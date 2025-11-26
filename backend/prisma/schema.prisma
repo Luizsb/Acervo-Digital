@@ -1,0 +1,105 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  favorites Favorite[]
+  views     View[]
+}
+
+model ODA {
+  id                String   @id @default(uuid())
+  title             String
+  tag               String   // Componente curricular principal
+  tags              String   @default("[]") // JSON array de componentes curriculares
+  tagColor          String?  // Cor do badge (ex: "bg-blue-600")
+  location          String   // Ano/série (ex: "1º ano")
+  image             String   // URL da imagem
+  videoUrl          String?  // URL do vídeo (YouTube, etc)
+  
+  // BNCC
+  bnccCode          String?
+  bnccDescription   String?
+  
+  // Metadados
+  category          String?  // Categoria (ex: "Contação de história", "Jogo Digital")
+  duration         String?  // Duração (ex: "10 min")
+  volume           String?  // Volume (ex: "Volume 1")
+  livro            String?  // Nome do livro
+  pagina           String?  // Páginas (ex: "42-48")
+  marca            String?  // Marca (CQT, SAE, SPE)
+  
+  // Tipo de conteúdo
+  contentType      String   // "Audiovisual" ou "OED"
+  videoCategory    String?  // Categoria de vídeo (se contentType = "Audiovisual")
+  tipoObjeto       String?  // Tipo de objeto (se contentType = "OED")
+  
+  // SAMR
+  samr             String?  // Escala SAMR: "Substituição", "Ampliação", "Modificação", "Redefinição"
+  
+  // Detalhes adicionais
+  description      String?
+  learningObjectives String @default("[]") // JSON array de objetivos de aprendizagem
+  pedagogicalResources String @default("[]") // JSON array de recursos pedagógicos
+  technicalRequirements String @default("[]") // JSON array de requisitos técnicos
+  
+  // Estatísticas
+  views            Int      @default(0)
+  lastUpdate       DateTime @default(now()) @updatedAt
+  createdAt        DateTime @default(now())
+  
+  favorites        Favorite[]
+  viewRecords      View[]
+  
+  @@index([contentType])
+  @@index([tag])
+  @@index([location])
+  @@index([bnccCode])
+  @@index([marca])
+  @@index([samr])
+}
+
+model Favorite {
+  id        String   @id @default(uuid())
+  userId    String
+  odaId     String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  oda  ODA @relation(fields: [odaId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, odaId])
+  @@index([userId])
+  @@index([odaId])
+}
+
+model View {
+  id        String   @id @default(uuid())
+  userId    String?  // Nullable para permitir visualizações anônimas
+  sessionId String?  // Para rastrear usuários não autenticados
+  odaId     String
+  viewedAt  DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  oda  ODA  @relation(fields: [odaId], references: [id], onDelete: Cascade)
+
+  @@index([userId, odaId, viewedAt])
+  @@index([sessionId, odaId, viewedAt])
+  @@index([odaId, viewedAt])
+}
+
