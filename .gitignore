@@ -41,6 +41,9 @@ yarn-error.log*
 *~
 .DS_Store
 
+# Build outputs (manter dist para Pages)
+# dist/ está comentado porque precisamos para deploy
+
 # OS
 Thumbs.db
 desktop.ini

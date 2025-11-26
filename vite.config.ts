@@ -4,6 +4,7 @@
   import path from 'path';
 
   export default defineConfig({
+    base: process.env.NODE_ENV === 'production' ? '/Acervo-Digital/' : '/',
     plugins: [react()],
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
@@ -58,7 +59,7 @@
     },
     build: {
       target: 'esnext',
-      outDir: 'build',
+      outDir: 'dist',
     },
     server: {
       port: 3000,
