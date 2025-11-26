@@ -29,13 +29,18 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: |
+          npm ci || npm install
 
       - name: Build
         run: npm run build
         env:
           NODE_ENV: production
           BASE_PATH: /Acervo-Digital/
+      
+      - name: List dist contents
+        run: ls -la dist/ || echo "Dist folder not found"
+        if: always()
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

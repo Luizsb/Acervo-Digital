@@ -1,6 +1,6 @@
 # Dependencies
 node_modules/
-package-lock.json
+# package-lock.json - Mantido para garantir builds consistentes no CI/CD
 yarn.lock
 
 # Environment variables
