@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
@@ -13,7 +13,8 @@ const sampleODAs = [
     image: "https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800",
     videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
     bnccCode: "EF15LP15",
-    bnccDescription: "Reconhecer que os textos literários fazem parte do mundo do imaginário",
+    bnccDescription:
+      "Reconhecer que os textos literários fazem parte do mundo do imaginário",
     category: "Contação de história",
     duration: "15 min",
     volume: "Volume 1",
@@ -23,20 +24,21 @@ const sampleODAs = [
     contentType: "Audiovisual",
     videoCategory: "Contação de história",
     samr: "Ampliação",
-    description: "Vídeo interativo de contação de histórias que desenvolve habilidades de leitura e interpretação de forma lúdica.",
+    description:
+      "Vídeo interativo de contação de histórias que desenvolve habilidades de leitura e interpretação de forma lúdica.",
     learningObjectives: [
       "Desenvolver habilidades de leitura e interpretação",
       "Estimular o pensamento crítico e a criatividade",
-      "Promover a autonomia e o protagonismo dos estudantes"
+      "Promover a autonomia e o protagonismo dos estudantes",
     ],
     pedagogicalResources: [
       "Guia do professor com orientações didáticas",
       "Atividades complementares para impressão",
-      "Sugestões de avaliação formativa"
+      "Sugestões de avaliação formativa",
     ],
     technicalRequirements: [
       "Navegador web atualizado",
-      "Conexão com internet (mínimo 2 Mbps)"
+      "Conexão com internet (mínimo 2 Mbps)",
     ],
     views: 0,
   },
@@ -59,20 +61,18 @@ const sampleODAs = [
     contentType: "Audiovisual",
     videoCategory: "Aula Explicativa",
     samr: "Substituição",
-    description: "Vídeo educativo que ensina operações básicas de adição e subtração através de situações do cotidiano.",
+    description:
+      "Vídeo educativo que ensina operações básicas de adição e subtração através de situações do cotidiano.",
     learningObjectives: [
       "Compreender operações de adição e subtração",
       "Resolver problemas matemáticos simples",
-      "Desenvolver raciocínio lógico"
+      "Desenvolver raciocínio lógico",
     ],
     pedagogicalResources: [
       "Exercícios práticos",
-      "Material de apoio para o professor"
+      "Material de apoio para o professor",
     ],
-    technicalRequirements: [
-      "Navegador web atualizado",
-      "Conexão com internet"
-    ],
+    technicalRequirements: ["Navegador web atualizado", "Conexão com internet"],
     views: 0,
   },
   {
@@ -94,20 +94,18 @@ const sampleODAs = [
     contentType: "Audiovisual",
     videoCategory: "Documentário Educativo",
     samr: "Modificação",
-    description: "Documentário educativo sobre o ciclo da água, mostrando processos naturais de forma visual e interativa.",
+    description:
+      "Documentário educativo sobre o ciclo da água, mostrando processos naturais de forma visual e interativa.",
     learningObjectives: [
       "Compreender o ciclo da água na natureza",
       "Identificar estados da matéria",
-      "Desenvolver consciência ambiental"
+      "Desenvolver consciência ambiental",
     ],
     pedagogicalResources: [
       "Roteiro de atividades",
-      "Experimentos práticos sugeridos"
+      "Experimentos práticos sugeridos",
     ],
-    technicalRequirements: [
-      "Navegador web atualizado",
-      "Conexão com internet"
-    ],
+    technicalRequirements: ["Navegador web atualizado", "Conexão com internet"],
     views: 0,
   },
   {
@@ -119,7 +117,8 @@ const sampleODAs = [
     image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800",
     videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
     bnccCode: "EF04HI01",
-    bnccDescription: "Reconhecer a história como resultado da ação do ser humano",
+    bnccDescription:
+      "Reconhecer a história como resultado da ação do ser humano",
     category: "Animação Educativa",
     duration: "25 min",
     volume: "Volume 3",
@@ -129,20 +128,18 @@ const sampleODAs = [
     contentType: "Audiovisual",
     videoCategory: "Animação Educativa",
     samr: "Redefinição",
-    description: "Animação educativa sobre o descobrimento do Brasil, apresentando fatos históricos de forma lúdica e envolvente.",
+    description:
+      "Animação educativa sobre o descobrimento do Brasil, apresentando fatos históricos de forma lúdica e envolvente.",
     learningObjectives: [
       "Conhecer fatos históricos do Brasil",
       "Desenvolver senso crítico sobre história",
-      "Valorizar a cultura brasileira"
+      "Valorizar a cultura brasileira",
     ],
     pedagogicalResources: [
       "Linha do tempo interativa",
-      "Atividades de fixação"
+      "Atividades de fixação",
     ],
-    technicalRequirements: [
-      "Navegador web atualizado",
-      "Conexão com internet"
-    ],
+    technicalRequirements: ["Navegador web atualizado", "Conexão com internet"],
     views: 0,
   },
   {
@@ -154,7 +151,8 @@ const sampleODAs = [
     image: "https://images.unsplash.com/photo-1513475382585-d06e58bcb0e0?w=800",
     videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
     bnccCode: "EF15AR01",
-    bnccDescription: "Identificar e apreciar formas distintas das artes visuais",
+    bnccDescription:
+      "Identificar e apreciar formas distintas das artes visuais",
     category: "Tutorial",
     duration: "12 min",
     volume: "Volume 2",
@@ -164,23 +162,21 @@ const sampleODAs = [
     contentType: "Audiovisual",
     videoCategory: "Tutorial",
     samr: "Ampliação",
-    description: "Tutorial de arte ensinando técnicas básicas de pintura e uso de cores, estimulando a criatividade dos estudantes.",
+    description:
+      "Tutorial de arte ensinando técnicas básicas de pintura e uso de cores, estimulando a criatividade dos estudantes.",
     learningObjectives: [
       "Desenvolver habilidades artísticas",
       "Conhecer técnicas de pintura",
-      "Expressar criatividade através da arte"
+      "Expressar criatividade através da arte",
     ],
     pedagogicalResources: [
       "Material de apoio",
-      "Sugestões de atividades práticas"
+      "Sugestões de atividades práticas",
     ],
-    technicalRequirements: [
-      "Navegador web atualizado",
-      "Conexão com internet"
-    ],
+    technicalRequirements: ["Navegador web atualizado", "Conexão com internet"],
     views: 0,
   },
-  
+
   // ========== OEDs - OBJETOS EDUCACIONAIS DIGITAIS (5) ==========
   {
     title: "Explorando Números e Quantidades",
@@ -201,20 +197,15 @@ const sampleODAs = [
     contentType: "OED",
     tipoObjeto: "Clicar e Arrastar",
     samr: "Modificação",
-    description: "Jogo interativo para explorar números e quantidades de forma lúdica, desenvolvendo habilidades matemáticas básicas.",
+    description:
+      "Jogo interativo para explorar números e quantidades de forma lúdica, desenvolvendo habilidades matemáticas básicas.",
     learningObjectives: [
       "Reconhecer números naturais",
       "Associar números a quantidades",
-      "Desenvolver raciocínio lógico"
+      "Desenvolver raciocínio lógico",
     ],
-    pedagogicalResources: [
-      "Guia do professor",
-      "Atividades complementares"
-    ],
-    technicalRequirements: [
-      "Navegador web atualizado",
-      "Conexão com internet"
-    ],
+    pedagogicalResources: ["Guia do professor", "Atividades complementares"],
+    technicalRequirements: ["Navegador web atualizado", "Conexão com internet"],
     views: 0,
   },
   {
@@ -236,20 +227,18 @@ const sampleODAs = [
     contentType: "OED",
     tipoObjeto: "Quiz Interativo",
     samr: "Ampliação",
-    description: "Objeto digital interativo para formação de palavras, auxiliando no processo de alfabetização.",
+    description:
+      "Objeto digital interativo para formação de palavras, auxiliando no processo de alfabetização.",
     learningObjectives: [
       "Reconhecer letras e sons",
       "Formar palavras simples",
-      "Desenvolver habilidades de leitura"
+      "Desenvolver habilidades de leitura",
     ],
     pedagogicalResources: [
       "Material de apoio pedagógico",
-      "Atividades de reforço"
+      "Atividades de reforço",
     ],
-    technicalRequirements: [
-      "Navegador web atualizado",
-      "Conexão com internet"
-    ],
+    technicalRequirements: ["Navegador web atualizado", "Conexão com internet"],
     views: 0,
   },
   {
@@ -271,20 +260,15 @@ const sampleODAs = [
     contentType: "OED",
     tipoObjeto: "Simulador",
     samr: "Redefinição",
-    description: "Simulador interativo de quebra-cabeça para aprender sobre os estados e regiões do Brasil.",
+    description:
+      "Simulador interativo de quebra-cabeça para aprender sobre os estados e regiões do Brasil.",
     learningObjectives: [
       "Conhecer a geografia do Brasil",
       "Identificar estados e regiões",
-      "Desenvolver noção espacial"
+      "Desenvolver noção espacial",
     ],
-    pedagogicalResources: [
-      "Mapas interativos",
-      "Atividades complementares"
-    ],
-    technicalRequirements: [
-      "Navegador web atualizado",
-      "Conexão com internet"
-    ],
+    pedagogicalResources: ["Mapas interativos", "Atividades complementares"],
+    technicalRequirements: ["Navegador web atualizado", "Conexão com internet"],
     views: 0,
   },
   {
@@ -306,20 +290,15 @@ const sampleODAs = [
     contentType: "OED",
     tipoObjeto: "Simulador",
     samr: "Modificação",
-    description: "Simulador de laboratório virtual para realizar experimentos científicos de forma segura e interativa.",
+    description:
+      "Simulador de laboratório virtual para realizar experimentos científicos de forma segura e interativa.",
     learningObjectives: [
       "Compreender conceitos científicos",
       "Realizar experimentos virtuais",
-      "Desenvolver pensamento científico"
+      "Desenvolver pensamento científico",
     ],
-    pedagogicalResources: [
-      "Roteiro de experimentos",
-      "Material de apoio"
-    ],
-    technicalRequirements: [
-      "Navegador web atualizado",
-      "Conexão com internet"
-    ],
+    pedagogicalResources: ["Roteiro de experimentos", "Material de apoio"],
+    technicalRequirements: ["Navegador web atualizado", "Conexão com internet"],
     views: 0,
   },
   {
@@ -341,23 +320,18 @@ const sampleODAs = [
     contentType: "OED",
     tipoObjeto: "Ferramenta",
     samr: "Substituição",
-    description: "Ferramenta educativa interativa para praticar operações matemáticas básicas de forma divertida.",
+    description:
+      "Ferramenta educativa interativa para praticar operações matemáticas básicas de forma divertida.",
     learningObjectives: [
       "Praticar operações matemáticas",
       "Desenvolver agilidade de cálculo",
-      "Reforçar conceitos básicos"
+      "Reforçar conceitos básicos",
     ],
-    pedagogicalResources: [
-      "Exercícios práticos",
-      "Relatórios de progresso"
-    ],
-    technicalRequirements: [
-      "Navegador web atualizado",
-      "Conexão com internet"
-    ],
+    pedagogicalResources: ["Exercícios práticos", "Relatórios de progresso"],
+    technicalRequirements: ["Navegador web atualizado", "Conexão com internet"],
     views: 0,
   },
-  
+
   // ========== ODAs ADICIONAIS PARA TESTE DE PAGINAÇÃO (5) ==========
   {
     title: "Inglês Divertido: Cores e Números",
@@ -368,7 +342,8 @@ const sampleODAs = [
     image: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800",
     videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
     bnccCode: "EF01LI01",
-    bnccDescription: "Reconhecer palavras e expressões em inglês relacionadas ao cotidiano",
+    bnccDescription:
+      "Reconhecer palavras e expressões em inglês relacionadas ao cotidiano",
     category: "Aula Explicativa",
     duration: "15 min",
     volume: "Volume 1",
@@ -378,20 +353,15 @@ const sampleODAs = [
     contentType: "Audiovisual",
     videoCategory: "Aula Explicativa",
     samr: "Ampliação",
-    description: "Vídeo educativo para ensinar cores e números em inglês de forma divertida e interativa.",
+    description:
+      "Vídeo educativo para ensinar cores e números em inglês de forma divertida e interativa.",
     learningObjectives: [
       "Aprender vocabulário básico em inglês",
       "Reconhecer cores e números",
-      "Desenvolver interesse por língua estrangeira"
+      "Desenvolver interesse por língua estrangeira",
     ],
-    pedagogicalResources: [
-      "Cartões de vocabulário",
-      "Atividades de fixação"
-    ],
-    technicalRequirements: [
-      "Navegador web atualizado",
-      "Conexão com internet"
-    ],
+    pedagogicalResources: ["Cartões de vocabulário", "Atividades de fixação"],
+    technicalRequirements: ["Navegador web atualizado", "Conexão com internet"],
     views: 0,
   },
   {
@@ -413,20 +383,15 @@ const sampleODAs = [
     contentType: "Audiovisual",
     videoCategory: "Tutorial",
     samr: "Modificação",
-    description: "Tutorial de educação física ensinando movimentos básicos e exercícios de coordenação motora.",
+    description:
+      "Tutorial de educação física ensinando movimentos básicos e exercícios de coordenação motora.",
     learningObjectives: [
       "Desenvolver coordenação motora",
       "Praticar exercícios físicos",
-      "Promover hábitos saudáveis"
+      "Promover hábitos saudáveis",
     ],
-    pedagogicalResources: [
-      "Roteiro de exercícios",
-      "Material de apoio"
-    ],
-    technicalRequirements: [
-      "Navegador web atualizado",
-      "Conexão com internet"
-    ],
+    pedagogicalResources: ["Roteiro de exercícios", "Material de apoio"],
+    technicalRequirements: ["Navegador web atualizado", "Conexão com internet"],
     views: 0,
   },
   {
@@ -448,20 +413,18 @@ const sampleODAs = [
     contentType: "OED",
     tipoObjeto: "Jogo Interativo",
     samr: "Ampliação",
-    description: "Jogo interativo para explorar sons, ritmos e instrumentos musicais de forma lúdica.",
+    description:
+      "Jogo interativo para explorar sons, ritmos e instrumentos musicais de forma lúdica.",
     learningObjectives: [
       "Reconhecer diferentes sons e instrumentos",
       "Desenvolver senso rítmico",
-      "Apreciar música"
+      "Apreciar música",
     ],
-    pedagogicalResources: [
-      "Guia do professor",
-      "Atividades complementares"
-    ],
+    pedagogicalResources: ["Guia do professor", "Atividades complementares"],
     technicalRequirements: [
       "Navegador web atualizado",
       "Conexão com internet",
-      "Caixas de som recomendadas"
+      "Caixas de som recomendadas",
     ],
     views: 0,
   },
@@ -484,20 +447,15 @@ const sampleODAs = [
     contentType: "OED",
     tipoObjeto: "Simulador",
     samr: "Redefinição",
-    description: "Simulador interativo para aprender sobre medidas, grandezas e unidades de medida.",
+    description:
+      "Simulador interativo para aprender sobre medidas, grandezas e unidades de medida.",
     learningObjectives: [
       "Compreender unidades de medida",
       "Estimar e medir grandezas",
-      "Resolver problemas práticos"
+      "Resolver problemas práticos",
     ],
-    pedagogicalResources: [
-      "Atividades práticas",
-      "Material de apoio"
-    ],
-    technicalRequirements: [
-      "Navegador web atualizado",
-      "Conexão com internet"
-    ],
+    pedagogicalResources: ["Atividades práticas", "Material de apoio"],
+    technicalRequirements: ["Navegador web atualizado", "Conexão com internet"],
     views: 0,
   },
   {
@@ -519,20 +477,18 @@ const sampleODAs = [
     contentType: "Audiovisual",
     videoCategory: "Contação de história",
     samr: "Modificação",
-    description: "Série de vídeos com contação de fábulas e contos infantis, desenvolvendo habilidades de leitura e interpretação.",
+    description:
+      "Série de vídeos com contação de fábulas e contos infantis, desenvolvendo habilidades de leitura e interpretação.",
     learningObjectives: [
       "Desenvolver gosto pela leitura",
       "Compreender textos literários",
-      "Interpretar fábulas e contos"
+      "Interpretar fábulas e contos",
     ],
     pedagogicalResources: [
       "Textos complementares",
-      "Atividades de interpretação"
+      "Atividades de interpretação",
     ],
-    technicalRequirements: [
-      "Navegador web atualizado",
-      "Conexão com internet"
-    ],
+    technicalRequirements: ["Navegador web atualizado", "Conexão com internet"],
     views: 0,
   },
 ];
@@ -543,15 +499,15 @@ const arrayToJson = (arr: string[]): string => {
 };
 
 async function main() {
-  console.log('🌱 Seeding database...');
+  console.log("🌱 Seeding database...");
 
   // Limpar dados existentes (opcional - comentar se quiser manter dados anteriores)
-  console.log('🗑️  Limpando dados existentes...');
+  console.log("🗑️  Limpando dados existentes...");
   await prisma.favorite.deleteMany();
   await prisma.oDA.deleteMany();
 
   // Create sample ODAs
-  console.log('📚 Criando ODAs de teste...');
+  console.log("📚 Criando ODAs de teste...");
   for (const oda of sampleODAs) {
     await prisma.oDA.create({
       data: {
@@ -564,22 +520,27 @@ async function main() {
     });
   }
 
-  const audiovisualCount = sampleODAs.filter(o => o.contentType === 'Audiovisual').length;
-  const oedCount = sampleODAs.filter(o => o.contentType === 'OED').length;
+  const audiovisualCount = sampleODAs.filter(
+    (o) => o.contentType === "Audiovisual"
+  ).length;
+  const oedCount = sampleODAs.filter((o) => o.contentType === "OED").length;
 
   console.log(`✅ Database seeded successfully!`);
   console.log(`   📹 ${audiovisualCount} Audiovisuais criados`);
   console.log(`   🎮 ${oedCount} OEDs criados`);
   console.log(`   📊 Total: ${sampleODAs.length} ODAs`);
-  console.log(`   📄 Com ${Math.ceil(sampleODAs.length / 12)} páginas de paginação (12 ODAs por página)`);
+  console.log(
+    `   📄 Com ${Math.ceil(
+      sampleODAs.length / 12
+    )} páginas de paginação (12 ODAs por página)`
+  );
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Error seeding database:', e);
+    console.error("❌ Error seeding database:", e);
     process.exit(1);
   })
   .finally(async () => {
     await prisma.$disconnect();
   });
-

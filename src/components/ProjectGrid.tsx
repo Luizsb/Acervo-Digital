@@ -1,18 +1,10 @@
 import React from 'react';
 import { ProjectCard } from './ProjectCard';
-
-interface Project {
-  id: string;
-  title: string;
-  tag: string;
-  tagColor?: string;
-  location: string;
-  image: string;
-}
+import { ODA } from '../services/odaService';
 
 interface ProjectGridProps {
-  projects: Project[];
-  onProjectClick: (project: Project) => void;
+  projects: ODA[];
+  onProjectClick: (project: ODA) => void;
   favorites?: string[];
   onToggleFavorite?: (projectId: string) => void;
 }

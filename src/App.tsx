@@ -127,49 +127,60 @@ export default function App() {
   };
 
   // Extrair valores únicos para filtros
-  const filterOptions = {
-    anos: Array.from(new Set(projects.map((p) => p.location))).sort(),
+  const filterOptions: {
+    anos: string[];
+    tags: string[];
+    bnccCodes: string[];
+    livros: string[];
+    categorias: string[];
+    marcas: string[];
+    tipoObjeto: string[];
+    videoCategory: string[];
+    samr: string[];
+    volumes: string[];
+  } = {
+    anos: Array.from(new Set(projects.map((p) => p.location))).sort() as string[],
     tags: Array.from(
       new Set(
         projects
           .flatMap((p) => p.tags || [p.tag])
-          .filter(Boolean)
+          .filter(Boolean) as string[]
       )
-    ).sort(),
+    ).sort() as string[],
     bnccCodes: Array.from(
-      new Set(projects.map((p) => p.bnccCode).filter(Boolean))
-    ).sort(),
+      new Set(projects.map((p) => p.bnccCode).filter(Boolean) as string[])
+    ).sort() as string[],
     livros: Array.from(
-      new Set(projects.map((p) => p.livro).filter(Boolean))
-    ).sort(),
+      new Set(projects.map((p) => p.livro).filter(Boolean) as string[])
+    ).sort() as string[],
     categorias: Array.from(
-      new Set(projects.map((p) => p.category).filter(Boolean))
-    ).sort(),
+      new Set(projects.map((p) => p.category).filter(Boolean) as string[])
+    ).sort() as string[],
     marcas: Array.from(
-      new Set(projects.map((p) => p.marca).filter(Boolean))
-    ).sort(),
+      new Set(projects.map((p) => p.marca).filter(Boolean) as string[])
+    ).sort() as string[],
     tipoObjeto: Array.from(
       new Set(
         projects
           .filter((p) => p.contentType === "OED")
           .map((p) => p.tipoObjeto)
-          .filter(Boolean)
+          .filter(Boolean) as string[]
       )
-    ).sort(),
+    ).sort() as string[],
     videoCategory: Array.from(
       new Set(
         projects
           .filter((p) => p.contentType === "Audiovisual")
           .map((p) => p.videoCategory)
-          .filter(Boolean)
+          .filter(Boolean) as string[]
       )
-    ).sort(),
+    ).sort() as string[],
     samr: Array.from(
-      new Set(projects.map((p) => p.samr).filter(Boolean))
-    ).sort(),
+      new Set(projects.map((p) => p.samr).filter(Boolean) as string[])
+    ).sort() as string[],
     volumes: Array.from(
-      new Set(projects.map((p) => p.volume).filter(Boolean))
-    ).sort(),
+      new Set(projects.map((p) => p.volume).filter(Boolean) as string[])
+    ).sort() as string[],
   };
 
   const handleProjectClick = (project: ODA) => {
@@ -293,12 +304,12 @@ export default function App() {
 
       {/* Mobile Active Filters Display */}
       <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-3">
-        {Object.values(selectedFilters).some((arr) => arr.length > 0) && (
+        {(Object.values(selectedFilters) as string[][]).some((arr) => arr.length > 0) && (
           <div className="space-y-2.5">
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-gray-600">
                 Filtros ativos (
-                {Object.values(selectedFilters).reduce(
+                {(Object.values(selectedFilters) as string[][]).reduce(
                   (acc, arr) => acc + arr.length,
                   0
                 )}
@@ -313,9 +324,10 @@ export default function App() {
             </div>
             <div className="flex flex-wrap gap-2">
               {Object.entries(selectedFilters).map(([category, values]) => {
-                  if (values.length === 0) return null;
+                  const filterValues = values as string[];
+                  if (filterValues.length === 0) return null;
 
-                  return values.map((value) => {
+                  return filterValues.map((value) => {
                     let badgeColor =
                       "bg-purple-100 text-purple-700 border-purple-300";
 
@@ -398,9 +410,9 @@ export default function App() {
           className="lg:hidden fixed bottom-6 right-6 z-40 w-14 h-14 bg-primary text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-all duration-300 hover:shadow-primary/50"
         >
           <SlidersHorizontal className="w-6 h-6" />
-          {Object.values(selectedFilters).some((arr) => arr.length > 0) && (
+          {(Object.values(selectedFilters) as string[][]).some((arr) => arr.length > 0) && (
             <span className="absolute -top-1 -right-1 w-6 h-6 bg-secondary text-white rounded-full text-xs flex items-center justify-center font-bold shadow-lg">
-              {Object.values(selectedFilters).reduce(
+              {(Object.values(selectedFilters) as string[][]).reduce(
                 (acc, arr) => acc + arr.length,
                 0
               )}
@@ -504,7 +516,7 @@ export default function App() {
                       </p>
 
                       {(searchQuery.trim() !== "" ||
-                        Object.values(selectedFilters).some(
+                        (Object.values(selectedFilters) as string[][]).some(
                           (arr) => arr.length > 0
                         )) && (
                         <button
