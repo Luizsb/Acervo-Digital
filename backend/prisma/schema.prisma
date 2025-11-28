@@ -27,7 +27,6 @@ model ODA {
   title             String
   tag               String   // Componente curricular principal
   tags              String   @default("[]") // JSON array de componentes curriculares
-  tagColor          String?  // Cor do badge (ex: "bg-blue-600")
   location          String   // Ano/série (ex: "1º ano")
   image             String   // URL da imagem
   videoUrl          String?  // URL do vídeo (YouTube, etc)

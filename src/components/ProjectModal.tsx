@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { X, BookOpen, Clock, Share2, Check, ExternalLink, Star, Eye, Sparkles, Play, Book, FileText } from 'lucide-react';
+import { getCurriculumColor, getModalTagColor } from '../utils/odaColors';
 
 interface Project {
   id: number;
   title: string;
   tag: string;
   tags?: string[];
-  tagColor: string;
   location: string;
   image: string;
   videoUrl?: string;
@@ -138,17 +138,13 @@ export function ProjectModal({ project, isOpen, onClose }: ProjectModalProps) {
                   project.tags.map((tag, index) => (
                     <div
                       key={index}
-                      className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-bold text-white shadow-md ${
-                        index === 0 ? project.tagColor : 
-                        index === 1 ? 'bg-gradient-to-r from-purple-500 to-indigo-600' :
-                        'bg-gradient-to-r from-cyan-500 to-blue-600'
-                      }`}
+                      className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-bold text-white shadow-md ${getModalTagColor(index, undefined, tag)}`}
                     >
                       {tag}
                     </div>
                   ))
                 ) : (
-                  <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-bold text-white shadow-md ${project.tagColor}`}>
+                  <div className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-bold text-white shadow-md ${getModalTagColor(0, undefined, project.tag)}`}>
                     {project.tag}
                   </div>
                 )}

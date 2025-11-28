@@ -56,6 +56,19 @@ export const authService = {
     return api.get<User>('/users/me');
   },
 
+  async updateProfile(data: { name?: string; email?: string }): Promise<User> {
+    const response = await api.put<User>('/users/me', data);
+    
+    // Atualizar usuário no localStorage
+    const currentUser = this.getUser();
+    if (currentUser) {
+      const updatedUser = { ...currentUser, ...response };
+      localStorage.setItem('user', JSON.stringify(updatedUser));
+    }
+    
+    return response;
+  },
+
   logout(): void {
     localStorage.removeItem('token');
     localStorage.removeItem('user');

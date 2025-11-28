@@ -1,13 +1,12 @@
 import React from 'react';
 import { BookOpen, Layers, Heart, Clock, Video, Gamepad2 } from 'lucide-react';
-import { getCurriculumColor } from '../utils/curriculumColors';
+import { getCurriculumColor, getMarcaColor } from '../utils/odaColors';
 
 interface Project {
   id: string;
   title: string;
   tag: string;
   tags?: string[];
-  tagColor?: string;
   location: string;
   image: string;
   bnccCode?: string;
@@ -103,12 +102,7 @@ export function ProjectCard({ project, onClick, isFavorite = false, onToggleFavo
 
             {/* Marca badge */}
             {project.marca && (
-              <div className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold border ${
-                project.marca === 'SPE' ? 'bg-secondary/10 text-secondary border-secondary/20' :
-                project.marca === 'SAE' ? 'bg-purple-100 text-purple-700 border-purple-200' :
-                project.marca === 'CQT' ? 'bg-pink-100 text-pink-700 border-pink-200' :
-                'bg-purple-100 text-purple-700 border-purple-200'
-              }`}>
+              <div className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold border ${getMarcaColor(project.marca)}`}>
                 {project.marca}
               </div>
             )}

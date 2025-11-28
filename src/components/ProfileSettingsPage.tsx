@@ -3,6 +3,7 @@ import { ArrowLeft, User, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { Alert, AlertDescription } from './ui/alert';
 import { AlertCircle, CheckCircle2 } from 'lucide-react';
+import { authService } from '../services/authService';
 
 interface ProfileSettingsPageProps {
   onBack: () => void;
@@ -28,6 +29,9 @@ export function ProfileSettingsPage({ onBack }: ProfileSettingsPageProps) {
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [profileError, setProfileError] = useState('');
+  const [profileSuccess, setProfileSuccess] = useState('');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -50,10 +54,28 @@ export function ProfileSettingsPage({ onBack }: ProfileSettingsPageProps) {
     setPasswordSuccess('');
   };
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    // TODO: integrar com endpoint de atualização quando disponível
-    console.log('Dados informados:', formData);
+    setProfileError('');
+    setProfileSuccess('');
+    setIsSavingProfile(true);
+
+    try {
+      const updatedUser = await authService.updateProfile({
+        name: formData.name,
+      });
+
+      setProfileSuccess('Perfil atualizado com sucesso!');
+      
+      // Atualizar contexto de autenticação se necessário
+      setTimeout(() => {
+        setProfileSuccess('');
+      }, 3000);
+    } catch (error: any) {
+      setProfileError(error.message || 'Erro ao atualizar perfil');
+    } finally {
+      setIsSavingProfile(false);
+    }
   };
 
   const handlePasswordSubmit = async (event: React.FormEvent) => {
@@ -149,6 +171,19 @@ export function ProfileSettingsPage({ onBack }: ProfileSettingsPageProps) {
             <h3 className="mb-6 text-primary">Informações Pessoais</h3>
             
             <form onSubmit={handleSubmit} className="space-y-6">
+              {profileError && (
+                <Alert variant="destructive" className="border-2">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="font-semibold">{profileError}</AlertDescription>
+                </Alert>
+              )}
+              
+              {profileSuccess && (
+                <Alert className="border-2 border-green-500 bg-green-50 flex items-center gap-3">
+                  <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0" />
+                  <AlertDescription className="font-semibold text-green-600 m-0">{profileSuccess}</AlertDescription>
+                </Alert>
+              )}
               {/* Name Field */}
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-foreground">
@@ -177,24 +212,13 @@ export function ProfileSettingsPage({ onBack }: ProfileSettingsPageProps) {
                 />
               </div>
 
-              <div className="mt-8 flex gap-3">
+              <div className="mt-8">
                 <button
                   type="submit"
-                  className="px-6 py-3 bg-primary text-white rounded-full hover:bg-primary/90 hover:shadow-2xl transition-all font-bold"
+                  disabled={isSavingProfile}
+                  className="px-6 py-3 bg-primary text-white rounded-full hover:bg-primary/90 hover:shadow-2xl transition-all font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Salvar Alterações
-                </button>
-                <button
-                  type="button"
-                  onClick={() =>
-                    setFormData({
-                      name: user.name ?? '',
-                      email: user.email ?? '',
-                    })
-                  }
-                  className="px-6 py-3 border-2 border-gray-200 rounded-full hover:bg-gray-100 transition-all font-bold text-foreground"
-                >
-                  Cancelar
+                  {isSavingProfile ? 'Salvando...' : 'Salvar Alterações'}
                 </button>
               </div>
             </form>
@@ -253,7 +277,7 @@ export function ProfileSettingsPage({ onBack }: ProfileSettingsPageProps) {
                     <button
                       type="button"
                       onClick={() => setShowPasswords((prev) => ({ ...prev, current: !prev.current }))}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      className="absolute inset-y-0 right-0 flex items-center justify-center pr-6 text-muted-foreground hover:text-foreground transition-colors"
                     >
                       {showPasswords.current ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
@@ -277,7 +301,7 @@ export function ProfileSettingsPage({ onBack }: ProfileSettingsPageProps) {
                     <button
                       type="button"
                       onClick={() => setShowPasswords((prev) => ({ ...prev, new: !prev.new }))}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      className="absolute inset-y-0 right-0 flex items-center justify-center pr-6 text-muted-foreground hover:text-foreground transition-colors"
                     >
                       {showPasswords.new ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>
@@ -301,7 +325,7 @@ export function ProfileSettingsPage({ onBack }: ProfileSettingsPageProps) {
                     <button
                       type="button"
                       onClick={() => setShowPasswords((prev) => ({ ...prev, confirm: !prev.confirm }))}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      className="absolute inset-y-0 right-0 flex items-center justify-center pr-6 text-muted-foreground hover:text-foreground transition-colors"
                     >
                       {showPasswords.confirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                     </button>

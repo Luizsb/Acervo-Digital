@@ -115,6 +115,9 @@ export const odaController = {
       const userId = (req as any).userId || undefined;
       const sessionId = req.headers['x-session-id'] as string | undefined;
       
+      // Log para debug
+      console.log(`[Views] Incrementando view para ODA ${id} - userId: ${userId || 'null'}, sessionId: ${sessionId || 'null'}`);
+      
       const result = await odaService.incrementView(id, userId, sessionId);
       
       if (result === null) {

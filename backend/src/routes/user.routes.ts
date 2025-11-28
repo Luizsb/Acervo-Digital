@@ -13,3 +13,6 @@ userRoutes.post('/login', userController.login);
 // GET /api/users/me - Obter dados do usuário logado
 userRoutes.get('/me', authenticate, userController.getMe);
 
+// PUT /api/users/me - Atualizar perfil do usuário logado
+userRoutes.put('/me', authenticate, userController.updateProfile);
+

@@ -167,7 +167,6 @@ export const odaService = {
         title: data.title,
         tag: data.tag,
         tags: arrayToJson(data.tags || [data.tag]),
-        tagColor: data.tagColor,
         location: data.location,
         image: data.image,
         videoUrl: data.videoUrl,
@@ -257,6 +256,11 @@ export const odaService = {
       today.setHours(0, 0, 0, 0);
       const tomorrow = new Date(today);
       tomorrow.setDate(tomorrow.getDate() + 1);
+
+      // Garantir que temos userId ou sessionId
+      if (!userId && !sessionId) {
+        throw new Error('userId or sessionId is required');
+      }
 
       // Buscar visualizações de hoje
       const existingView = await tx.view.findFirst({

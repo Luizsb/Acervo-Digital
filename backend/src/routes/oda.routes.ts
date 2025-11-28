@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { odaController } from '../controllers/oda.controller';
+import { optionalAuthenticate } from '../middleware/auth';
 
 export const odaRoutes = Router();
 
@@ -21,6 +22,6 @@ odaRoutes.delete('/:id', odaController.delete);
 // GET /api/odas/:id/related - Obter ODAs relacionados
 odaRoutes.get('/:id/related', odaController.getRelated);
 
-// POST /api/odas/:id/view - Incrementar visualizações
-odaRoutes.post('/:id/view', odaController.incrementView);
+// POST /api/odas/:id/view - Incrementar visualizações (autenticação opcional)
+odaRoutes.post('/:id/view', optionalAuthenticate, odaController.incrementView);
 

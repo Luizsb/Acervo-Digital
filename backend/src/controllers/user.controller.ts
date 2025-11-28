@@ -59,5 +59,27 @@ export const userController = {
       res.status(500).json({ error: 'Failed to fetch user' });
     }
   },
+
+  async updateProfile(req: any, res: Response) {
+    try {
+      const userId = req.userId;
+      const { name, email } = req.body;
+
+      if (!name && !email) {
+        return res.status(400).json({ error: 'At least one field (name or email) is required' });
+      }
+
+      const updatedUser = await userService.update(userId, { name, email });
+      res.json(updatedUser);
+    } catch (error: any) {
+      console.error('Update profile error:', error);
+      
+      if (error.code === 'P2002') {
+        return res.status(400).json({ error: 'Email already in use' });
+      }
+      
+      res.status(500).json({ error: error.message || 'Failed to update profile' });
+    }
+  },
 };
 

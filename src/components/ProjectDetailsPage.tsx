@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, BookOpen, Clock, Share2, Check, ExternalLink, Eye, Sparkles, Play, Book, FileText, ArrowLeft, Heart, Link as LinkIcon, QrCode } from 'lucide-react';
 import { ProjectCard } from './ProjectCard';
-import { getCurriculumColor } from '../utils/curriculumColors';
+import { getCurriculumColor, getMarcaColor } from '../utils/odaColors';
 import { odaService } from '../services/odaService';
+import { useAuth } from '../contexts/AuthContext';
 
 interface Project {
   id: string;
   title: string;
   tag: string;
   tags?: string[];
-  tagColor?: string;
   location: string;
   image: string;
   videoUrl?: string;
@@ -37,11 +37,22 @@ interface ProjectDetailsPageProps {
 }
 
 export function ProjectDetailsPage({ project, onBack, isFavorite = false, onToggleFavorite }: ProjectDetailsPageProps) {
+  const { user } = useAuth();
   const [isShared, setIsShared] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [views, setViews] = useState(project.views || 0);
   const hasIncrementedRef = useRef(false); // Ref para garantir que só execute uma vez por montagem
+
+  // Gerar ou obter sessionId do localStorage
+  const getOrCreateSessionId = (): string => {
+    let sessionId = localStorage.getItem('acervo_session_id');
+    if (!sessionId) {
+      sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      localStorage.setItem('acervo_session_id', sessionId);
+    }
+    return sessionId;
+  };
 
   // Incrementar visualizações quando o componente for montado (apenas uma vez por dia)
   useEffect(() => {
@@ -118,7 +129,9 @@ export function ProjectDetailsPage({ project, onBack, isFavorite = false, onTogg
         localStorage.setItem(viewKey, JSON.stringify(viewData));
         console.log(`[Views] ✅ Marcado no localStorage:`, viewData);
         
-        await odaService.incrementView(project.id);
+        // Enviar sessionId se não houver userId (usuário não autenticado)
+        const sessionId = user ? undefined : getOrCreateSessionId();
+        await odaService.incrementView(project.id, sessionId);
         
         if (!isMounted) return; // Verificar novamente após async
         
@@ -296,12 +309,7 @@ export function ProjectDetailsPage({ project, onBack, isFavorite = false, onTogg
                     </div>
                   )}
                   {project.marca && (
-                    <div className={`inline-flex items-center px-5 py-2.5 rounded-full text-sm font-bold border-2 shadow-md ${
-                      project.marca === 'SPE' ? 'bg-secondary/10 text-secondary border-secondary/20' :
-                      project.marca === 'SAE' ? 'bg-purple-100 text-purple-700 border-purple-200' :
-                      project.marca === 'CQT' ? 'bg-pink-100 text-pink-700 border-pink-200' :
-                      'bg-indigo-100 text-indigo-700 border-indigo-200'
-                    }`}>
+                    <div className={`inline-flex items-center px-5 py-2.5 rounded-full text-sm font-bold border-2 shadow-md ${getMarcaColor(project.marca)}`}>
                       {project.marca}
                     </div>
                   )}
@@ -508,6 +516,7 @@ export function ProjectDetailsPage({ project, onBack, isFavorite = false, onTogg
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               {relatedProjects.map((relatedProject) => (
                 <ProjectCard
+                  // @ts-expect-error - key is a special React prop, not part of ProjectCardProps
                   key={relatedProject.id}
                   project={relatedProject}
                   onClick={() => {}}

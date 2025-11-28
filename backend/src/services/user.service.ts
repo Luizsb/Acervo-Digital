@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 
 const prisma = new PrismaClient();
 
@@ -31,7 +31,7 @@ export const userService = {
     const token = jwt.sign(
       { userId: user.id },
       process.env.JWT_SECRET || 'secret',
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+      { expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as jwt.SignOptions['expiresIn'] }
     );
 
     return {
@@ -65,7 +65,7 @@ export const userService = {
     const token = jwt.sign(
       { userId: user.id },
       process.env.JWT_SECRET || 'secret',
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+      { expiresIn: (process.env.JWT_EXPIRES_IN || '7d') as jwt.SignOptions['expiresIn'] }
     );
 
     return {
@@ -82,6 +82,22 @@ export const userService = {
     return prisma.user.findUnique({
       where: { id },
     });
+  },
+
+  async update(id: string, data: { name?: string; email?: string }) {
+    const user = await prisma.user.update({
+      where: { id },
+      data: {
+        ...(data.name !== undefined && { name: data.name }),
+        ...(data.email !== undefined && { email: data.email }),
+      },
+    });
+
+    return {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+    };
   },
 };
 

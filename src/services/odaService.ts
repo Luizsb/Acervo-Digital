@@ -5,7 +5,6 @@ export interface ODA {
   title: string;
   tag: string;
   tags: string[];
-  tagColor?: string;
   location: string;
   image: string;
   videoUrl?: string;
