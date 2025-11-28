@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { odaRoutes } from './routes/oda.routes';
 import { userRoutes } from './routes/user.routes';
 import { favoriteRoutes } from './routes/favorite.routes';
+import { adminRoutes } from './routes/admin.routes';
 import { errorHandler } from './middleware/errorHandler';
 
 dotenv.config();
@@ -43,6 +44,7 @@ app.get('/health', (req, res) => {
 app.use('/api/odas', odaRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/favorites', favoriteRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Error handling
 app.use(errorHandler);
