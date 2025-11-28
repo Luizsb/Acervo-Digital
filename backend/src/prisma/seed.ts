@@ -328,7 +328,7 @@ const sampleODAs = [
     tag: "Língua Inglesa",
     tags: ["Língua Inglesa", "Alfabetização"],
     location: "1º ano",
-    image: "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800",
+    image: "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=800",
     videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
     bnccCode: "EF01LI01",
     bnccDescription:

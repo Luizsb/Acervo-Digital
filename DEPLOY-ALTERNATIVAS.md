@@ -20,7 +20,13 @@ O **GitHub Pages** não funciona para este projeto porque:
 2. Conectar repositório GitHub
 3. Criar 2 serviços:
    - **Web Service** (Backend): `backend/`
+     - Root Directory: `backend`
+     - Build Command: `npm install && npx prisma generate && npm run build`
+     - Start Command: `npm start`
    - **Static Site** (Frontend): `dist/` após build
+     - Root Directory: (deixar vazio - raiz do projeto)
+     - Build Command: `npm install && npm run build`
+     - Publish Directory: `dist`
 
 ### 2. **Railway.app** (Gratuito)
 - Similar ao Render
