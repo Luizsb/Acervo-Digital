@@ -1,0 +1,74 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model ODA {
+  id                    Int      @id @default(autoincrement())
+  codigoOda             String?  @unique @map("codigo_oda")
+  titulo                String   @map("titulo")
+  componenteCurricular  String?  @map("componente_curricular")
+  tags                  String?  // JSON array
+  tagColor              String?  @map("tag_color")
+  anoSerie              String?  @map("ano_serie")
+  imagem                String?  @map("imagem")
+  linkRepositorio       String?  @map("link_repositorio")
+  codigoBncc            String?  @map("codigo_bncc")
+  descricaoBncc         String?  @map("descricao_bncc")
+  categoria             String?  @map("categoria")
+  duracao               String?  @map("duracao")
+  volume                String?  @map("volume")
+  segmento              String?  @map("segmento")
+  pagina                String?  @map("pagina")
+  marca                 String?  @map("marca")
+  tipoConteudo          String   @map("tipo_conteudo") // 'Audiovisual' | 'OED'
+  categoriaVideo        String?  @map("categoria_video")
+  escalaSamr            String?  @map("escala_samr")
+  tipoObjeto            String?  @map("tipo_objeto")
+  descricao             String?  @map("descricao")
+  objetivosAprendizagem String?  @map("objetivos_aprendizagem") // JSON array
+  recursosPedagogicos   String?  @map("recursos_pedagogicos") // JSON array
+  requisitosTecnicos    String?  @map("requisitos_tecnicos")
+  urlMetodologiaPdf     String?  @map("url_metodologia_pdf")
+  status                String?  @map("status")
+  createdAt             DateTime @default(now()) @map("created_at")
+  updatedAt             DateTime @updatedAt @map("updated_at")
+  
+  // Relacionamento com BNCC
+  bncc                  BNCC?   @relation(fields: [codigoBncc], references: [codigo])
+
+  @@index([tipoConteudo])
+  @@index([componenteCurricular])
+  @@index([anoSerie])
+  @@index([codigoBncc])
+  @@index([marca])
+  @@index([segmento])
+  @@map("odas")
+}
+
+model BNCC {
+  id          Int      @id @default(autoincrement())
+  codigo      String   @unique
+  habilidade  String?  @map("habilidade")
+  descricao   String?  @map("descricao")
+  componente  String?  @map("componente")
+  ano         String?  @map("ano")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  // Relacionamento com ODAs
+  odas        ODA[]
+
+  @@index([codigo])
+  @@index([componente])
+  @@index([ano])
+  @@map("bncc")
+}
+

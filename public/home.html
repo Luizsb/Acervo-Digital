@@ -1,0 +1,2483 @@
+<html class="">
+
+<head>
+    <script>(function (firebaseConfig, initialAuthToken, appId) {
+            window.__firebase_config = firebaseConfig;
+            window.__initial_auth_token = initialAuthToken;
+            window.__app_id = appId;
+        })("\n{\n  \"apiKey\": \"AIzaSyCqyCcs2R2e7AegGjvFAwG98wlamtbHvZY\",\n  \"authDomain\": \"bard-frontend.firebaseapp.com\",\n  \"projectId\": \"bard-frontend\",\n  \"storageBucket\": \"bard-frontend.firebasestorage.app\",\n  \"messagingSenderId\": \"175205271074\",\n  \"appId\": \"1:175205271074:web:2b7bd4d34d33bf38e6ec7b\"\n}\n", "eyJhbGciOiJSUzI1NiIsImtpZCI6IjExYjc0YTUyNzgwMDk5ZjEzNDY0MmNlZWM3ZGE4MjNkMTc4MDc2ZjIiLCJ0eXAiOiJKV1QifQ.eyJzdWIiOiJmaXJlYmFzZS1hZG1pbnNkay1mYnN2Y0BiYXJkLWZyb250ZW5kLmlhbS5nc2VydmljZWFjY291bnQuY29tIiwiYXVkIjoiaHR0cHM6Ly9pZGVudGl0eXRvb2xraXQuZ29vZ2xlYXBpcy5jb20vZ29vZ2xlLmlkZW50aXR5LmlkZW50aXR5dG9vbGtpdC52MS5JZGVudGl0eVRvb2xraXQiLCJ1aWQiOiIxMzgxMjY2NjY3NDQwMTU5NjgxOSIsImlzcyI6ImZpcmViYXNlLWFkbWluc2RrLWZic3ZjQGJhcmQtZnJvbnRlbmQuaWFtLmdzZXJ2aWNlYWNjb3VudC5jb20iLCJjbGFpbXMiOnsiYXBwSWQiOiJjXzEyNDY5ZTI1OTllZWJkMmJfQXBwLmpzeC05MTUifSwiZXhwIjoxNzY0NzY1NDUwLCJpYXQiOjE3NjQ3NjE4NTAsImFsZyI6IlJTMjU2In0.i2JTw9boGsLDOZSbYNtIMyJdMaF7v6ambsAXgzeDefLp9u8JXZcVnY1BqJ1mumAVbuHnwUu_MvLTsjOlb0CaDT6x84kgJRVEmhMbiMbzIvQak6rrLUE6dqbL2uvHyxMh5Dm6dk4UpUClOeso-40coWRDuAusaw-auOLmiorWoLPfEFiKcADMarVML2PHZp6Blf31dDPaNiZFULpRk__M8_Soza5MTjk4X5rGTQ1kfk0_eiMnT1wKRhJeAZ54ArcDyGzGmWc7BKZTyK-jZ-pcKxBlAdte7MlpmipNKG2p530vWPhM7OFdUse5gQgB5difnxSM2xOLNO7B2_kttK2fIg", "c_12469e2599eebd2b_App.jsx-915")</script>
+    <script>'use strict'; var h = typeof Object.defineProperties == "function" ? Object.defineProperty : function (a, b, d) { if (a == Array.prototype || a == Object.prototype) return a; a[b] = d.value; return a }; function l(a) { a = ["object" == typeof globalThis && globalThis, a, "object" == typeof window && window, "object" == typeof self && self, "object" == typeof global && global]; for (var b = 0; b < a.length; ++b) { var d = a[b]; if (d && d.Math == Math) return d } throw Error("Cannot find global object"); } var n = l(this);
+        function p(a, b) { if (b) a: { var d = n; a = a.split("."); for (var c = 0; c < a.length - 1; c++) { var e = a[c]; if (!(e in d)) break a; d = d[e] } a = a[a.length - 1]; c = d[a]; b = b(c); b != c && b != null && h(d, a, { configurable: !0, writable: !0, value: b }) } } function r(a) { function b(c) { return a.next(c) } function d(c) { return a.throw(c) } return new Promise(function (c, e) { function f(g) { g.done ? c(g.value) : Promise.resolve(g.value).then(b, d).then(f, e) } f(a.next()) }) } function t(a) { return r(a()) }
+        p("Object.values", function (a) { return a ? a : function (b) { var d = [], c; for (c in b) Object.prototype.hasOwnProperty.call(b, c) && d.push(b[c]); return d } }); p("Array.prototype.includes", function (a) { return a ? a : function (b, d) { var c = this; c instanceof String && (c = String(c)); var e = c.length; d = d || 0; for (d < 0 && (d = Math.max(d + e, 0)); d < e; d++) { var f = c[d]; if (f === b || Object.is(f, b)) return !0 } return !1 } });/*
+
+MIT License
+
+Copyright (c) 2017-2023 W.Y.
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+*/
+        function u(a, b) { const d = a.style; b.backgroundColor && (d.backgroundColor = b.backgroundColor); b.width && (d.width = `${b.width}px`); b.height && (d.height = `${b.height}px`); const c = b.style; c != null && Object.keys(c).forEach(e => { d[e] = c[e] }) }; var v = (() => { let a = 0; return () => { a += 1; return `u${`0000${(Math.random() * 1679616 << 0).toString(36)}`.slice(-4)}${a}` } })(); function w(a) { const b = []; for (let d = 0, c = a.length; d < c; d++)b.push(a[d]); return b } let x = null; function y(a = {}) { return x ? x : a.l ? x = a.l : x = w(window.getComputedStyle(document.documentElement)) } function z(a, b) { return (a = (a.ownerDocument.defaultView || window).getComputedStyle(a).getPropertyValue(b)) ? parseFloat(a.replace("px", "")) : 0 }
+        function A(a, b = {}) { var d; if (!(d = b.width)) { d = z(a, "border-left-width"); var c = z(a, "border-right-width"); d = a.clientWidth + d + c } (b = b.height) || (b = z(a, "border-top-width"), c = z(a, "border-bottom-width"), b = a.clientHeight + b + c); return { width: d, height: b } } function B(a) { return new Promise((b, d) => { const c = new Image; c.onload = () => { c.decode().then(() => { requestAnimationFrame(() => b(c)) }) }; c.onerror = d; c.crossOrigin = "anonymous"; c.decoding = "async"; c.src = a }) }
+        function C(a) { return t(function* () { return Promise.resolve().then(() => (new XMLSerializer).serializeToString(a)).then(encodeURIComponent).then(b => `data:image/svg+xml;charset=utf-8,${b}`) }) }
+        function D(a, b, d) { return t(function* () { const c = document.createElementNS("http://www.w3.org/2000/svg", "svg"), e = document.createElementNS("http://www.w3.org/2000/svg", "foreignObject"); c.setAttribute("width", `${b}`); c.setAttribute("height", `${d}`); c.setAttribute("viewBox", `0 0 ${b} ${d}`); e.setAttribute("width", "100%"); e.setAttribute("height", "100%"); e.setAttribute("x", "0"); e.setAttribute("y", "0"); e.setAttribute("externalResourcesRequired", "true"); c.appendChild(e); e.appendChild(a); return C(c) }) }
+        var E = (a, b) => { if (a instanceof b) return !0; a = Object.getPrototypeOf(a); return a === null ? !1 : a.constructor.name === b.name || E(a, b) }; function F(a, b) { return y(b).map(d => { const c = a.getPropertyValue(d), e = a.getPropertyPriority(d); return `${d}: ${c}${e ? " !important" : ""};` }).join(" ") }
+        function G(a, b, d, c) { a = window.getComputedStyle(a, d); var e = a.getPropertyValue("content"); if (e !== "" && e !== "none") { var f = v(); try { b.className = `${b.className} ${f}` } catch (k) { return } e = document.createElement("style"); var g = e.appendChild; d = `.${f}:${d}`; a.cssText ? (c = a.getPropertyValue("content"), c = `${a.cssText} content: '${c.replace(/'|"/g, "")}';`) : c = F(a, c); g.call(e, document.createTextNode(`${d}{${c}}`)); b.appendChild(e) } }; function H(a) { return a.search(/^(data:)/) !== -1 } function I(a, b, d) { return t(function* () { const c = yield fetch(a, b); if (c.status === 404) throw Error(`Resource "${c.url}" not found`); const e = yield c.blob(); return new Promise((f, g) => { const k = new FileReader; k.onerror = g; k.onloadend = () => { try { f(d({ o: c, result: k.result })) } catch (m) { g(m) } }; k.readAsDataURL(e) }) }) } const J = {}; function K(a, b, d) { let c = a.replace(/\?.*/, ""); d && (c = a); /ttf|otf|eot|woff2?/i.test(c) && (c = c.replace(/.*\//, "")); return b ? `[${b}]${c}` : c }
+        function L(a, b, d) { return t(function* () { const c = K(a, b, d.C); if (J[c] != null) return J[c]; d.u && (a += (/\?/.test(a) ? "&" : "?") + (new Date).getTime()); let e; try { const f = yield I(a, d.i, ({ o: g, result: k }) => { b || (b = g.headers.get("Content-Type") || ""); return k.split(/,/)[1] }); e = `data:${b};base64,${f}` } catch (f) { e = d.B || "" } return J[c] = e }) }; const M = { P: "application/font-woff", R: "application/font-woff", N: "application/font-truetype", v: "application/vnd.ms-fontobject", H: "image/png", F: "image/jpeg", D: "image/jpeg", A: "image/gif", M: "image/tiff", L: "image/svg+xml", O: "image/webp" }; function N(a) { return (a = /\.([^./]*?)$/g.exec(a)) ? a[1] : "" }; function O(a) { return t(function* () { const b = a.toDataURL(); return b === "data:," ? a.cloneNode(!1) : B(b) }) } function aa(a, b) { return t(function* () { if (a.currentSrc) { var d = document.createElement("canvas"); const c = d.getContext("2d"); d.width = a.clientWidth; d.height = a.clientHeight; c == null || c.drawImage(a, 0, 0, d.width, d.height); d = d.toDataURL(); return B(d) } d = a.poster; d = yield L(d, M[N(d).toLowerCase()] || "", b); return B(d) }) }
+        function ba(a, b) { return t(function* () { try { let d; if (a == null ? 0 : (d = a.contentDocument) == null ? 0 : d.body) return yield P(a.contentDocument.body, b, !0) } catch (d) { } return a.cloneNode(!1) }) } function ca(a, b) { return t(function* () { return E(a, HTMLCanvasElement) ? O(a) : E(a, HTMLVideoElement) ? aa(a, b) : E(a, HTMLIFrameElement) ? ba(a, b) : a.cloneNode(a.tagName != null && a.tagName.toUpperCase() === "SVG") }) }
+        function da(a, b, d) {
+            return t(function* () {
+                if (b.tagName != null && b.tagName.toUpperCase() === "SVG") return b; let c = []; if (a.tagName != null && a.tagName.toUpperCase() === "SLOT" && a.assignedNodes) c = w(a.assignedNodes()); else { let e; if (E(a, HTMLIFrameElement) && ((e = a.contentDocument) == null ? 0 : e.body)) c = w(a.contentDocument.body.childNodes); else { let f; c = w(((f = a.shadowRoot) != null ? f : a).childNodes) } } if (c.length === 0 || E(a, HTMLVideoElement)) return b; yield c.reduce((e, f) => e.then(() => P(f, d)).then(g => { g && b.appendChild(g) }), Promise.resolve());
+                return b
+            })
+        } function ea(a, b, d) { const c = b.style; if (c) { var e = window.getComputedStyle(a); e.cssText ? (c.cssText = e.cssText, c.transformOrigin = e.transformOrigin) : y(d).forEach(f => { let g = e.getPropertyValue(f); f === "font-size" && g.endsWith("px") && (g = `${Math.floor(parseFloat(g.substring(0, g.length - 2))) - .1}px`); E(a, HTMLIFrameElement) && f === "display" && g === "inline" && (g = "block"); f === "d" && b.getAttribute("d") && (g = `path(${b.getAttribute("d")})`); c.setProperty(f, g, e.getPropertyPriority(f)) }) } }
+        function fa(a, b) { E(a, HTMLSelectElement) && (b = Array.from(b.children).find(d => a.value === d.getAttribute("value"))) && b.setAttribute("selected", "") }
+        function ha(a, b) {
+            return t(function* () {
+                var d = a.querySelectorAll ? a.querySelectorAll("use") : []; if (d.length === 0) return a; var c = {}; for (var e = 0; e < d.length; e++) { var f = d[e].getAttribute("xlink:href"); if (f) { const g = document.querySelector(f); a.querySelector(f) || !g || c[f] || (c[f] = yield P(g, b, !0)) } } d = Object.values(c); if (d.length) {
+                    c = document.createElementNS("http://www.w3.org/1999/xhtml", "svg"); c.setAttribute("xmlns", "http://www.w3.org/1999/xhtml"); c.style.position = "absolute"; c.style.width = "0"; c.style.height = "0";
+                    c.style.overflow = "hidden"; c.style.display = "none"; e = document.createElementNS("http://www.w3.org/1999/xhtml", "defs"); c.appendChild(e); for (f = 0; f < d.length; f++)e.appendChild(d[f]); a.appendChild(c)
+                } return a
+            })
+        }
+        function P(a, b, d) { return t(function* () { return d || !b.filter || b.filter(a) ? Promise.resolve(a).then(c => ca(c, b)).then(c => da(a, c, b)).then(c => { E(c, Element) && (ea(a, c, b), G(a, c, ":before", b), G(a, c, ":after", b), E(a, HTMLTextAreaElement) && (c.textContent = a.value), E(a, HTMLInputElement) && c.setAttribute("value", a.value), fa(a, c)); return c }).then(c => ha(c, b)) : null }) }; const Q = /url\((['"]?)([^'"]+?)\1\)/g, ia = /url\([^)]+\)\s*format\((["']?)([^"']+)\1\)/g, ja = /src:\s*(?:url\([^)]+\)\s*format\([^)]+\)[,;]\s*)+/g; function ka(a) { const b = []; a.replace(Q, (d, c, e) => { b.push(e); return d }); return b.filter(d => !H(d)) }
+        function la(a, b, d, c) { return t(function* () { try { const e = d ? (new URL(b, d || void 0)).toString() : b; let f; f = yield L(e, M[N(b).toLowerCase()] || "", c); return a.replace(new RegExp(`(url\\(['"]?)(${b.replace(/([.*+?^${}()|\[\]\/\\])/g, "\\$1")})(['"]?\\))`, "g"), `$1${f}$3`) } catch (e) { } return a }) } function ma(a, { I: b }) { return b ? a.replace(ja, d => { for (; ;) { const [c, , e] = ia.exec(d) || [], f = c, g = e; if (!g) return ""; if (g === b) return `src: ${f};` } }) : a }
+        function R(a, b, d) { return t(function* () { if (a.search(Q) === -1) return a; const c = ma(a, d); return ka(c).reduce((e, f) => e.then(g => la(g, f, b, d)), Promise.resolve(c)) }) }; function S(a, b, d) { return t(function* () { var c; const e = (c = b.style) == null ? void 0 : c.getPropertyValue(a); return e ? (c = yield R(e, null, d), b.style.setProperty(a, c, b.style.getPropertyPriority(a)), !0) : !1 }) } function na(a, b) { return t(function* () { (yield S("background", a, b)) || (yield S("background-image", a, b)); (yield S("mask", a, b)) || (yield S("-webkit-mask", a, b)) || (yield S("mask-image", a, b)) || (yield S("-webkit-mask-image", a, b)) }) }
+        function oa(a, b) { return t(function* () { const d = E(a, HTMLImageElement); if (d && !H(a.src) || E(a, SVGImageElement) && !H(a.href.baseVal)) { var c = d ? a.src : a.href.baseVal, e = yield L(c, M[N(c).toLowerCase()] || "", b); yield new Promise((f, g) => { a.onload = f; a.onerror = b.m ? (...k) => { try { f(b.m(...k)) } catch (m) { g(m) } } : g; a.decode && (a.decode = f); a.loading === "lazy" && (a.loading = "eager"); d ? (a.srcset = "", a.src = e) : a.href.baseVal = e }) } }) }
+        function pa(a, b) { return t(function* () { const d = w(a.childNodes).map(c => T(c, b)); yield Promise.all(d).then(() => a) }) } function T(a, b) { return t(function* () { E(a, Element) && (yield na(a, b), yield oa(a, b), yield pa(a, b)) }) }; const U = {}; function V(a) { return t(function* () { var b = U[a]; if (b != null) return b; b = yield (yield fetch(a)).text(); b = { url: a, cssText: b }; return U[a] = b }) } function W(a, b) { return t(function* () { let d = a.cssText; const c = /url\(["']?([^"')]+)["']?\)/g, e = (d.match(/url\([^)]+\)/g) || []).map(f => t(function* () { let g = f.replace(c, "$1"); g.startsWith("https://") || (g = (new URL(g, a.url)).href); return I(g, b.i, ({ result: k }) => { d = d.replace(f, `url(${k})`); return [f, k] }) })); return Promise.all(e).then(() => d) }) }
+        function X(a) {
+            if (a == null) return []; const b = []; a = a.replace(/(\/\*[\s\S]*?\*\/)/gi, ""); for (var d = RegExp("((@.*?keyframes [\\s\\S]*?){([\\s\\S]*?}\\s*?)})", "gi"); ;) { var c = d.exec(a); if (c === null) break; b.push(c[0]) } a = a.replace(d, ""); d = /@import[\s\S]*?url\([^)]*\)[\s\S]*?;/gi; for (c = RegExp("((\\s*?(?:\\/\\*[\\s\\S]*?\\*\\/)?\\s*?@media[\\s\\S]*?){([\\s\\S]*?)}\\s*?})|(([\\s\\S]*?){([\\s\\S]*?)})", "gi"); ;) {
+                let e = d.exec(a); if (e === null) if (e = c.exec(a), e === null) break; else d.lastIndex = c.lastIndex; else c.lastIndex =
+                    d.lastIndex; b.push(e[0])
+            } return b
+        }
+        function qa(a, b) {
+            return t(function* () {
+                const d = [], c = []; a.forEach(e => {
+                    if ("cssRules" in e) try { w(e.cssRules || []).forEach((f, g) => { if (f.type === CSSRule.IMPORT_RULE) { let k = g + 1; f = V(f.href).then(m => W(m, b)).then(m => X(m).forEach(q => { try { e.insertRule(q, q.startsWith("@import") ? k += 1 : e.cssRules.length) } catch (Da) { } })).catch(() => { }); c.push(f) } }) } catch (f) {
+                        const g = a.find(k => k.href == null) || document.styleSheets[0]; e.href != null && c.push(V(e.href).then(k => W(k, b)).then(k => X(k).forEach(m => { g.insertRule(m, g.cssRules.length) })).catch(() => { }))
+                    }
+                }); return Promise.all(c).then(() => { a.forEach(e => { if ("cssRules" in e) try { w(e.cssRules || []).forEach(f => { d.push(f) }) } catch (f) { } }); return d })
+            })
+        } function ra(a) { return a.filter(b => b.type === CSSRule.FONT_FACE_RULE).filter(b => b.style.getPropertyValue("src").search(Q) !== -1) } function sa(a, b) { return t(function* () { if (a.ownerDocument == null) throw Error("Provided element is not within a Document"); var d = w(a.ownerDocument.styleSheets); d = yield qa(d, b); return ra(d) }) }
+        function ta(a) { function b(c) { (c.style.fontFamily || getComputedStyle(c).fontFamily).split(",").forEach(e => { d.add(e.trim().replace(/["']/g, "")) }); Array.from(c.children).forEach(e => { e instanceof HTMLElement && b(e) }) } const d = new Set; b(a); return d } function ua(a, b) { return t(function* () { const d = yield sa(a, b), c = ta(a); return (yield Promise.all(d.filter(e => c.has(e.style.fontFamily.trim().replace(/["']/g, ""))).map(e => R(e.cssText, e.parentStyleSheet ? e.parentStyleSheet.href : null, b)))).join("\n") }) }
+        function va(a, b) { return t(function* () { const d = b.j != null ? b.j : b.K ? null : yield ua(a, b); if (d) { const c = document.createElement("style"); c.appendChild(document.createTextNode(d)); a.firstChild ? a.insertBefore(c, a.firstChild) : a.appendChild(c) } }) }; function wa(a, b = {}) { return t(function* () { const { width: d, height: c } = A(a, b), e = yield P(a, b, !0); yield va(e, b); yield T(e, b); u(e, b); return yield D(e, d, c) }) }
+        function xa(a, b = {}) {
+            return t(function* () {
+                const { width: d, height: c } = A(a, b); var e = yield wa(a, b); e = yield B(e); const f = document.createElement("canvas"), g = f.getContext("2d"), k = b.G || window.devicePixelRatio || 1, m = b.h || d, q = b.g || c; f.width = m * k; f.height = q * k; !b.J && (f.width > 16384 || f.height > 16384) && (f.width > 16384 && f.height > 16384 ? f.width > f.height ? (f.height *= 16384 / f.width, f.width = 16384) : (f.width *= 16384 / f.height, f.height = 16384) : f.width > 16384 ? (f.height *= 16384 / f.width, f.width = 16384) : (f.width *= 16384 / f.height, f.height =
+                    16384)); f.style.width = `${m}`; f.style.height = `${q}`; b.backgroundColor && (g.fillStyle = b.backgroundColor, g.fillRect(0, 0, f.width, f.height)); g.drawImage(e, 0, 0, f.width, f.height); return f
+            })
+        } function ya(a, b = {}) { return t(function* () { return (yield xa(a, b)).toDataURL() }) }; const za = ["gemini.google.com", "corp.google.com", "proxy.googlers.com"]; function Y() { return document.body.querySelectorAll('[class*="animate"]').length > 0 } function Z(a) { return t(function* () { try { return yield ya(a, { h: a.offsetWidth, g: a.offsetHeight }) } catch (d) { var b = a.offsetHeight; const c = document.createElement("canvas"); c.width = a.offsetWidth; c.height = b; return c.toDataURL("image/png") } }) }
+        function Aa() { return t(function* () { const a = document.body.offsetWidth, b = document.body.offsetHeight, d = document.body.cloneNode(!0); d.querySelectorAll('[class*="animate"]').forEach(c => { c.classList.remove(...Array.from(c.classList).filter(e => e.startsWith("animate"))) }); d.style.width = `${a}px`; d.style.height = `${b}px`; return d }) }
+        function Ba(a) { return t(function* () { let b = document.body; if (Y()) { var d = yield Aa(); b = d; document.body.appendChild(d) } d = yield Z(b); Y() && document.body.removeChild(b); window.parent.postMessage({ type: "SEND_SCREENSHOT", image: d, topOffset: document.documentElement.scrollTop }, a.origin) }) } function Ca(a) { return t(function* () { const b = { type: "SEND_SCREENSHOT_FOR_DATA_VISUALIZATION", image: yield Z(document.body), topOffset: 0 }; window.parent.postMessage(b, a.origin) }) }
+        window.addEventListener("message", a => t(function* () { if (za.some(d => a.origin.includes(d))) { var b = a.data; b && (b.type === "MAKE_SCREENSHOT" && (yield Ba(a)), b.type === "MAKE_SCREENSHOT_FOR_DATA_VISUALIZATION" && (yield Ca(a))) } }));
+    </script>
+    <script>(function () {
+            // Ensure this script is executed only once
+            if (window.firebaseAuthBridgeScriptLoaded) {
+                return;
+            }
+            window.firebaseAuthBridgeScriptLoaded = true;
+
+            let nextTokenPromiseId = 0;
+
+            // Stores { resolve, reject } for ongoing token requests
+            const pendingTokenPromises = {};
+
+            // Listen for messages from the Host Application
+            window.addEventListener('message', function (event) {
+
+                const messageData = event.data;
+
+                if (messageData && messageData.type === 'RESOLVE_NEW_FIREBASE_TOKEN') {
+                    const { success, token, error, promiseId } = messageData ?? {};
+                    if (pendingTokenPromises[promiseId]) {
+                        if (success) {
+                            pendingTokenPromises[promiseId].resolve(token);
+                        } else {
+                            pendingTokenPromises[promiseId].reject(new Error(error || 'Token refresh failed from host.'));
+                        }
+                        delete pendingTokenPromises[promiseId];
+                    }
+                }
+            });
+
+            // Expose a function for the Generated App to request a new Firebase token
+            window.requestNewFirebaseToken = function () {
+                const currentPromiseId = nextTokenPromiseId++;
+                const promise = new Promise((resolve, reject) => {
+                    pendingTokenPromises[currentPromiseId] = { resolve, reject };
+                });
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({
+                        type: 'REQUEST_NEW_FIREBASE_TOKEN',
+                        promiseId: currentPromiseId
+                    }, '*');
+                } else {
+                    pendingTokenPromises[currentPromiseId].reject(new Error('No parent window to request token from.'));
+                    delete pendingTokenPromises[currentPromiseId];
+                }
+                return promise;
+            };
+        })();</script>
+    <script>
+        let realOriginalGetUserMedia = null;
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            realOriginalGetUserMedia = navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices);
+        }
+
+        (function () {
+            if (navigator.mediaDevices && navigator.mediaDevices.__proto__) {
+                try {
+                    Object.defineProperty(navigator.mediaDevices.__proto__, 'getUserMedia', {
+                        get: function () {
+                            return undefined; // Or throw an error
+                        },
+                        configurable: false
+                    });
+                } catch (error) {
+                    console.error("Error defining prototype getter:", error);
+                }
+            }
+        })();
+
+        (function () {
+            const pendingMediaResolvers = {};
+            let nextMediaPromiseId = 0;
+
+            function requestMediaPermissions(constraints) {
+                const mediaPromiseId = nextMediaPromiseId++;
+                const promise = new Promise((resolve, reject) => {
+                    pendingMediaResolvers[mediaPromiseId] = (granted) => {
+                        delete pendingMediaResolvers[mediaPromiseId];
+                        resolve(granted);
+                    };
+                });
+
+                window.parent.postMessage({
+                    type: 'requestMediaPermission',
+                    constraints: constraints,
+                    promiseId: mediaPromiseId,
+                }, '*');
+
+                return promise;
+            }
+
+            let originalGetUserMedia = realOriginalGetUserMedia;
+
+            function interceptGetUserMedia() {
+                if (navigator.mediaDevices) {
+                    Object.defineProperty(navigator.mediaDevices, 'getUserMedia', {
+                        value: function (constraints) {
+                            return requestMediaPermissions(constraints).then((granted) => {
+                                if (granted) {
+                                    if (originalGetUserMedia) {
+                                        return originalGetUserMedia(constraints);
+                                    } else {
+                                        throw new Error("Original getUserMedia not available.");
+                                    }
+                                } else {
+                                    throw new DOMException('Permission denied', 'NotAllowedError');
+                                }
+                            });
+                        },
+                        writable: false,
+                        configurable: false
+                    });
+                }
+            }
+
+            interceptGetUserMedia();
+
+            const observer = new MutationObserver(function (mutationsList, observer) {
+                for (const mutation of mutationsList) {
+                    if (mutation.type === 'reconfigured' && mutation.name === 'getUserMedia' && mutation.object === navigator.mediaDevices) {
+                        interceptGetUserMedia();
+                    } else if (mutation.type === 'attributes' && mutation.attributeName === 'getUserMedia' && mutation.target === navigator.mediaDevices) {
+                        interceptGetUserMedia();
+                    } else if (mutation.type === 'childList' && mutation.addedNodes) {
+                        mutation.addedNodes.forEach(node => {
+                            if (node === navigator.mediaDevices) {
+                                interceptGetUserMedia();
+                            }
+                        });
+                    }
+                }
+            });
+
+            function interceptSpeechRecognition() {
+                if (!window.SpeechRecognition && !window.webkitSpeechRecognition) {
+                    return;
+                }
+
+                const OriginalSpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+                const SpeechRecognitionWrapper = function (...args) {
+                    const recognizer = new OriginalSpeechRecognition(...args);
+                    const originalStart = recognizer.start.bind(recognizer);
+
+                    recognizer.start = function () {
+                        requestMediaPermissions({ audio: true }).then(granted => {
+                            if (granted) {
+                                originalStart();
+                            } else {
+                                const errorEvent = new SpeechRecognitionErrorEvent('error');
+                                errorEvent.error = 'not-allowed'; // This is the standard error for permission denial.
+                                recognizer.dispatchEvent(errorEvent);
+                            }
+                        });
+                    };
+
+                    return recognizer;
+                };
+
+                SpeechRecognitionWrapper.prototype = OriginalSpeechRecognition.prototype;
+                SpeechRecognitionWrapper.prototype.constructor = SpeechRecognitionWrapper;
+
+                if (window.SpeechRecognition) {
+                    window.SpeechRecognition = SpeechRecognitionWrapper;
+                }
+                if (window.webkitSpeechRecognition) {
+                    window.webkitSpeechRecognition = SpeechRecognitionWrapper;
+                }
+            }
+
+            interceptSpeechRecognition();
+
+            window.addEventListener('message', function (event) {
+                if (event.data) {
+                    if (event.data.type === 'resolveMediaPermission') {
+                        const { promiseId, granted } = event.data;
+                        if (pendingMediaResolvers[promiseId]) {
+                            pendingMediaResolvers[promiseId](granted);
+                        }
+                    }
+                }
+            });
+
+        })();</script>
+    <script>((function (modelInformation) {
+            const originalFetch = window.fetch;
+            // TODO: b/421908508 - Move these out of the script and match all generative AI model calls.
+            let googleLlmBaseApiUrls = [
+                'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.textModelName + ':streamGenerateContent',
+                'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.textModelName + ':generateContent',
+                'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.imageModelName + ':predict',
+                'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.imageModelName + ':predictLongRunning',
+                'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.imageEditModelName + ':generateContent',
+                'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.imageTransformModelName + ':generateContent',
+                'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.videoModelName + ':predict',
+                'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.videoModelName + ':predictLongRunning',
+                'https://generativelanguage.googleapis.com/v1beta/models/' + modelInformation.ttsModelName + ':generateContent',
+            ];
+            modelInformation.deprecatedTextModelNames.forEach((modelName) => {
+                googleLlmBaseApiUrls.push(
+                    'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':streamGenerateContent',
+                    'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':generateContent',
+                );
+            });
+            modelInformation.deprecatedImageModelNames.forEach((modelName) => {
+                googleLlmBaseApiUrls.push(
+                    'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':predict',
+                    'https://generativelanguage.googleapis.com/v1beta/models/' + modelName + ':predictLongRunning',
+                );
+            });
+
+            const pendingFetchResolvers = {};
+            let nextPromiseId = 0;
+
+            function handleStringInput(input, optionsArgument) {
+                const actualUrl = input;
+                const fetchCallArgs = [actualUrl, optionsArgument];
+                const effectiveOptions = optionsArgument || {};
+                const bodyForApiKeyCheck = effectiveOptions.body;
+                const bodyForPostMessage = effectiveOptions.body;
+                return { actualUrl, fetchCallArgs, effectiveOptions, bodyForApiKeyCheck, bodyForPostMessage };
+            }
+
+            function handleRequestInput(input, optionsArgument) {
+                const actualUrl = input.url;
+                const fetchCallArgs = [input, optionsArgument];
+                const effectiveOptions = { method: input.method, headers: new Headers(input.headers) };
+                let bodyForApiKeyCheck;
+                let bodyForPostMessage;
+
+                if (optionsArgument) {
+                    if (optionsArgument.method) effectiveOptions.method = optionsArgument.method;
+                    if (optionsArgument.headers) effectiveOptions.headers = new Headers(optionsArgument.headers);
+                    if ('body' in optionsArgument) {
+                        bodyForApiKeyCheck = optionsArgument.body;
+                        bodyForPostMessage = optionsArgument.body;
+                    } else {
+                        bodyForApiKeyCheck = undefined;
+                        bodyForPostMessage = input.body;
+                    }
+                } else {
+                    bodyForApiKeyCheck = undefined;
+                    bodyForPostMessage = input.body;
+                }
+                return { actualUrl, fetchCallArgs, effectiveOptions, bodyForApiKeyCheck, bodyForPostMessage };
+            }
+
+            window.fetch = function (input, optionsArgument) {
+                let actualUrl;
+                let fetchCallArgs;
+                let effectiveOptions = {};
+                let bodyForApiKeyCheck;
+                let bodyForPostMessage;
+
+                if (typeof input === 'string') {
+                    ({ actualUrl, fetchCallArgs, effectiveOptions, bodyForApiKeyCheck, bodyForPostMessage } = handleStringInput(input, optionsArgument));
+                } else if (input instanceof Request) {
+                    ({ actualUrl, fetchCallArgs, effectiveOptions, bodyForApiKeyCheck, bodyForPostMessage } = handleRequestInput(input, optionsArgument));
+                } else {
+                    return originalFetch.apply(window, [input, optionsArgument]);
+                }
+
+                effectiveOptions.method = effectiveOptions.method || 'GET';
+                if (!effectiveOptions.headers) {
+                    effectiveOptions.headers = new Headers();
+                }
+
+
+                if (typeof actualUrl === 'string' && googleLlmBaseApiUrls.some((url) => actualUrl.startsWith(url))) {
+                    let apiKeyIsNull = true;
+
+                    const regex = new RegExp("models/([^:]+)");
+                    const modelNameMatch = actualUrl.match(regex);
+                    const modelName = modelNameMatch ? modelNameMatch[1] : 'unspecified';
+
+
+                    try {
+                        const urlObject = new URL(actualUrl);  // Use URL object for robust parsing
+                        const apiKeyParam = urlObject.searchParams.get('key');
+                        if (apiKeyParam) {
+                            apiKeyIsNull = false;
+                        }
+                    } catch (e) {
+                        // Continue checks even if URL parsing fails
+                    }
+
+                    if (apiKeyIsNull && effectiveOptions.headers) {
+                        const h = new Headers(effectiveOptions.headers);
+                        const apiKeyHeaderValue = h.get('X-API-Key') || h.get('x-api-key');
+                        if (apiKeyHeaderValue) {
+                            apiKeyIsNull = false;
+                            return originalFetch.apply(window, fetchCallArgs);
+                        }
+                    }
+
+                    if (apiKeyIsNull && effectiveOptions.method && ['POST', 'PUT', 'PATCH'].includes(effectiveOptions.method.toUpperCase()) && typeof bodyForApiKeyCheck === 'string') {
+                        try {
+                            const bodyData = JSON.parse(bodyForApiKeyCheck);
+                            if (bodyData && bodyData.apiKey) {
+                                apiKeyIsNull = false;
+                                return originalFetch.apply(window, fetchCallArgs);
+                            }
+                        } catch (e) {
+                            // Ignore JSON parsing errors
+                        }
+                    }
+
+                    if (apiKeyIsNull) {
+                        const promiseId = nextPromiseId++;
+                        const promise = new Promise((resolve) => {
+                            pendingFetchResolvers[promiseId] = (resolvedResponse) => {
+                                delete pendingFetchResolvers[promiseId];
+                                resolve(resolvedResponse);
+                            };
+                        });
+
+                        let serializedBodyForPostMessage;
+                        if (typeof bodyForPostMessage === 'string' || bodyForPostMessage == null) {
+                            serializedBodyForPostMessage = bodyForPostMessage;
+                        } else if (bodyForPostMessage instanceof ReadableStream) {
+                            serializedBodyForPostMessage = null;
+                        } else {
+                            try {
+                                serializedBodyForPostMessage = JSON.stringify(bodyForPostMessage);
+                            } catch (e) {
+                                serializedBodyForPostMessage = null;
+                            }
+                        }
+
+                        const messageOptions = {
+                            method: effectiveOptions.method,
+                            headers: Object.fromEntries(new Headers(effectiveOptions.headers).entries()),
+                            body: serializedBodyForPostMessage
+                        };
+
+                        window.parent.postMessage({
+                            type: 'requestFetch',
+                            url: actualUrl,
+                            modelName: modelName,
+                            options: messageOptions,
+                            promiseId: promiseId,
+                        }, '*');
+
+                        return promise;
+                    }
+                    return originalFetch.apply(window, fetchCallArgs);
+                }
+                return originalFetch.apply(window, fetchCallArgs);
+            };
+
+            window.addEventListener('message', function (event) {
+                if (event.data && event.data.type === 'resolveFetch') {
+                    const { promiseId, response } = event.data;
+                    if (pendingFetchResolvers[promiseId]) {
+                        try {
+                            const reconstructedResponse = new Response(response.body, {
+                                status: response.status,
+                                statusText: response.statusText,
+                                headers: new Headers(response.headers),
+                            });
+                            pendingFetchResolvers[promiseId](reconstructedResponse);
+                        } catch (error) {
+                            pendingFetchResolvers[promiseId](new Response(null, { status: 500, statusText: "Interceptor Response Reconstruction Error" }));
+                        }
+                    }
+                }
+            });
+
+        }))({ "textModelName": "gemini-2.5-flash-preview-09-2025", "imageModelName": "imagen-4.0-generate-001", "imageEditModelName": "gemini-2.5-flash-image-preview", "imageTransformModelName": "gemini-2.5-flash-image-preview", "videoModelName": "veo-2.0-generate-001", "ttsModelName": "gemini-2.5-flash-preview-tts", "deprecatedTextModelNames": ["gemini-2.0-flash", "gemini-2.5-flash-preview-04-17", "gemini-2.5-flash-preview-05-20"], "deprecatedImageModelNames": ["imagen-3.0-generate-001", "imagen-3.0-generate-002"] })</script>
+    <script>(function () {
+                    const originalConsoleLog = console.log;
+                    const originalConsoleError = console.error;
+
+                    /**
+                    * Normalizes an error event or a promise rejection reason into a structured error object.
+                    * @param {*} errorEventOrReason The error object or reason.
+                    * @return {object} Structured error data { message, name, stack }.
+                    */
+                    function getErrorObject(errorEventOrReason) {
+                        if (errorEventOrReason instanceof Error) {
+                            return {
+                                message: errorEventOrReason.message,
+                                name: errorEventOrReason.name,
+                                stack: errorEventOrReason.stack,
+                            };
+                        }
+                        // Fallback for non-Error objects.
+                        try {
+                            return {
+                                message: JSON.stringify(errorEventOrReason),
+                                name: 'UnknownErrorType',
+                                stack: null,
+                            };
+                        } catch (e) {
+                            return {
+                                message: String(errorEventOrReason),
+                                name: 'UnknownErrorTypeNonStringifiable',
+                                stack: null,
+                            };
+                        }
+                    }
+
+                    /**
+                    * Converts an array of arguments (from log/error) into a single string.
+                    * Handles Error objects specially to include their message and stack.
+                    * @param {Array<*>} args - Arguments passed to console methods.
+                    * @return {string} A string representation of the arguments.
+                    */
+                    function stringifyArgs(args) {
+                        return args
+                            .map((arg) => {
+                                if (arg instanceof Error) {
+                                    const { message, stack } = arg;
+                                    return `Error: ${message}${stack ? ('\nStack: ' + stack) : ''}`;
+                                }
+                                if (typeof arg === 'object' && arg !== null) {
+                                    try {
+                                        return JSON.stringify(arg);
+                                    } catch (error) {
+                                        return '[Circular Object]';
+                                    }
+                                } else {
+                                    return String(arg);
+                                }
+                            })
+                            .join(' ');
+                    }
+
+                    console.log = function (...args) {
+                        const logString = stringifyArgs(args);
+                        window.parent.postMessage({ type: 'log', message: logString }, '*');
+                        originalConsoleLog.apply(console, args);
+                    };
+
+                    console.error = function (...args) {
+                        let errorData;
+                        if (args.length > 0 && args[0] instanceof Error) {
+                            const err = args[0];
+                            // If the first arg is an Error, capture its details.
+                            errorData = {
+                                type: 'error',
+                                source: 'CONSOLE_ERROR',
+                                ...getErrorObject(err),
+                                rawArgsString: stringifyArgs(args.slice(1)),
+                                timestamp: new Date().toISOString(),
+                            };
+                        } else {
+                            // If not an Error object, treat all args as a general error message.
+                            errorData = {
+                                type: 'error',
+                                source: 'CONSOLE_ERROR',
+                                message: stringifyArgs(args),
+                                name: 'ConsoleLoggedError',
+                                stack: null,
+                                timestamp: new Date().toISOString(),
+                            };
+                        }
+                        window.parent.postMessage(errorData, '*');
+                        originalConsoleError.apply(console, args);
+                    };
+
+                    // Listen for global unhandled synchronous errors.
+                    window.addEventListener('error', function (event) {
+                        const errorDetails = event.error ? getErrorObject(event.error) : {
+                            message: event.message,
+                            name: 'GlobalError',
+                            stack: null,
+                            filename: event.filename,
+                            lineno: event.lineno,
+                            colno: event.colno,
+                        };
+
+                        window.parent.postMessage({
+                            type: 'error',
+                            source: 'global',
+                            ...errorDetails,
+                            message: errorDetails.message || event.message,
+                            timestamp: new Date().toISOString(),
+                        }, '*');
+                    });
+
+                    // Listen for unhandled promise rejections (asynchronous errors).
+                    window.addEventListener('unhandledrejection', function (event) {
+                        const errorDetails = getErrorObject(event.reason);
+
+                        window.parent.postMessage({
+                            type: 'error',
+                            source: 'unhandledrejection',
+                            ...errorDetails,
+                            message: errorDetails.message || 'Unhandled Promise Rejection',
+                            timestamp: new Date().toISOString(),
+                        }, '*');
+                    });
+
+                })();</script>
+    <meta charset="utf-8">
+    <style>
+        .error-boundary {
+            border: 2px dashed rgba(255, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .error-boundary::after {
+            content: "⚠️";
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: rgba(255, 0, 0, 0.1);
+            color: red;
+            font-size: 14px;
+            padding: 2px 6px;
+            border-radius: 0 0 0 4px;
+            pointer-events: none;
+        }
+
+        .loading-spinner {
+            @apply flex items-center justify-center;
+            @apply min-h-[200px];
+            @apply bg-gradient-to-br from-white/5 to-white/10;
+            @apply rounded-xl;
+            @apply backdrop-blur-sm;
+        }
+
+        .loading-spinner::after {
+            content: '';
+            @apply w-12 h-12;
+            @apply border-4 border-primary/20;
+            @apply border-t-primary;
+            @apply rounded-full;
+            @apply animate-spin;
+            @apply shadow-lg;
+        }
+
+        /* Base text and background colors for all elements */
+        body {
+            @apply bg-background text-foreground;
+        }
+
+        /* Form elements styling */
+        input,
+        textarea,
+        select {
+            @apply bg-background text-foreground border-input;
+            @apply placeholder:text-muted-foreground;
+            @apply focus:outline-none focus:ring-2 focus:ring-ring;
+        }
+
+        /* Handle filled state */
+        input:not(:placeholder-shown),
+        textarea:not(:placeholder-shown),
+        select:not(:placeholder-shown) {
+            @apply bg-background;
+        }
+
+        /* Ensure proper contrast in both modes */
+        .dark input,
+        .dark textarea,
+        .dark select {
+            @apply bg-background/95;
+        }
+
+        input,
+        textarea,
+        select {
+            @apply bg-background/95;
+        }
+
+        /* Handle disabled state */
+        input:disabled,
+        textarea:disabled,
+        select:disabled {
+            @apply opacity-50 cursor-not-allowed;
+        }
+
+        /* Button styling */
+        button {
+            @apply bg-primary text-primary-foreground hover:bg-primary/90;
+            @apply disabled:opacity-50 disabled:cursor-not-allowed;
+            @apply focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2;
+        }
+
+        /* Secondary button variant */
+        button.secondary {
+            @apply bg-secondary text-secondary-foreground hover:bg-secondary/80;
+        }
+
+        /* Card styling */
+        .card {
+            @apply bg-card text-card-foreground;
+            @apply border border-border;
+            @apply rounded-lg shadow-sm;
+        }
+
+        /* Popover and dropdown styling */
+        .popover {
+            @apply bg-popover text-popover-foreground;
+            @apply border border-border;
+            @apply shadow-md rounded-md;
+        }
+
+        /* Link styling */
+        a {
+            @apply text-primary hover:text-primary/80;
+            @apply focus:outline-none focus:ring-2 focus:ring-ring;
+        }
+
+        /* Muted text */
+        .text-muted {
+            @apply text-muted-foreground;
+        }
+
+        /* Accent backgrounds */
+        .bg-accent {
+            @apply bg-accent text-accent-foreground;
+        }
+
+        /* Destructive elements */
+        .destructive {
+            @apply bg-destructive text-destructive-foreground hover:bg-destructive/90;
+        }
+
+        /* Code blocks and pre elements */
+        pre,
+        code {
+            @apply bg-muted text-muted-foreground;
+            @apply rounded px-[0.3em] py-[0.2em];
+        }
+
+        /* Table styling */
+        table {
+            @apply border-collapse w-full;
+        }
+
+        th,
+        td {
+            @apply border border-border;
+            @apply p-2 text-left;
+        }
+
+        th {
+            @apply bg-muted font-semibold;
+        }
+
+        /* Badge/tag styling */
+        .badge {
+            @apply inline-flex items-center rounded-full;
+            @apply px-2.5 py-0.5 text-xs font-semibold;
+            @apply bg-primary/10 text-primary-foreground;
+        }
+
+        /* Focus outline for accessibility */
+        :focus-visible {
+            @apply outline-none ring-2 ring-ring ring-offset-2;
+        }
+
+        /* Selection styling */
+        ::selection {
+            @apply bg-primary/20 text-foreground;
+        }
+    </style>
+
+    <!-- Styles -->
+    <style>
+        :root {
+            --background: 0 0% 100%;
+            --foreground: 222.2 84% 4.9%;
+            --card: 0 0% 100%;
+            --card-foreground: 222.2 84% 4.9%;
+            --popover: 0 0% 100%;
+            --popover-foreground: 222.2 84% 4.9%;
+            --primary: 222.2 47.4% 11.2%;
+            --primary-foreground: 210 40% 98%;
+            --secondary: 210 40% 96.1%;
+            --secondary-foreground: 222.2 47.4% 11.2%;
+            --muted: 210 40% 96.1%;
+            --muted-foreground: 215.4 16.3% 46.9%;
+            --accent: 210 40% 96.1%;
+            --accent-foreground: 222.2 47.4% 11.2%;
+            --destructive: 0 84.2% 60.2%;
+            --destructive-foreground: 210 40% 98%;
+            --border: 214.3 31.8% 91.4%;
+            --input: 214.3 31.8% 91.4%;
+            --ring: 222.2 84% 4.9%;
+            --radius: 0.5rem;
+        }
+
+        .dark {
+            --background: 222.2 84% 4.9%;
+            --foreground: 210 40% 98%;
+            --card: 222.2 84% 4.9%;
+            --card-foreground: 210 40% 98%;
+            --popover: 222.2 84% 4.9%;
+            --popover-foreground: 210 40% 98%;
+            --primary: 210 40% 98%;
+            --primary-foreground: 222.2 47.4% 11.2%;
+            --secondary: 217.2 32.6% 17.5%;
+            --secondary-foreground: 210 40% 98%;
+            --muted: 217.2 32.6% 17.5%;
+            --muted-foreground: 215 20.2% 65.1%;
+            --accent: 217.2 32.6% 17.5%;
+            --accent-foreground: 210 40% 98%;
+            --destructive: 0 62.8% 30.6%;
+            --destructive-foreground: 210 40% 98%;
+            --border: 217.2 32.6% 17.5%;
+            --input: 217.2 32.6% 17.5%;
+            --ring: 212.7 26.8% 83.9%;
+        }
+    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: ["class"],
+            theme: {
+                container: {
+                    center: true,
+                    padding: "2rem",
+                    screens: {
+                        "2xl": "1400px",
+                    },
+                },
+                extend: {
+                    colors: {
+                        border: "hsl(var(--border))",
+                        input: "hsl(var(--input))",
+                        ring: "hsl(var(--ring))",
+                        background: "hsl(var(--background))",
+                        foreground: "hsl(var(--foreground))",
+                        primary: {
+                            DEFAULT: "hsl(var(--primary))",
+                            foreground: "hsl(var(--primary-foreground))",
+                        },
+                        secondary: {
+                            DEFAULT: "hsl(var(--secondary))",
+                            foreground: "hsl(var(--secondary-foreground))",
+                        },
+                        destructive: {
+                            DEFAULT: "hsl(var(--destructive))",
+                            foreground: "hsl(var(--destructive-foreground))",
+                        },
+                        muted: {
+                            DEFAULT: "hsl(var(--muted))",
+                            foreground: "hsl(var(--muted-foreground))",
+                        },
+                        accent: {
+                            DEFAULT: "hsl(var(--accent))",
+                            foreground: "hsl(var(--accent-foreground))",
+                        },
+                        popover: {
+                            DEFAULT: "hsl(var(--popover))",
+                            foreground: "hsl(var(--popover-foreground))",
+                        },
+                        card: {
+                            DEFAULT: "hsl(var(--card))",
+                            foreground: "hsl(var(--card-foreground))",
+                        },
+                    },
+                    borderRadius: {
+                        lg: "var(--radius)",
+                        md: "calc(var(--radius) - 2px)",
+                        sm: "calc(var(--radius) - 4px)",
+                    },
+                },
+            },
+        }
+    </script>
+
+    <!-- Load React only -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" crossorigin="anonymous"></script>
+
+    <script>
+        // Ensure React and ReactDOM are globally available
+        if (!window.React || !window.ReactDOM) {
+            throw new Error('React or ReactDOM not loaded');
+        }
+
+        window.React = React;
+        window.ReactDOM = ReactDOM;
+        window.createPortal = ReactDOM.createPortal;
+    </script>
+    <style>
+        *,
+        ::before,
+        ::after {
+            --tw-border-spacing-x: 0;
+            --tw-border-spacing-y: 0;
+            --tw-translate-x: 0;
+            --tw-translate-y: 0;
+            --tw-rotate: 0;
+            --tw-skew-x: 0;
+            --tw-skew-y: 0;
+            --tw-scale-x: 1;
+            --tw-scale-y: 1;
+            --tw-pan-x: ;
+            --tw-pan-y: ;
+            --tw-pinch-zoom: ;
+            --tw-scroll-snap-strictness: proximity;
+            --tw-gradient-from-position: ;
+            --tw-gradient-via-position: ;
+            --tw-gradient-to-position: ;
+            --tw-ordinal: ;
+            --tw-slashed-zero: ;
+            --tw-numeric-figure: ;
+            --tw-numeric-spacing: ;
+            --tw-numeric-fraction: ;
+            --tw-ring-inset: ;
+            --tw-ring-offset-width: 0px;
+            --tw-ring-offset-color: #fff;
+            --tw-ring-color: rgb(59 130 246 / 0.5);
+            --tw-ring-offset-shadow: 0 0 #0000;
+            --tw-ring-shadow: 0 0 #0000;
+            --tw-shadow: 0 0 #0000;
+            --tw-shadow-colored: 0 0 #0000;
+            --tw-blur: ;
+            --tw-brightness: ;
+            --tw-contrast: ;
+            --tw-grayscale: ;
+            --tw-hue-rotate: ;
+            --tw-invert: ;
+            --tw-saturate: ;
+            --tw-sepia: ;
+            --tw-drop-shadow: ;
+            --tw-backdrop-blur: ;
+            --tw-backdrop-brightness: ;
+            --tw-backdrop-contrast: ;
+            --tw-backdrop-grayscale: ;
+            --tw-backdrop-hue-rotate: ;
+            --tw-backdrop-invert: ;
+            --tw-backdrop-opacity: ;
+            --tw-backdrop-saturate: ;
+            --tw-backdrop-sepia: ;
+            --tw-contain-size: ;
+            --tw-contain-layout: ;
+            --tw-contain-paint: ;
+            --tw-contain-style:
+        }
+
+        ::backdrop {
+            --tw-border-spacing-x: 0;
+            --tw-border-spacing-y: 0;
+            --tw-translate-x: 0;
+            --tw-translate-y: 0;
+            --tw-rotate: 0;
+            --tw-skew-x: 0;
+            --tw-skew-y: 0;
+            --tw-scale-x: 1;
+            --tw-scale-y: 1;
+            --tw-pan-x: ;
+            --tw-pan-y: ;
+            --tw-pinch-zoom: ;
+            --tw-scroll-snap-strictness: proximity;
+            --tw-gradient-from-position: ;
+            --tw-gradient-via-position: ;
+            --tw-gradient-to-position: ;
+            --tw-ordinal: ;
+            --tw-slashed-zero: ;
+            --tw-numeric-figure: ;
+            --tw-numeric-spacing: ;
+            --tw-numeric-fraction: ;
+            --tw-ring-inset: ;
+            --tw-ring-offset-width: 0px;
+            --tw-ring-offset-color: #fff;
+            --tw-ring-color: rgb(59 130 246 / 0.5);
+            --tw-ring-offset-shadow: 0 0 #0000;
+            --tw-ring-shadow: 0 0 #0000;
+            --tw-shadow: 0 0 #0000;
+            --tw-shadow-colored: 0 0 #0000;
+            --tw-blur: ;
+            --tw-brightness: ;
+            --tw-contrast: ;
+            --tw-grayscale: ;
+            --tw-hue-rotate: ;
+            --tw-invert: ;
+            --tw-saturate: ;
+            --tw-sepia: ;
+            --tw-drop-shadow: ;
+            --tw-backdrop-blur: ;
+            --tw-backdrop-brightness: ;
+            --tw-backdrop-contrast: ;
+            --tw-backdrop-grayscale: ;
+            --tw-backdrop-hue-rotate: ;
+            --tw-backdrop-invert: ;
+            --tw-backdrop-opacity: ;
+            --tw-backdrop-saturate: ;
+            --tw-backdrop-sepia: ;
+            --tw-contain-size: ;
+            --tw-contain-layout: ;
+            --tw-contain-paint: ;
+            --tw-contain-style:
+        }
+
+        /* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */
+        *,
+        ::after,
+        ::before {
+            box-sizing: border-box;
+            border-width: 0;
+            border-style: solid;
+            border-color: #e5e7eb
+        }
+
+        ::after,
+        ::before {
+            --tw-content: ''
+        }
+
+        :host,
+        html {
+            line-height: 1.5;
+            -webkit-text-size-adjust: 100%;
+            -moz-tab-size: 4;
+            tab-size: 4;
+            font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+            font-feature-settings: normal;
+            font-variation-settings: normal;
+            -webkit-tap-highlight-color: transparent
+        }
+
+        body {
+            margin: 0;
+            line-height: inherit
+        }
+
+        hr {
+            height: 0;
+            color: inherit;
+            border-top-width: 1px
+        }
+
+        abbr:where([title]) {
+            -webkit-text-decoration: underline dotted;
+            text-decoration: underline dotted
+        }
+
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6 {
+            font-size: inherit;
+            font-weight: inherit
+        }
+
+        a {
+            color: inherit;
+            text-decoration: inherit
+        }
+
+        b,
+        strong {
+            font-weight: bolder
+        }
+
+        code,
+        kbd,
+        pre,
+        samp {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+            font-feature-settings: normal;
+            font-variation-settings: normal;
+            font-size: 1em
+        }
+
+        small {
+            font-size: 80%
+        }
+
+        sub,
+        sup {
+            font-size: 75%;
+            line-height: 0;
+            position: relative;
+            vertical-align: baseline
+        }
+
+        sub {
+            bottom: -.25em
+        }
+
+        sup {
+            top: -.5em
+        }
+
+        table {
+            text-indent: 0;
+            border-color: inherit;
+            border-collapse: collapse
+        }
+
+        button,
+        input,
+        optgroup,
+        select,
+        textarea {
+            font-family: inherit;
+            font-feature-settings: inherit;
+            font-variation-settings: inherit;
+            font-size: 100%;
+            font-weight: inherit;
+            line-height: inherit;
+            letter-spacing: inherit;
+            color: inherit;
+            margin: 0;
+            padding: 0
+        }
+
+        button,
+        select {
+            text-transform: none
+        }
+
+        button,
+        input:where([type=button]),
+        input:where([type=reset]),
+        input:where([type=submit]) {
+            -webkit-appearance: button;
+            background-color: transparent;
+            background-image: none
+        }
+
+        :-moz-focusring {
+            outline: auto
+        }
+
+        :-moz-ui-invalid {
+            box-shadow: none
+        }
+
+        progress {
+            vertical-align: baseline
+        }
+
+        ::-webkit-inner-spin-button,
+        ::-webkit-outer-spin-button {
+            height: auto
+        }
+
+        [type=search] {
+            -webkit-appearance: textfield;
+            outline-offset: -2px
+        }
+
+        ::-webkit-search-decoration {
+            -webkit-appearance: none
+        }
+
+        ::-webkit-file-upload-button {
+            -webkit-appearance: button;
+            font: inherit
+        }
+
+        summary {
+            display: list-item
+        }
+
+        blockquote,
+        dd,
+        dl,
+        figure,
+        h1,
+        h2,
+        h3,
+        h4,
+        h5,
+        h6,
+        hr,
+        p,
+        pre {
+            margin: 0
+        }
+
+        fieldset {
+            margin: 0;
+            padding: 0
+        }
+
+        legend {
+            padding: 0
+        }
+
+        menu,
+        ol,
+        ul {
+            list-style: none;
+            margin: 0;
+            padding: 0
+        }
+
+        dialog {
+            padding: 0
+        }
+
+        textarea {
+            resize: vertical
+        }
+
+        input::placeholder,
+        textarea::placeholder {
+            opacity: 1;
+            color: #9ca3af
+        }
+
+        [role=button],
+        button {
+            cursor: pointer
+        }
+
+        :disabled {
+            cursor: default
+        }
+
+        audio,
+        canvas,
+        embed,
+        iframe,
+        img,
+        object,
+        svg,
+        video {
+            display: block;
+            vertical-align: middle
+        }
+
+        img,
+        video {
+            max-width: 100%;
+            height: auto
+        }
+
+        [hidden]:where(:not([hidden=until-found])) {
+            display: none
+        }
+
+        .pointer-events-none {
+            pointer-events: none
+        }
+
+        .fixed {
+            position: fixed
+        }
+
+        .absolute {
+            position: absolute
+        }
+
+        .relative {
+            position: relative
+        }
+
+        .-left-12 {
+            left: -3rem
+        }
+
+        .-right-12 {
+            right: -3rem
+        }
+
+        .-top-12 {
+            top: -3rem
+        }
+
+        .bottom-0 {
+            bottom: 0px
+        }
+
+        .bottom-12 {
+            bottom: 3rem
+        }
+
+        .left-0 {
+            left: 0px
+        }
+
+        .right-0 {
+            right: 0px
+        }
+
+        .top-0 {
+            top: 0px
+        }
+
+        .z-10 {
+            z-index: 10
+        }
+
+        .z-50 {
+            z-index: 50
+        }
+
+        .mx-auto {
+            margin-left: auto;
+            margin-right: auto
+        }
+
+        .mb-16 {
+            margin-bottom: 4rem
+        }
+
+        .mb-2 {
+            margin-bottom: 0.5rem
+        }
+
+        .mb-3 {
+            margin-bottom: 0.75rem
+        }
+
+        .mb-4 {
+            margin-bottom: 1rem
+        }
+
+        .mb-6 {
+            margin-bottom: 1.5rem
+        }
+
+        .mb-8 {
+            margin-bottom: 2rem
+        }
+
+        .mt-10 {
+            margin-top: 2.5rem
+        }
+
+        .mt-12 {
+            margin-top: 3rem
+        }
+
+        .flex {
+            display: flex
+        }
+
+        .inline-flex {
+            display: inline-flex
+        }
+
+        .grid {
+            display: grid
+        }
+
+        .hidden {
+            display: none
+        }
+
+        .h-10 {
+            height: 2.5rem
+        }
+
+        .h-14 {
+            height: 3.5rem
+        }
+
+        .h-2 {
+            height: 0.5rem
+        }
+
+        .h-20 {
+            height: 5rem
+        }
+
+        .h-8 {
+            height: 2rem
+        }
+
+        .h-\[500px\] {
+            height: 500px
+        }
+
+        .h-\[600px\] {
+            height: 600px
+        }
+
+        .h-\[800px\] {
+            height: 800px
+        }
+
+        .h-full {
+            height: 100%
+        }
+
+        .min-h-screen {
+            min-height: 100vh
+        }
+
+        .w-10 {
+            width: 2.5rem
+        }
+
+        .w-14 {
+            width: 3.5rem
+        }
+
+        .w-2 {
+            width: 0.5rem
+        }
+
+        .w-8 {
+            width: 2rem
+        }
+
+        .w-\[600px\] {
+            width: 600px
+        }
+
+        .w-\[800px\] {
+            width: 800px
+        }
+
+        .w-full {
+            width: 100%
+        }
+
+        .max-w-2xl {
+            max-width: 42rem
+        }
+
+        .max-w-3xl {
+            max-width: 48rem
+        }
+
+        .max-w-5xl {
+            max-width: 64rem
+        }
+
+        .max-w-7xl {
+            max-width: 80rem
+        }
+
+        .max-w-lg {
+            max-width: 32rem
+        }
+
+        .-translate-x-1\/3 {
+            --tw-translate-x: -33.333333%;
+            transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))
+        }
+
+        .-translate-y-1\/2 {
+            --tw-translate-y: -50%;
+            transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))
+        }
+
+        .translate-x-1\/3 {
+            --tw-translate-x: 33.333333%;
+            transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))
+        }
+
+        .translate-y-1\/3 {
+            --tw-translate-y: 33.333333%;
+            transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))
+        }
+
+        .transform {
+            transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))
+        }
+
+        @keyframes bounce {
+
+            0%,
+            100% {
+                transform: translateY(-25%);
+                animation-timing-function: cubic-bezier(0.8, 0, 1, 1)
+            }
+
+            50% {
+                transform: none;
+                animation-timing-function: cubic-bezier(0, 0, 0.2, 1)
+            }
+        }
+
+        .animate-bounce {
+            animation: bounce 1s infinite
+        }
+
+        @keyframes ping {
+
+            75%,
+            100% {
+                transform: scale(2);
+                opacity: 0
+            }
+        }
+
+        .animate-ping {
+            animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite
+        }
+
+        .grid-cols-2 {
+            grid-template-columns: repeat(2, minmax(0, 1fr))
+        }
+
+        .flex-col {
+            flex-direction: column
+        }
+
+        .items-center {
+            align-items: center
+        }
+
+        .justify-center {
+            justify-content: center
+        }
+
+        .justify-between {
+            justify-content: space-between
+        }
+
+        .gap-12 {
+            gap: 3rem
+        }
+
+        .gap-2 {
+            gap: 0.5rem
+        }
+
+        .gap-3 {
+            gap: 0.75rem
+        }
+
+        .gap-4 {
+            gap: 1rem
+        }
+
+        .gap-6 {
+            gap: 1.5rem
+        }
+
+        .gap-8 {
+            gap: 2rem
+        }
+
+        .space-x-8> :not([hidden])~ :not([hidden]) {
+            --tw-space-x-reverse: 0;
+            margin-right: calc(2rem * var(--tw-space-x-reverse));
+            margin-left: calc(2rem * calc(1 - var(--tw-space-x-reverse)))
+        }
+
+        .overflow-hidden {
+            overflow: hidden
+        }
+
+        .rounded {
+            border-radius: 0.25rem
+        }
+
+        .rounded-2xl {
+            border-radius: 1rem
+        }
+
+        .rounded-3xl {
+            border-radius: 1.5rem
+        }
+
+        .rounded-\[2\.5rem\] {
+            border-radius: 2.5rem
+        }
+
+        .rounded-full {
+            border-radius: 9999px
+        }
+
+        .rounded-lg {
+            border-radius: var(--radius)
+        }
+
+        .rounded-xl {
+            border-radius: 0.75rem
+        }
+
+        .border {
+            border-width: 1px
+        }
+
+        .border-8 {
+            border-width: 8px
+        }
+
+        .border-b {
+            border-bottom-width: 1px
+        }
+
+        .border-t {
+            border-top-width: 1px
+        }
+
+        .border-blue-100 {
+            --tw-border-opacity: 1;
+            border-color: rgb(219 234 254 / var(--tw-border-opacity, 1))
+        }
+
+        .border-gray-100 {
+            --tw-border-opacity: 1;
+            border-color: rgb(243 244 246 / var(--tw-border-opacity, 1))
+        }
+
+        .border-gray-800 {
+            --tw-border-opacity: 1;
+            border-color: rgb(31 41 55 / var(--tw-border-opacity, 1))
+        }
+
+        .border-transparent {
+            border-color: transparent
+        }
+
+        .border-white {
+            --tw-border-opacity: 1;
+            border-color: rgb(255 255 255 / var(--tw-border-opacity, 1))
+        }
+
+        .bg-background {
+            background-color: hsl(var(--background))
+        }
+
+        .bg-\[\#002B5C\] {
+            --tw-bg-opacity: 1;
+            background-color: rgb(0 43 92 / var(--tw-bg-opacity, 1))
+        }
+
+        .bg-blue-400 {
+            --tw-bg-opacity: 1;
+            background-color: rgb(96 165 250 / var(--tw-bg-opacity, 1))
+        }
+
+        .bg-blue-50 {
+            --tw-bg-opacity: 1;
+            background-color: rgb(239 246 255 / var(--tw-bg-opacity, 1))
+        }
+
+        .bg-blue-500 {
+            --tw-bg-opacity: 1;
+            background-color: rgb(59 130 246 / var(--tw-bg-opacity, 1))
+        }
+
+        .bg-gray-50 {
+            --tw-bg-opacity: 1;
+            background-color: rgb(249 250 251 / var(--tw-bg-opacity, 1))
+        }
+
+        .bg-gray-900 {
+            --tw-bg-opacity: 1;
+            background-color: rgb(17 24 39 / var(--tw-bg-opacity, 1))
+        }
+
+        .bg-green-100 {
+            --tw-bg-opacity: 1;
+            background-color: rgb(220 252 231 / var(--tw-bg-opacity, 1))
+        }
+
+        .bg-indigo-50 {
+            --tw-bg-opacity: 1;
+            background-color: rgb(238 242 255 / var(--tw-bg-opacity, 1))
+        }
+
+        .bg-purple-100 {
+            --tw-bg-opacity: 1;
+            background-color: rgb(243 232 255 / var(--tw-bg-opacity, 1))
+        }
+
+        .bg-white {
+            --tw-bg-opacity: 1;
+            background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1))
+        }
+
+        .bg-white\/90 {
+            background-color: rgb(255 255 255 / 0.9)
+        }
+
+        .bg-\[url\(\'https\:\/\/www\.transparenttextures\.com\/patterns\/cubes\.png\'\)\] {
+            background-image: url('https://www.transparenttextures.com/patterns/cubes.png')
+        }
+
+        .bg-gradient-to-r {
+            background-image: linear-gradient(to right, var(--tw-gradient-stops))
+        }
+
+        .from-\[\#002B5C\] {
+            --tw-gradient-from: #002B5C var(--tw-gradient-from-position);
+            --tw-gradient-to: rgb(0 43 92 / 0) var(--tw-gradient-to-position);
+            --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to)
+        }
+
+        .to-blue-500 {
+            --tw-gradient-to: #3b82f6 var(--tw-gradient-to-position)
+        }
+
+        .bg-clip-text {
+            -webkit-background-clip: text;
+            background-clip: text
+        }
+
+        .object-cover {
+            object-fit: cover
+        }
+
+        .p-4 {
+            padding: 1rem
+        }
+
+        .p-8 {
+            padding: 2rem
+        }
+
+        .px-4 {
+            padding-left: 1rem;
+            padding-right: 1rem
+        }
+
+        .px-6 {
+            padding-left: 1.5rem;
+            padding-right: 1.5rem
+        }
+
+        .px-8 {
+            padding-left: 2rem;
+            padding-right: 2rem
+        }
+
+        .py-12 {
+            padding-top: 3rem;
+            padding-bottom: 3rem
+        }
+
+        .py-16 {
+            padding-top: 4rem;
+            padding-bottom: 4rem
+        }
+
+        .py-2 {
+            padding-top: 0.5rem;
+            padding-bottom: 0.5rem
+        }
+
+        .py-2\.5 {
+            padding-top: 0.625rem;
+            padding-bottom: 0.625rem
+        }
+
+        .py-20 {
+            padding-top: 5rem;
+            padding-bottom: 5rem
+        }
+
+        .py-24 {
+            padding-top: 6rem;
+            padding-bottom: 6rem
+        }
+
+        .py-4 {
+            padding-top: 1rem;
+            padding-bottom: 1rem
+        }
+
+        .pb-20 {
+            padding-bottom: 5rem
+        }
+
+        .pt-32 {
+            padding-top: 8rem
+        }
+
+        .pt-8 {
+            padding-top: 2rem
+        }
+
+        .text-center {
+            text-align: center
+        }
+
+        .font-sans {
+            font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"
+        }
+
+        .text-2xl {
+            font-size: 1.5rem;
+            line-height: 2rem
+        }
+
+        .text-3xl {
+            font-size: 1.875rem;
+            line-height: 2.25rem
+        }
+
+        .text-4xl {
+            font-size: 2.25rem;
+            line-height: 2.5rem
+        }
+
+        .text-5xl {
+            font-size: 3rem;
+            line-height: 1
+        }
+
+        .text-lg {
+            font-size: 1.125rem;
+            line-height: 1.75rem
+        }
+
+        .text-sm {
+            font-size: 0.875rem;
+            line-height: 1.25rem
+        }
+
+        .text-xl {
+            font-size: 1.25rem;
+            line-height: 1.75rem
+        }
+
+        .text-xs {
+            font-size: 0.75rem;
+            line-height: 1rem
+        }
+
+        .font-bold {
+            font-weight: 700
+        }
+
+        .font-medium {
+            font-weight: 500
+        }
+
+        .font-semibold {
+            font-weight: 600
+        }
+
+        .leading-\[1\.1\] {
+            line-height: 1.1
+        }
+
+        .leading-relaxed {
+            line-height: 1.625
+        }
+
+        .tracking-tight {
+            letter-spacing: -0.025em
+        }
+
+        .text-foreground {
+            color: hsl(var(--foreground))
+        }
+
+        .text-\[\#002B5C\] {
+            --tw-text-opacity: 1;
+            color: rgb(0 43 92 / var(--tw-text-opacity, 1))
+        }
+
+        .text-amber-500 {
+            --tw-text-opacity: 1;
+            color: rgb(245 158 11 / var(--tw-text-opacity, 1))
+        }
+
+        .text-blue-100 {
+            --tw-text-opacity: 1;
+            color: rgb(219 234 254 / var(--tw-text-opacity, 1))
+        }
+
+        .text-blue-200 {
+            --tw-text-opacity: 1;
+            color: rgb(191 219 254 / var(--tw-text-opacity, 1))
+        }
+
+        .text-gray-400 {
+            --tw-text-opacity: 1;
+            color: rgb(156 163 175 / var(--tw-text-opacity, 1))
+        }
+
+        .text-gray-500 {
+            --tw-text-opacity: 1;
+            color: rgb(107 114 128 / var(--tw-text-opacity, 1))
+        }
+
+        .text-gray-600 {
+            --tw-text-opacity: 1;
+            color: rgb(75 85 99 / var(--tw-text-opacity, 1))
+        }
+
+        .text-gray-800 {
+            --tw-text-opacity: 1;
+            color: rgb(31 41 55 / var(--tw-text-opacity, 1))
+        }
+
+        .text-gray-900 {
+            --tw-text-opacity: 1;
+            color: rgb(17 24 39 / var(--tw-text-opacity, 1))
+        }
+
+        .text-green-500 {
+            --tw-text-opacity: 1;
+            color: rgb(34 197 94 / var(--tw-text-opacity, 1))
+        }
+
+        .text-green-600 {
+            --tw-text-opacity: 1;
+            color: rgb(22 163 74 / var(--tw-text-opacity, 1))
+        }
+
+        .text-indigo-500 {
+            --tw-text-opacity: 1;
+            color: rgb(99 102 241 / var(--tw-text-opacity, 1))
+        }
+
+        .text-purple-600 {
+            --tw-text-opacity: 1;
+            color: rgb(147 51 234 / var(--tw-text-opacity, 1))
+        }
+
+        .text-transparent {
+            color: transparent
+        }
+
+        .text-white {
+            --tw-text-opacity: 1;
+            color: rgb(255 255 255 / var(--tw-text-opacity, 1))
+        }
+
+        .opacity-10 {
+            opacity: 0.1
+        }
+
+        .opacity-50 {
+            opacity: 0.5
+        }
+
+        .opacity-75 {
+            opacity: 0.75
+        }
+
+        .shadow-2xl {
+            --tw-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+            --tw-shadow-colored: 0 25px 50px -12px var(--tw-shadow-color);
+            box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)
+        }
+
+        .shadow-lg {
+            --tw-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --tw-shadow-colored: 0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);
+            box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)
+        }
+
+        .shadow-md {
+            --tw-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+            --tw-shadow-colored: 0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);
+            box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)
+        }
+
+        .shadow-sm {
+            --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+            --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);
+            box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)
+        }
+
+        .shadow-xl {
+            --tw-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            --tw-shadow-colored: 0 20px 25px -5px var(--tw-shadow-color), 0 8px 10px -6px var(--tw-shadow-color);
+            box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)
+        }
+
+        .blur-3xl {
+            --tw-blur: blur(64px);
+            filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)
+        }
+
+        .backdrop-blur-md {
+            --tw-backdrop-blur: blur(12px);
+            -webkit-backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
+            backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)
+        }
+
+        .transition-all {
+            transition-property: all;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 150ms
+        }
+
+        .transition-colors {
+            transition-property: color, background-color, border-color, fill, stroke, -webkit-text-decoration-color;
+            transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+            transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, -webkit-text-decoration-color;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 150ms
+        }
+
+        .transition-transform {
+            transition-property: transform;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+            transition-duration: 150ms
+        }
+
+        .duration-300 {
+            transition-duration: 300ms
+        }
+
+        .duration-\[3000ms\] {
+            transition-duration: 3000ms
+        }
+
+        .duration-\[4000ms\] {
+            transition-duration: 4000ms
+        }
+
+        .selection\:bg-blue-100 *::selection {
+            --tw-bg-opacity: 1;
+            background-color: rgb(219 234 254 / var(--tw-bg-opacity, 1))
+        }
+
+        .selection\:bg-blue-100::selection {
+            --tw-bg-opacity: 1;
+            background-color: rgb(219 234 254 / var(--tw-bg-opacity, 1))
+        }
+
+        .hover\:-translate-y-0\.5:hover {
+            --tw-translate-y: -0.125rem;
+            transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))
+        }
+
+        .hover\:border-gray-100:hover {
+            --tw-border-opacity: 1;
+            border-color: rgb(243 244 246 / var(--tw-border-opacity, 1))
+        }
+
+        .hover\:bg-\[\#001f42\]:hover {
+            --tw-bg-opacity: 1;
+            background-color: rgb(0 31 66 / var(--tw-bg-opacity, 1))
+        }
+
+        .hover\:bg-gray-100:hover {
+            --tw-bg-opacity: 1;
+            background-color: rgb(243 244 246 / var(--tw-bg-opacity, 1))
+        }
+
+        .hover\:bg-white:hover {
+            --tw-bg-opacity: 1;
+            background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1))
+        }
+
+        .hover\:shadow-lg:hover {
+            --tw-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            --tw-shadow-colored: 0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);
+            box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)
+        }
+
+        .hover\:shadow-xl:hover {
+            --tw-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+            --tw-shadow-colored: 0 20px 25px -5px var(--tw-shadow-color), 0 8px 10px -6px var(--tw-shadow-color);
+            box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)
+        }
+
+        .group:hover .group-hover\:translate-x-1 {
+            --tw-translate-x: 0.25rem;
+            transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))
+        }
+
+        .group:hover .group-hover\:scale-110 {
+            --tw-scale-x: 1.1;
+            --tw-scale-y: 1.1;
+            transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y))
+        }
+
+        @media (min-width: 640px) {
+            .sm\:flex-row {
+                flex-direction: row
+            }
+
+            .sm\:px-6 {
+                padding-left: 1.5rem;
+                padding-right: 1.5rem
+            }
+        }
+
+        @media (min-width: 768px) {
+            .md\:block {
+                display: block
+            }
+
+            .md\:flex {
+                display: flex
+            }
+
+            .md\:hidden {
+                display: none
+            }
+
+            .md\:grid-cols-3 {
+                grid-template-columns: repeat(3, minmax(0, 1fr))
+            }
+
+            .md\:grid-cols-4 {
+                grid-template-columns: repeat(4, minmax(0, 1fr))
+            }
+
+            .md\:p-16 {
+                padding: 4rem
+            }
+
+            .md\:text-4xl {
+                font-size: 2.25rem;
+                line-height: 2.5rem
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .lg\:h-\[600px\] {
+                height: 600px
+            }
+
+            .lg\:grid-cols-2 {
+                grid-template-columns: repeat(2, minmax(0, 1fr))
+            }
+
+            .lg\:gap-8 {
+                gap: 2rem
+            }
+
+            .lg\:px-8 {
+                padding-left: 2rem;
+                padding-right: 2rem
+            }
+
+            .lg\:pb-32 {
+                padding-bottom: 8rem
+            }
+
+            .lg\:pt-48 {
+                padding-top: 12rem
+            }
+
+            .lg\:text-5xl {
+                font-size: 3rem;
+                line-height: 1
+            }
+
+            .lg\:text-7xl {
+                font-size: 4.5rem;
+                line-height: 1
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-background text-foreground">
+    <div id="root">
+        <div class="min-h-screen bg-white font-sans text-gray-900 selection:bg-blue-100">
+            <nav class="fixed w-full bg-white/90 backdrop-blur-md z-50 border-b border-gray-100">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex justify-between h-20 items-center">
+                        <div class="flex items-center gap-2">
+                            <div
+                                class="w-10 h-10 bg-[#002B5C] rounded-lg flex items-center justify-center text-white shadow-lg">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                                    stroke-linejoin="round" class="lucide lucide-book-open" aria-hidden="true">
+                                    <path d="M12 7v14"></path>
+                                    <path
+                                        d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z">
+                                    </path>
+                                </svg></div><span class="text-2xl font-bold text-[#002B5C] tracking-tight">Acervo
+                                Digital</span>
+                        </div>
+                        <div class="hidden md:flex items-center space-x-8"><button
+                                onclick="navigateToAcervo()"
+                                class="px-6 py-2.5 bg-[#002B5C] text-white font-semibold rounded-full hover:bg-[#001f42] transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5">Acessar
+                                Acervo</button></div>
+                        <div class="md:hidden"><button class="text-gray-600"><svg xmlns="http://www.w3.org/2000/svg"
+                                    width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                    class="lucide lucide-menu" aria-hidden="true">
+                                    <path d="M4 12h16"></path>
+                                    <path d="M4 18h16"></path>
+                                    <path d="M4 6h16"></path>
+                                </svg></button></div>
+                    </div>
+                </div>
+            </nav>
+            <section class="pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden relative">
+                <div
+                    class="absolute top-0 right-0 -translate-y-1/2 translate-x-1/3 w-[800px] h-[800px] bg-blue-50 rounded-full blur-3xl opacity-50 pointer-events-none">
+                </div>
+                <div
+                    class="absolute bottom-0 left-0 translate-y-1/3 -translate-x-1/3 w-[600px] h-[600px] bg-indigo-50 rounded-full blur-3xl opacity-50 pointer-events-none">
+                </div>
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                    <div class="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
+                        <div class="max-w-2xl">
+                            <div
+                                class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-blue-50 text-[#002B5C] font-semibold text-sm mb-6 border border-blue-100">
+                                <span class="relative flex h-2 w-2"><span
+                                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span><span
+                                        class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span></span>Transformação
+                             no Ensino</div>
+                            <h1 class="text-5xl lg:text-7xl font-bold text-gray-900 leading-[1.1] mb-6 tracking-tight">O
+                                futuro da educação está <span
+                                    class="text-transparent bg-clip-text bg-gradient-to-r from-[#002B5C] to-blue-500">Digital</span>.
+                            </h1>
+                            <p class="text-xl text-gray-600 mb-8 leading-relaxed">Transforme suas aulas com nosso acervo
+                                de +5.000 objetos digitais de aprendizagem, videoaulas e simuladores. Tudo alinhado à
+                                BNCC para facilitar seu planejamento.</p>
+                            <div class="flex flex-col sm:flex-row gap-4"><button
+                                    onclick="scrollToCTA()"
+                                    class="px-8 py-4 bg-[#002B5C] text-white rounded-full font-bold text-lg hover:bg-[#001f42] transition-all shadow-lg hover:shadow-xl flex items-center justify-center gap-2 group">Explorar
+                                    Acervo<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                        viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                        stroke-linecap="round" stroke-linejoin="round"
+                                        class="lucide lucide-arrow-right group-hover:translate-x-1 transition-transform"
+                                        aria-hidden="true">
+                                        <path d="M5 12h14"></path>
+                                        <path d="m12 5 7 7-7 7"></path>
+                                    </svg></button></div>
+                            <!-- <div class="mt-10 flex items-center gap-6 text-sm text-gray-500 font-medium">
+                                <div class="flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="18"
+                                        height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                        class="lucide lucide-circle-check text-green-500" aria-hidden="true">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <path d="m9 12 2 2 4-4"></path>
+                                    </svg>Metodologias Ativas na Prática</div>
+                                <div class="flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" width="18"
+                                        height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                        stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                        class="lucide lucide-circle-check text-green-500" aria-hidden="true">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <path d="m9 12 2 2 4-4"></path>
+                                    </svg>Engajamento Real dos Alunos</div>
+                            </div> -->
+                        </div>
+                        <div class="relative lg:h-[600px] flex items-center justify-center">
+                            <div class="relative w-full max-w-lg">
+                                <div
+                                    class="absolute -top-12 -right-12 bg-white p-4 rounded-2xl shadow-xl animate-bounce duration-[3000ms] hidden md:block">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center text-green-600">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round"
+                                                class="lucide lucide-video" aria-hidden="true">
+                                                <path
+                                                    d="m16 13 5.223 3.482a.5.5 0 0 0 .777-.416V7.87a.5.5 0 0 0-.752-.432L16 10.5">
+                                                </path>
+                                                <rect x="2" y="6" width="14" height="12" rx="2"></rect>
+                                            </svg></div>
+                                        <div>
+                                            <p class="text-xs text-gray-500 font-semibold">Vídeoaulas</p>
+                                            <p class="font-bold text-gray-800">+1.200</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div
+                                    class="absolute bottom-12 -left-12 bg-white p-4 rounded-2xl shadow-xl animate-bounce duration-[4000ms] hidden md:block">
+                                    <div class="flex items-center gap-3">
+                                        <div
+                                            class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center text-purple-600">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"
+                                                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                                stroke-linecap="round" stroke-linejoin="round"
+                                                class="lucide lucide-gamepad2 lucide-gamepad-2" aria-hidden="true">
+                                                <line x1="6" x2="10" y1="11" y2="11"></line>
+                                                <line x1="8" x2="8" y1="9" y2="13"></line>
+                                                <line x1="15" x2="15.01" y1="12" y2="12"></line>
+                                                <line x1="18" x2="18.01" y1="10" y2="10"></line>
+                                                <path
+                                                    d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z">
+                                                </path>
+                                            </svg></div>
+                                        <div>
+                                            <p class="text-xs text-gray-500 font-semibold">Jogos</p>
+                                            <p class="font-bold text-gray-800">Interativos</p>
+                                        </div>
+                                    </div>
+                                </div><img src="home.png" alt="Estudante interagindo com tecnologia educacional"
+                                    class="rounded-[2.5rem] shadow-2xl border-8 border-white object-cover h-[500px] w-full">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section class="bg-[#002B5C] py-16 text-white relative overflow-hidden">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+                        <div>
+                            <div class="text-4xl lg:text-5xl font-bold mb-2">5k+</div>
+                            <div class="text-blue-200 font-medium">Recursos Digitais</div>
+                        </div>
+                        <div>
+                            <div class="text-4xl lg:text-5xl font-bold mb-2">200+</div>
+                            <div class="text-blue-200 font-medium">Escolas Parceiras</div>
+                        </div>
+                        <div>
+                            <div class="text-4xl lg:text-5xl font-bold mb-2">50k+</div>
+                            <div class="text-blue-200 font-medium">Alunos Impactados</div>
+                        </div>
+                        <div>
+                            <div class="text-4xl lg:text-5xl font-bold mb-2">100%</div>
+                            <div class="text-blue-200 font-medium">Aprovado por Profs</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section id="solucoes" class="py-24 bg-white">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="text-center max-w-3xl mx-auto mb-16">
+                        <h2 class="text-3xl font-bold text-gray-900 mb-4">Tudo o que você precisa em um só lugar</h2>
+                        <p class="text-xl text-gray-600">Nossa plataforma foi desenvolvida pensando nas necessidades
+                            reais da sala de aula moderna, integrando tecnologia e pedagogia.</p>
+                    </div>
+                    <div class="grid md:grid-cols-3 gap-8">
+                        <div
+                            class="bg-gray-50 rounded-2xl p-8 hover:bg-white hover:shadow-xl transition-all duration-300 border border-transparent hover:border-gray-100 group">
+                            <div
+                                class="w-14 h-14 bg-white rounded-xl shadow-sm flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" class="lucide lucide-circle-check text-green-500"
+                                    aria-hidden="true">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path d="m9 12 2 2 4-4"></path>
+                                </svg></div>
+                            <h3 class="text-xl font-bold text-gray-900 mb-3">100% Alinhado à BNCC</h3>
+                            <p class="text-gray-600 leading-relaxed">Todos os objetos digitais e videoaulas são
+                                categorizados por códigos e competências da Base Nacional Comum Curricular.</p>
+                        </div>
+                        <div
+                            class="bg-gray-50 rounded-2xl p-8 hover:bg-white hover:shadow-xl transition-all duration-300 border border-transparent hover:border-gray-100 group">
+                            <div
+                                class="w-14 h-14 bg-white rounded-xl shadow-sm flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round"
+                                    class="lucide lucide-gamepad2 lucide-gamepad-2 text-indigo-500" aria-hidden="true">
+                                    <line x1="6" x2="10" y1="11" y2="11"></line>
+                                    <line x1="8" x2="8" y1="9" y2="13"></line>
+                                    <line x1="15" x2="15.01" y1="12" y2="12"></line>
+                                    <line x1="18" x2="18.01" y1="10" y2="10"></line>
+                                    <path
+                                        d="M17.32 5H6.68a4 4 0 0 0-3.978 3.59c-.006.052-.01.101-.017.152C2.604 9.416 2 14.456 2 16a3 3 0 0 0 3 3c1 0 1.5-.5 2-1l1.414-1.414A2 2 0 0 1 9.828 16h4.344a2 2 0 0 1 1.414.586L17 18c.5.5 1 1 2 1a3 3 0 0 0 3-3c0-1.545-.604-6.584-.685-7.258-.007-.05-.011-.1-.017-.151A4 4 0 0 0 17.32 5z">
+                                    </path>
+                                </svg></div>
+                            <h3 class="text-xl font-bold text-gray-900 mb-3">Gamificação</h3>
+                            <p class="text-gray-600 leading-relaxed">Engaje seus alunos com jogos educativos, quizzes
+                                interativos e simulações que tornam o aprendizado divertido.</p>
+                        </div>
+                        <div
+                            class="bg-gray-50 rounded-2xl p-8 hover:bg-white hover:shadow-xl transition-all duration-300 border border-transparent hover:border-gray-100 group">
+                            <div
+                                class="w-14 h-14 bg-white rounded-xl shadow-sm flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                    stroke-linejoin="round" class="lucide lucide-book-open text-amber-500"
+                                    aria-hidden="true">
+                                    <path d="M12 7v14"></path>
+                                    <path
+                                        d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z">
+                                    </path>
+                                </svg></div>
+                            <h3 class="text-xl font-bold text-gray-900 mb-3">Consulta Facilitada</h3>
+                            <p class="text-gray-600 leading-relaxed">Acesse rapidamente nosso catálogo completo de
+                                objetos digitais para planejar suas aulas com mais eficiência.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <section id="cta-section" class="py-20 bg-white">
+                <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="bg-[#002B5C] rounded-3xl p-8 md:p-16 text-center relative overflow-hidden shadow-2xl">
+                        <div
+                            class="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10">
+                        </div>
+                        <div class="relative z-10">
+                            <h2 class="text-3xl md:text-4xl font-bold text-white mb-6">Pronto para transformar a
+                                educação?</h2>
+                            <p class="text-blue-100 text-lg mb-8 max-w-2xl mx-auto">Junte-se a milhares de educadores
+                                que já utilizam nosso acervo para criar aulas mais dinâmicas e engajadoras.</p><button
+                                onclick="navigateToAcervo()"
+                                class="px-8 py-4 bg-white text-[#002B5C] rounded-full font-bold text-lg hover:bg-gray-100 transition-colors shadow-lg hover:shadow-xl">Acessar
+                                Acervo</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <footer class="bg-gray-900 text-gray-400 py-12 border-t border-gray-800">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col items-center text-center">
+                    <div class="max-w-2xl">
+                        <div class="flex items-center justify-center gap-2 mb-6">
+                            <div class="w-8 h-8 bg-white rounded flex items-center justify-center text-[#002B5C]"><svg
+                                    xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"
+                                    fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                                    stroke-linejoin="round" class="lucide lucide-book-open" aria-hidden="true">
+                                    <path d="M12 7v14"></path>
+                                    <path
+                                        d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z">
+                                    </path>
+                                </svg></div><span class="text-xl font-bold text-white tracking-tight">Acervo
+                                Digital</span>
+                        </div>
+                        <p class="text-sm">Plataforma líder em recursos digitais educacionais, comprometida com a
+                            inovação e a qualidade do ensino no Brasil.</p>
+                    </div>
+                </div>
+                <div
+                    class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-12 pt-8 border-t border-gray-800 text-sm text-center">
+                    © 2025 Acervo Digital. Todos os direitos reservados.</div>
+            </footer>
+        </div>
+    </div>
+    <script>
+        // Função para fazer scroll suave até a seção CTA
+        function scrollToCTA(e) {
+            if (e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            console.log('scrollToCTA chamado');
+            const ctaSection = document.getElementById('cta-section');
+            console.log('ctaSection encontrado:', ctaSection);
+            
+            if (ctaSection) {
+                // Calcular a posição da seção relativa ao documento
+                const elementTop = ctaSection.offsetTop;
+                const currentScroll = window.pageYOffset || document.documentElement.scrollTop;
+                const offset = 100; // Offset para não ficar colado no topo
+                const targetPosition = elementTop - offset;
+                
+                console.log('Posição atual:', currentScroll, 'Posição alvo:', targetPosition);
+                
+                // Tentar scroll suave
+                if (window.scrollTo) {
+                    window.scrollTo({
+                        top: targetPosition,
+                        behavior: 'smooth'
+                    });
+                } else {
+                    // Fallback para navegadores antigos
+                    window.scrollTo(0, targetPosition);
+                }
+                
+                // Também tentar scrollIntoView como backup
+                setTimeout(() => {
+                    try {
+                        ctaSection.scrollIntoView({ 
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    } catch (err) {
+                        ctaSection.scrollIntoView();
+                    }
+                }, 100);
+            } else {
+                console.error('Seção CTA não encontrada!');
+            }
+            
+            return false;
+        }
+
+        // Função para navegar para o acervo
+        function navigateToAcervo() {
+            // Se estiver em um iframe, comunica com o parent
+            if (window.parent && window.parent !== window) {
+                window.parent.postMessage('navigateToAcervo', '*');
+            } else {
+                // Se não estiver em iframe, tenta usar hash ou recarregar
+                window.location.hash = '#acervo';
+                // Força recarregamento se necessário
+                if (window.location.hash !== '#acervo') {
+                    window.location.reload();
+                }
+            }
+        }
+
+        // Adicionar event listeners para os botões
+        document.addEventListener('DOMContentLoaded', function() {
+            // Encontrar todos os botões "Acessar Acervo" no menu mobile
+            const mobileButtons = document.querySelectorAll('button');
+            mobileButtons.forEach(button => {
+                const buttonText = button.textContent || button.innerText;
+                if (buttonText.includes('Acessar Acervo') && !button.onclick) {
+                    // Botões na navbar navegam para o acervo
+                    if (button.closest('nav')) {
+                        button.onclick = navigateToAcervo;
+                    }
+                }
+            });
+
+            // Botão "Acessar Acervo" na seção CTA navega para o acervo
+            const ctaButton = document.querySelector('#cta-section button');
+            if (ctaButton) {
+                ctaButton.onclick = navigateToAcervo;
+            }
+        });
+    </script>
+</body>
+
+</html>
