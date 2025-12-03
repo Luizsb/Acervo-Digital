@@ -78,15 +78,26 @@ VITE_API_URL=https://acervo-digital-xbp3.onrender.com/api
 
 **Nota:** Substitua `acervo-digital-xbp3.onrender.com` pela URL real do seu backend.
 
-## 🗄️ Database (PostgreSQL)
+## 🗄️ Database (SQLite)
 
-### Configurações
+**Nota:** Estamos usando SQLite localmente. No Render, o SQLite funciona, mas:
+- O sistema de arquivos é efêmero
+- O banco pode ser perdido entre deploys
+- Para produção estável, considere migrar para PostgreSQL
 
-1. **Nome**: `acervo-digital-db`
-2. **Tipo**: `PostgreSQL`
-3. **Plan**: `Free` (ou o plano que você escolher)
-4. **Database Name**: `acervo_digital`
-5. **User**: `acervo_user`
+### Se quiser usar PostgreSQL no Render:
+
+1. Crie um **PostgreSQL Database** no Render
+2. Copie a **Internal Database URL**
+3. Atualize o `DATABASE_URL` no backend para: `postgresql://user:password@host:port/database`
+4. Atualize o `server/prisma/schema.prisma`:
+   ```prisma
+   datasource db {
+     provider = "postgresql"
+     url      = env("DATABASE_URL")
+   }
+   ```
+5. Execute as migrations novamente
 
 ## ✅ Verificar Configuração
 
