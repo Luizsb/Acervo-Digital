@@ -225,11 +225,55 @@ router.post('/excel', async (req, res) => {
 router.get('/status', async (req, res) => {
   try {
     const count = await prisma.oDA.count();
+    const bnccCount = await (prisma as any).bNCC.count();
     res.json({
       totalODAs: count,
+      totalBNCC: bnccCount,
       databaseExists: true,
     });
   } catch (error: any) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/migration/seed - Executar seed completo (BNCC + ODAs)
+router.post('/seed', async (req, res) => {
+  try {
+    const { exec } = require('child_process');
+    const { promisify } = require('util');
+    const execAsync = promisify(exec);
+
+    console.log('🌱 Iniciando seed do banco de dados...');
+    
+    try {
+      const { stdout, stderr } = await execAsync('npm run seed', {
+        cwd: process.cwd(),
+        timeout: 300000, // 5 minutos
+      });
+      
+      console.log('✅ Seed concluído:', stdout);
+      if (stderr) console.warn('⚠️ Warnings:', stderr);
+
+      const bnccCount = await (prisma as any).bNCC.count();
+      const odasCount = await prisma.oDA.count();
+
+      res.json({
+        success: true,
+        message: 'Seed executado com sucesso',
+        totalBNCC: bnccCount,
+        totalODAs: odasCount,
+      });
+    } catch (execError: any) {
+      console.error('Erro ao executar seed:', execError);
+      res.status(500).json({
+        success: false,
+        error: execError.message,
+        stdout: execError.stdout,
+        stderr: execError.stderr,
+      });
+    }
+  } catch (error: any) {
+    console.error('Error in seed route:', error);
     res.status(500).json({ error: error.message });
   }
 });
