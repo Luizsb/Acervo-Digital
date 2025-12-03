@@ -155,6 +155,13 @@ router.post('/excel', async (req, res) => {
     const errors: string[] = [];
     let imported = 0;
 
+    // Buscar todos os códigos BNCC existentes para validação
+    const existingBnccCodes = await (prisma as any).bNCC.findMany({
+      select: { codigo: true }
+    });
+    const validBnccCodes = new Set(existingBnccCodes.map((b: any) => b.codigo));
+    console.log(`📋 ${validBnccCodes.size} códigos BNCC válidos encontrados no banco`);
+
     // Processar cada linha
     for (let i = 0; i < jsonData.length; i++) {
       try {
@@ -164,6 +171,12 @@ router.post('/excel', async (req, res) => {
         if (!odaData || !odaData.titulo) {
           errors.push(`Linha ${i + 1}: título vazio, pulando...`);
           continue;
+        }
+
+        // Validar código BNCC: se não existir na tabela BNCC, definir como null
+        if (odaData.codigoBncc && !validBnccCodes.has(odaData.codigoBncc)) {
+          console.warn(`⚠️ Linha ${i + 1}: Código BNCC "${odaData.codigoBncc}" não encontrado na tabela BNCC. Definindo como null.`);
+          odaData.codigoBncc = null;
         }
 
         // Verificar se já existe
