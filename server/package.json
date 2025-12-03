@@ -12,6 +12,7 @@
     "prisma:generate": "prisma generate",
     "prisma:generate:fix": "npm config set strict-ssl false && prisma generate && npm config set strict-ssl true",
     "prisma:migrate": "prisma migrate dev",
+    "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:migrate:fix": "cross-env NODE_TLS_REJECT_UNAUTHORIZED=0 prisma migrate dev",
     "prisma:studio": "prisma studio",
     "prisma:studio:fix": "npm config set strict-ssl false && prisma studio",

@@ -41,6 +41,9 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
 // Verificar e avisar sobre dados BNCC
 async function checkBNCC() {
   try {
+    // Aguardar um pouco para garantir que o Prisma está conectado
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
     const count = await (prisma as any).bNCC.count();
     if (count === 0) {
       console.log('⚠️ Nenhum dado BNCC encontrado no banco.');
@@ -49,8 +52,14 @@ async function checkBNCC() {
     } else {
       console.log(`✅ ${count} habilidades BNCC já estão no banco`);
     }
-  } catch (error) {
-    console.warn('⚠️ Erro ao verificar dados BNCC:', error);
+  } catch (error: any) {
+    // Se o erro for de banco não encontrado, apenas avisar (não quebrar o servidor)
+    if (error.code === 'P1001' || error.message?.includes('Unable to open')) {
+      console.warn('⚠️ Banco de dados ainda não está disponível. Execute as migrations primeiro.');
+      console.warn('📝 Execute: npx prisma migrate deploy');
+    } else {
+      console.warn('⚠️ Erro ao verificar dados BNCC:', error.message || error);
+    }
   }
 }
 

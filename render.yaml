@@ -5,7 +5,7 @@ services:
     env: node
     plan: free
     buildCommand: cd server && npm install && npm run build && cp ../public/bncc.db ./public/bncc.db 2>/dev/null || cp ../public/bncc.db . 2>/dev/null || true
-    startCommand: cd server && npm start
+    startCommand: cd server && npx prisma migrate deploy && npm start
     envVars:
       - key: NODE_ENV
         value: production
