@@ -25,6 +25,9 @@ server/prisma/prisma/dev.db-journal
 server/prisma/dev.db
 server/prisma/dev.db-journal
 
+# Exceção: permitir bncc.db no repositório
+!public/bncc.db
+
 # Logs
 *.log
 npm-debug.log*

@@ -38,10 +38,29 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   });
 });
 
+// Verificar e avisar sobre dados BNCC
+async function checkBNCC() {
+  try {
+    const count = await (prisma as any).bNCC.count();
+    if (count === 0) {
+      console.log('⚠️ Nenhum dado BNCC encontrado no banco.');
+      console.log('📝 Para migrar as habilidades BNCC, execute: POST /api/bncc/migrate');
+      console.log('   Ou execute: npm run migrate:bncc');
+    } else {
+      console.log(`✅ ${count} habilidades BNCC já estão no banco`);
+    }
+  } catch (error) {
+    console.warn('⚠️ Erro ao verificar dados BNCC:', error);
+  }
+}
+
 // Start server
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, async () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
   console.log(`📊 Prisma connected to database`);
+  
+  // Verificar BNCC em background (não bloquear o servidor)
+  checkBNCC().catch(console.error);
 });
 
 // Graceful shutdown
