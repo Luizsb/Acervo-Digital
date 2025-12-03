@@ -75,10 +75,19 @@ router.post('/migrate', async (req, res) => {
     const { clearExisting = false } = req.body;
 
     // Caminhos possíveis para o banco BNCC
+    // Considera diferentes estruturas: local, Render, etc.
     const possiblePaths = [
-      path.join(process.cwd(), '..', 'public', 'bncc.db'),
+      // Render: quando buildCommand é "cd server", o cwd é a raiz do projeto
       path.join(process.cwd(), 'public', 'bncc.db'),
+      // Render: quando startCommand roda de dentro de server/
+      path.join(process.cwd(), '..', 'public', 'bncc.db'),
+      // Local: quando roda de dentro de server/
       path.join(__dirname, '..', '..', 'public', 'bncc.db'),
+      // Local: quando roda da raiz
+      path.join(process.cwd(), 'public', 'bncc.db'),
+      // Alternativa: dentro de server/public
+      path.join(__dirname, '..', 'public', 'bncc.db'),
+      path.join(process.cwd(), 'server', 'public', 'bncc.db'),
     ];
 
     let dbPath: string | null = null;
