@@ -239,44 +239,220 @@ router.get('/status', async (req, res) => {
 // POST /api/migration/seed - Executar seed completo (BNCC + ODAs)
 router.post('/seed', async (req, res) => {
   try {
-    const { exec } = require('child_process');
-    const { promisify } = require('util');
-    const execAsync = promisify(exec);
-
     console.log('🌱 Iniciando seed do banco de dados...');
-    
+
+    let bnccImported = 0;
+    let odasImported = 0;
+
+    // 1. Migrar BNCC se necessário
     try {
-      const { stdout, stderr } = await execAsync('npm run seed', {
-        cwd: process.cwd(),
-        timeout: 300000, // 5 minutos
-      });
-      
-      console.log('✅ Seed concluído:', stdout);
-      if (stderr) console.warn('⚠️ Warnings:', stderr);
-
       const bnccCount = await (prisma as any).bNCC.count();
-      const odasCount = await prisma.oDA.count();
-
-      res.json({
-        success: true,
-        message: 'Seed executado com sucesso',
-        totalBNCC: bnccCount,
-        totalODAs: odasCount,
-      });
-    } catch (execError: any) {
-      console.error('Erro ao executar seed:', execError);
-      res.status(500).json({
-        success: false,
-        error: execError.message,
-        stdout: execError.stdout,
-        stderr: execError.stderr,
-      });
+      if (bnccCount === 0) {
+        console.log('📊 Migrando BNCC...');
+        const bnccResult = await migrateBNCCDirect();
+        bnccImported = bnccResult.imported;
+        console.log(`✅ ${bnccImported} habilidades BNCC importadas`);
+      } else {
+        console.log(`✅ ${bnccCount} habilidades BNCC já estão no banco`);
+      }
+    } catch (bnccError: any) {
+      console.error('Erro ao migrar BNCC:', bnccError);
+      // Continua mesmo se BNCC falhar
     }
+
+    // 2. Migrar ODAs se necessário
+    try {
+      const odasCount = await prisma.oDA.count();
+      if (odasCount === 0) {
+        console.log('📊 Migrando ODAs...');
+        const odasResult = await migrateODAsDirect();
+        odasImported = odasResult.imported;
+        console.log(`✅ ${odasImported} ODAs importados`);
+      } else {
+        console.log(`✅ ${odasCount} ODAs já estão no banco`);
+      }
+    } catch (odasError: any) {
+      console.error('Erro ao migrar ODAs:', odasError);
+      // Continua mesmo se ODAs falhar
+    }
+
+    const finalBnccCount = await (prisma as any).bNCC.count();
+    const finalOdasCount = await prisma.oDA.count();
+
+    res.json({
+      success: true,
+      message: 'Seed executado',
+      bnccImported,
+      odasImported,
+      totalBNCC: finalBnccCount,
+      totalODAs: finalOdasCount,
+    });
   } catch (error: any) {
     console.error('Error in seed route:', error);
     res.status(500).json({ error: error.message });
   }
 });
+
+// Função auxiliar para migrar BNCC diretamente
+async function migrateBNCCDirect() {
+  const BetterSqlite3 = require('better-sqlite3');
+  const possiblePaths = [
+    path.join(process.cwd(), 'public', 'bncc.db'),
+    path.join(process.cwd(), '..', 'public', 'bncc.db'),
+    path.join(__dirname, '..', '..', 'public', 'bncc.db'),
+  ];
+
+  let dbPath: string | null = null;
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      dbPath = p;
+      break;
+    }
+  }
+
+  if (!dbPath) {
+    throw new Error('Banco BNCC não encontrado');
+  }
+
+  const db = new BetterSqlite3(dbPath);
+  db.pragma('journal_mode = WAL');
+
+  const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table'").all();
+  if (tables.length === 0) {
+    db.close();
+    return { imported: 0 };
+  }
+
+  const tableName = (tables[0] as any).name;
+  const columns = db.prepare(`PRAGMA table_info(${tableName})`).all();
+  const columnNames = columns.map((col: any) => col.name);
+  const rows = db.prepare(`SELECT * FROM ${tableName}`).all();
+
+  const codigoIndex = columnNames.findIndex((col: string) => 
+    col.toLowerCase().includes('codigo') || col.toLowerCase().includes('code')
+  );
+  const habilidadeIndex = columnNames.findIndex((col: string) => 
+    col.toLowerCase().includes('habilidade') || col.toLowerCase().includes('skill')
+  );
+  const descricaoIndex = columnNames.findIndex((col: string) => 
+    col.toLowerCase().includes('descricao') || col.toLowerCase().includes('description')
+  );
+  const componenteIndex = columnNames.findIndex((col: string) => 
+    col.toLowerCase().includes('componente') || col.toLowerCase().includes('component')
+  );
+  const anoIndex = columnNames.findIndex((col: string) => 
+    col.toLowerCase().includes('ano') || col.toLowerCase().includes('year')
+  );
+
+  let imported = 0;
+  for (let i = 0; i < rows.length; i++) {
+    try {
+      const row = rows[i];
+      const getValue = (index: number): string => {
+        const key = columnNames[index];
+        return key ? String((row as any)[key] || '').trim() : '';
+      };
+      
+      const codigo = codigoIndex >= 0 ? getValue(codigoIndex) : '';
+      if (!codigo) continue;
+
+      const bnccData: any = {
+        codigo,
+        habilidade: habilidadeIndex >= 0 ? getValue(habilidadeIndex) || null : null,
+        descricao: descricaoIndex >= 0 ? getValue(descricaoIndex) || null : null,
+        componente: componenteIndex >= 0 ? getValue(componenteIndex) || null : null,
+        ano: anoIndex >= 0 ? getValue(anoIndex) || null : null,
+      };
+
+      await (prisma as any).bNCC.upsert({
+        where: { codigo },
+        update: bnccData,
+        create: bnccData,
+      });
+
+      imported++;
+    } catch (error: any) {
+      console.error(`Erro ao migrar BNCC linha ${i + 1}:`, error.message);
+    }
+  }
+
+  db.close();
+  return { imported };
+}
+
+// Função auxiliar para migrar ODAs diretamente
+async function migrateODAsDirect() {
+  const possiblePaths = [
+    path.join(process.cwd(), '..', 'public', 'ObjetosDigitais.xlsx'),
+    path.join(process.cwd(), 'public', 'ObjetosDigitais.xlsx'),
+    path.join(__dirname, '..', '..', 'public', 'ObjetosDigitais.xlsx'),
+  ];
+
+  let finalPath: string | null = null;
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      finalPath = p;
+      break;
+    }
+  }
+
+  if (!finalPath) {
+    throw new Error('Planilha Excel não encontrada');
+  }
+
+  const workbook = XLSX.readFile(finalPath);
+  const firstSheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[firstSheetName];
+  const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+  if (jsonData.length === 0) {
+    return { imported: 0 };
+  }
+
+  // Buscar códigos BNCC válidos
+  const existingBnccCodes = await (prisma as any).bNCC.findMany({
+    select: { codigo: true }
+  });
+  const validBnccCodes = new Set(existingBnccCodes.map((b: any) => b.codigo));
+
+  const errors: string[] = [];
+  let imported = 0;
+
+  for (let i = 0; i < jsonData.length; i++) {
+    try {
+      const row = jsonData[i] as any;
+      const odaData = mapRowToODA(row, i);
+
+      if (!odaData || !odaData.titulo) {
+        continue;
+      }
+
+      // Validar código BNCC
+      if (odaData.codigoBncc && !validBnccCodes.has(odaData.codigoBncc)) {
+        odaData.codigoBncc = null;
+      }
+
+      const existing = odaData.codigoOda
+        ? await prisma.oDA.findUnique({ where: { codigoOda: odaData.codigoOda } })
+        : await prisma.oDA.findFirst({ where: { titulo: odaData.titulo } });
+
+      if (existing) {
+        await prisma.oDA.update({
+          where: { id: existing.id },
+          data: odaData,
+        });
+      } else {
+        await prisma.oDA.create({ data: odaData });
+      }
+
+      imported++;
+    } catch (error: any) {
+      errors.push(`Linha ${i + 1}: ${error.message}`);
+    }
+  }
+
+  return { imported, errors: errors.slice(0, 10) };
+}
 
 export default router;
 
