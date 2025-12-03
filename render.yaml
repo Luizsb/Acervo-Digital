@@ -1,0 +1,42 @@
+services:
+  # Backend API
+  - type: web
+    name: acervo-digital-api
+    env: node
+    plan: free
+    buildCommand: cd server && npm install && npm run prisma:generate && npm run build
+    startCommand: cd server && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: DATABASE_URL
+        fromDatabase:
+          name: acervo-digital-db
+          property: connectionString
+      - key: CORS_ORIGIN
+        fromService:
+          name: acervo-digital-frontend
+          type: web
+          property: host
+
+  # Frontend
+  - type: web
+    name: acervo-digital-frontend
+    env: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          name: acervo-digital-api
+          type: web
+          property: host
+
+databases:
+  - name: acervo-digital-db
+    plan: free
+    databaseName: acervo_digital
+    user: acervo_user
+

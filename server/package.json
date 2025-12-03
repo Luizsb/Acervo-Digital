@@ -7,6 +7,7 @@
     "dev": "tsx watch index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
+    "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",
     "prisma:generate:fix": "npm config set strict-ssl false && prisma generate && npm config set strict-ssl true",
     "prisma:migrate": "prisma migrate dev",
