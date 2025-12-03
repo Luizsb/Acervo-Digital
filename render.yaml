@@ -4,8 +4,8 @@ services:
     name: acervo-digital-api
     env: node
     plan: free
-    buildCommand: cd server && npm install && npm run build && cp ../public/bncc.db ./public/bncc.db 2>/dev/null || cp ../public/bncc.db . 2>/dev/null || true
-    startCommand: cd server && npm run start:prod
+    buildCommand: npm install && npm run build && cp ../public/bncc.db ./public/bncc.db 2>/dev/null || cp ../public/bncc.db . 2>/dev/null || true
+    startCommand: npm run start:prod
     envVars:
       - key: NODE_ENV
         value: production

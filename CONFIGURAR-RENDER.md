@@ -20,18 +20,15 @@
 
 **Build Command:**
 ```bash
-cd server && npm install && npm run build && cp ../public/bncc.db ./public/bncc.db 2>/dev/null || cp ../public/bncc.db . 2>/dev/null || true
+npm install && npm run build && cp ../public/bncc.db ./public/bncc.db 2>/dev/null || cp ../public/bncc.db . 2>/dev/null || true
 ```
 
 **Start Command:**
 ```bash
-cd server && npm run start:prod
-```
-
-**OU se o Root Directory já estiver como `server`:**
-```bash
 npm run start:prod
 ```
+
+**⚠️ IMPORTANTE:** Como o Root Directory está configurado como `server`, NÃO inclua `cd server` nos comandos!
 
 ### Environment Variables
 
