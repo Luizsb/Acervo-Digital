@@ -4,7 +4,19 @@
 
 Execute este comando para migrar **tanto BNCC quanto ODAs** de uma vez:
 
-### Usando curl (Terminal/PowerShell):
+### Usando PowerShell (Windows):
+
+```powershell
+Invoke-RestMethod -Uri "https://acervo-digital-xbp3.onrender.com/api/migration/seed" -Method POST -ContentType "application/json"
+```
+
+**OU** se preferir usar curl.exe (se tiver instalado):
+
+```powershell
+curl.exe -X POST https://acervo-digital-xbp3.onrender.com/api/migration/seed
+```
+
+### Usando curl (Linux/Mac/Terminal):
 
 ```bash
 curl -X POST https://acervo-digital-xbp3.onrender.com/api/migration/seed
@@ -40,16 +52,37 @@ fetch('https://acervo-digital-xbp3.onrender.com/api/migration/seed', {
 ## ✅ Verificar se Funcionou
 
 ### Verificar BNCC:
+
+**PowerShell:**
+```powershell
+Invoke-RestMethod -Uri "https://acervo-digital-xbp3.onrender.com/api/bncc"
+```
+
+**Linux/Mac:**
 ```bash
 curl https://acervo-digital-xbp3.onrender.com/api/bncc
 ```
 
 ### Verificar ODAs:
+
+**PowerShell:**
+```powershell
+Invoke-RestMethod -Uri "https://acervo-digital-xbp3.onrender.com/api/odas"
+```
+
+**Linux/Mac:**
 ```bash
 curl https://acervo-digital-xbp3.onrender.com/api/odas
 ```
 
 ### Verificar Status Completo:
+
+**PowerShell:**
+```powershell
+Invoke-RestMethod -Uri "https://acervo-digital-xbp3.onrender.com/api/migration/status"
+```
+
+**Linux/Mac:**
 ```bash
 curl https://acervo-digital-xbp3.onrender.com/api/migration/status
 ```
