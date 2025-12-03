@@ -10,6 +10,7 @@
     "start:prod": "npx prisma migrate deploy && node dist/index.js",
     "postinstall": "prisma generate",
     "migrate:bncc": "tsx scripts/migrate-bncc.ts",
+    "seed": "tsx scripts/seed-database.ts",
     "prisma:generate": "prisma generate",
     "prisma:generate:fix": "npm config set strict-ssl false && prisma generate && npm config set strict-ssl true",
     "prisma:migrate": "prisma migrate dev",

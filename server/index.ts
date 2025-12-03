@@ -38,19 +38,23 @@ app.use((err: any, req: express.Request, res: express.Response, next: express.Ne
   });
 });
 
-// Verificar e avisar sobre dados BNCC
-async function checkBNCC() {
+// Verificar e migrar dados automaticamente se necessário
+async function checkAndSeedDatabase() {
   try {
     // Aguardar um pouco para garantir que o Prisma está conectado
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 2000));
     
-    const count = await (prisma as any).bNCC.count();
-    if (count === 0) {
-      console.log('⚠️ Nenhum dado BNCC encontrado no banco.');
-      console.log('📝 Para migrar as habilidades BNCC, execute: POST /api/bncc/migrate');
-      console.log('   Ou execute: npm run migrate:bncc');
+    const bnccCount = await (prisma as any).bNCC.count();
+    const odasCount = await prisma.oDA.count();
+    
+    if (bnccCount === 0 || odasCount === 0) {
+      console.log('⚠️ Banco de dados vazio detectado.');
+      console.log('📝 Para migrar os dados, execute:');
+      console.log('   1. POST /api/bncc/migrate (para BNCC)');
+      console.log('   2. POST /api/migration/excel (para ODAs)');
+      console.log('   Ou execute: npm run seed');
     } else {
-      console.log(`✅ ${count} habilidades BNCC já estão no banco`);
+      console.log(`✅ ${bnccCount} habilidades BNCC e ${odasCount} ODAs já estão no banco`);
     }
   } catch (error: any) {
     // Se o erro for de banco não encontrado, apenas avisar (não quebrar o servidor)
@@ -58,7 +62,7 @@ async function checkBNCC() {
       console.warn('⚠️ Banco de dados ainda não está disponível. Execute as migrations primeiro.');
       console.warn('📝 Execute: npx prisma migrate deploy');
     } else {
-      console.warn('⚠️ Erro ao verificar dados BNCC:', error.message || error);
+      console.warn('⚠️ Erro ao verificar dados:', error.message || error);
     }
   }
 }
@@ -68,8 +72,8 @@ const server = app.listen(PORT, async () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
   console.log(`📊 Prisma connected to database`);
   
-  // Verificar BNCC em background (não bloquear o servidor)
-  checkBNCC().catch(console.error);
+  // Verificar dados em background (não bloquear o servidor)
+  checkAndSeedDatabase().catch(console.error);
 });
 
 // Graceful shutdown
