@@ -40,14 +40,15 @@ Adicione as seguintes variáveis de ambiente:
 ```
 NODE_ENV=production
 PORT=3001
-DATABASE_URL=<conexão do banco PostgreSQL>
+DATABASE_URL=file:./prisma/dev.db
 CORS_ORIGIN=https://acervo-digital-frontend.onrender.com
 ```
 
 **Nota sobre DATABASE_URL:**
-- Se você criou um banco PostgreSQL no Render, use a **Internal Database URL**
-- Copie a URL do banco no painel do Render (seção Databases)
-- Formato: `postgresql://user:password@host:port/database`
+- Estamos usando SQLite: `file:./prisma/dev.db`
+- ⚠️ **ATENÇÃO**: SQLite no Render pode ter problemas porque o sistema de arquivos é efêmero
+- O banco pode ser perdido entre deploys
+- Para produção, considere migrar para PostgreSQL (gratuito no Render)
 
 ## 📋 Frontend (Static Site)
 
@@ -116,8 +117,8 @@ Após configurar, verifique:
    - VITE_API_URL aponta para o backend correto?
 
 3. **Database:**
-   - Banco foi criado?
-   - Internal Database URL foi copiada para o backend?
+   - DATABASE_URL está como `file:./prisma/dev.db`?
+   - ⚠️ Lembre-se: SQLite no Render pode perder dados entre deploys
 
 ## 🚀 Após o Deploy
 
