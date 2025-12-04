@@ -867,7 +867,17 @@ export default function App() {
   const handleProjectClick = (project) => {
     setSelectedProject(project);
     setCurrentPage("gallery");
+    // Scroll instantâneo para o topo quando abrir um ODA
+    window.scrollTo(0, 0);
   };
+
+  // Garantir que sempre rola para o topo quando um projeto é selecionado
+  useEffect(() => {
+    if (selectedProject) {
+      // Scroll instantâneo sem animação
+      window.scrollTo(0, 0);
+    }
+  }, [selectedProject]);
 
   const handleBackToGallery = () => {
     setSelectedProject(null);
@@ -882,6 +892,12 @@ export default function App() {
   const handleNavigateToFavorites = () => {
     setCurrentPage("favorites");
     setSelectedProject(null);
+  };
+
+  const handleNavigateToGallery = () => {
+    setCurrentPage("gallery");
+    setSelectedProject(null);
+    setCurrentPageNumber(1);
   };
 
   const handleFilterChange = (
@@ -988,6 +1004,7 @@ export default function App() {
           onSearchChange={setSearchQuery}
           onNavigateToSettings={handleNavigateToSettings}
           onNavigateToFavorites={handleNavigateToFavorites}
+          onNavigateToGallery={handleNavigateToGallery}
           contentTypeFilter={contentTypeFilter}
           onContentTypeChange={handleContentTypeChange}
           hideSearch={true}
@@ -1013,6 +1030,7 @@ export default function App() {
         onSearchChange={setSearchQuery}
         onNavigateToSettings={handleNavigateToSettings}
         onNavigateToFavorites={handleNavigateToFavorites}
+        onNavigateToGallery={handleNavigateToGallery}
         contentTypeFilter={contentTypeFilter}
         onContentTypeChange={handleContentTypeChange}
       />
@@ -1190,7 +1208,7 @@ export default function App() {
                   onClick={() =>
                     handleContentTypeChange("Todos")
                   }
-                  className={`flex items-center gap-2.5 px-6 py-3 rounded-xl transition-all duration-200 font-semibold border ${
+                  className={`flex items-center gap-2.5 px-6 py-3 rounded-xl transition-all duration-200 font-semibold border cursor-pointer ${
                     contentTypeFilter === "Todos"
                       ? "bg-secondary text-white border-secondary shadow-sm"
                       : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
@@ -1203,7 +1221,7 @@ export default function App() {
                   onClick={() =>
                     handleContentTypeChange("Audiovisual")
                   }
-                  className={`flex items-center gap-2.5 px-6 py-3 rounded-xl transition-all duration-200 font-semibold border ${
+                  className={`flex items-center gap-2.5 px-6 py-3 rounded-xl transition-all duration-200 font-semibold border cursor-pointer ${
                     contentTypeFilter === "Audiovisual"
                       ? "bg-secondary text-white border-secondary shadow-sm"
                       : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
@@ -1214,7 +1232,7 @@ export default function App() {
                 </button>
                 <button
                   onClick={() => handleContentTypeChange("OED")}
-                  className={`flex items-center gap-2.5 px-6 py-3 rounded-xl transition-all duration-200 font-semibold border ${
+                  className={`flex items-center gap-2.5 px-6 py-3 rounded-xl transition-all duration-200 font-semibold border cursor-pointer ${
                     contentTypeFilter === "OED"
                       ? "bg-secondary text-white border-secondary shadow-sm"
                       : "bg-white text-gray-600 border-gray-200 hover:border-gray-300 hover:bg-gray-50"
@@ -1243,7 +1261,7 @@ export default function App() {
                   <div className="flex items-center gap-2 bg-white border border-gray-200 rounded-lg p-1 shadow-sm">
                     <button
                       onClick={() => setViewMode('grid')}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all duration-200 ${
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all duration-200 cursor-pointer ${
                         viewMode === 'grid'
                           ? 'bg-primary text-white shadow-sm'
                           : 'text-gray-600 hover:bg-gray-50'
@@ -1255,7 +1273,7 @@ export default function App() {
                     </button>
                     <button
                       onClick={() => setViewMode('list')}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all duration-200 ${
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md transition-all duration-200 cursor-pointer ${
                         viewMode === 'list'
                           ? 'bg-primary text-white shadow-sm'
                           : 'text-gray-600 hover:bg-gray-50'

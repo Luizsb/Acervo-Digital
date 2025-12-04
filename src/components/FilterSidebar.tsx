@@ -79,6 +79,17 @@ export function FilterSidebar({ filters, selectedFilters, onFilterChange, onClea
     selectedFilters.samr.length +
     selectedFilters.volumes.length;
 
+  // Função helper para aplicar scroll quando há mais de 6 itens
+  // Cada item tem aproximadamente 50px de altura (p-3 = 12px top + 12px bottom + ~26px conteúdo)
+  // Com space-y-2.5 (10px gap), 6 itens = (50px * 6) + (10px * 5) = 300px + 50px = 350px
+  // Mas vamos usar 300px para mostrar exatamente 6 itens
+  const getScrollClasses = (itemCount: number) => {
+    if (itemCount > 6) {
+      return 'max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400';
+    }
+    return '';
+  };
+
   return (
     <div className="w-full lg:w-80 p-6 bg-white border-2 border-gray-300 shadow-xl h-full overflow-y-auto">
       <div className="mb-6">
@@ -235,7 +246,7 @@ export function FilterSidebar({ filters, selectedFilters, onFilterChange, onClea
           <div className="h-0.5 bg-gray-300 rounded-full opacity-40"></div>
         )}
 
-      {/* Anos Filter */}
+        {/* Anos Filter */}
         <div className="space-y-3 py-2">
           <button
             onClick={() => toggleSection('anos')}
@@ -250,7 +261,7 @@ export function FilterSidebar({ filters, selectedFilters, onFilterChange, onClea
           </button>
           
           {expandedSections.anos && (
-            <div className="space-y-2.5 pl-2">
+            <div className={`space-y-2.5 pl-2 ${getScrollClasses(filters.anos.length)}`} style={filters.anos.length > 6 ? { maxHeight: '300px', overflowY: 'auto' } : {}}>
               {filters.anos.map((ano) => {
                 const isSelected = selectedFilters.anos.includes(ano);
                 return (
@@ -304,7 +315,7 @@ export function FilterSidebar({ filters, selectedFilters, onFilterChange, onClea
           </button>
           
           {expandedSections.tags && (
-            <div className="space-y-2.5 pl-2">
+            <div className={`space-y-2.5 pl-2 ${getScrollClasses(filters.tags.length)}`} style={filters.tags.length > 6 ? { maxHeight: '300px', overflowY: 'auto' } : {}}>
               {filters.tags.map((tag) => {
                 const isSelected = selectedFilters.tags.includes(tag);
                 return (
@@ -386,16 +397,17 @@ export function FilterSidebar({ filters, selectedFilters, onFilterChange, onClea
               </div>
               
               <div className="relative">
-                {/* Indicador de scroll no topo */}
-                <div className="absolute top-0 left-0 right-0 h-4 bg-gradient-to-b from-white to-transparent z-10 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity"></div>
-                
-                {/* Container com scroll visível */}
-                <div className="space-y-2.5 pl-2 max-h-64 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400">
-                  {filters.bnccCodes
-                    .filter((code) => 
-                      code.toLowerCase().includes(bnccSearchQuery.toLowerCase())
-                    )
-                    .map((code) => {
+                {/* Container com scroll visível - mostra 6 itens e rola para ver mais */}
+                {(() => {
+                  const filteredCodes = filters.bnccCodes.filter((code) => 
+                    code.toLowerCase().includes(bnccSearchQuery.toLowerCase())
+                  );
+                  return (
+                    <div 
+                      className="space-y-2.5 pl-2 pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 hover:scrollbar-thumb-gray-400"
+                      style={filteredCodes.length > 6 ? { maxHeight: '300px', overflowY: 'auto' } : {}}
+                    >
+                      {filteredCodes.map((code) => {
                 const isSelected = selectedFilters.bnccCodes.includes(code);
                 return (
                   <label
@@ -426,20 +438,17 @@ export function FilterSidebar({ filters, selectedFilters, onFilterChange, onClea
                     </span>
                   </label>
                 );
-                  })}
-                  
-                  {/* Mensagem quando não há resultados */}
-                  {filters.bnccCodes.filter((code) => 
-                    code.toLowerCase().includes(bnccSearchQuery.toLowerCase())
-                  ).length === 0 && (
-                    <div className="text-center py-6 text-sm text-gray-500">
-                      Nenhum código encontrado para "{bnccSearchQuery}"
+              })}
+              
+                      {/* Mensagem quando não há resultados */}
+                      {filteredCodes.length === 0 && (
+                        <div className="text-center py-6 text-sm text-gray-500">
+                          Nenhum código encontrado para "{bnccSearchQuery}"
+                        </div>
+                      )}
                     </div>
-                  )}
-                  
-                  {/* Gradiente inferior indicando mais conteúdo abaixo */}
-                  <div className="sticky bottom-0 left-0 right-0 h-4 bg-gradient-to-t from-white via-white/80 to-transparent z-10 pointer-events-none -mx-2"></div>
-                </div>
+                  );
+                })()}
               </div>
             </div>
           )}
@@ -462,7 +471,7 @@ export function FilterSidebar({ filters, selectedFilters, onFilterChange, onClea
           </button>
           
           {expandedSections.segmentos && (
-            <div className="space-y-2.5 pl-2">
+            <div className={`space-y-2.5 pl-2 ${getScrollClasses(filters.segmentos.length)}`} style={filters.segmentos.length > 6 ? { maxHeight: '300px', overflowY: 'auto' } : {}}>
               {filters.segmentos.map((segmento) => {
                 const isSelected = selectedFilters.segmentos.includes(segmento);
                 return (
@@ -516,7 +525,7 @@ export function FilterSidebar({ filters, selectedFilters, onFilterChange, onClea
           </button>
           
           {expandedSections.marcas && (
-            <div className="space-y-2.5 pl-2">
+            <div className={`space-y-2.5 pl-2 ${getScrollClasses(filters.marcas.length)}`} style={filters.marcas.length > 6 ? { maxHeight: '300px', overflowY: 'auto' } : {}}>
               {filters.marcas.map((marca) => {
                 const isSelected = selectedFilters.marcas.includes(marca);
                 return (
@@ -573,7 +582,7 @@ export function FilterSidebar({ filters, selectedFilters, onFilterChange, onClea
               </button>
               
               {expandedSections.videoCategory && (
-                <div className="space-y-2.5 pl-2">
+                <div className={`space-y-2.5 pl-2 ${getScrollClasses(filters.videoCategory.length)}`} style={filters.videoCategory.length > 6 ? { maxHeight: '300px', overflowY: 'auto' } : {}}>
                   {filters.videoCategory.map((cat) => {
                     const isSelected = selectedFilters.videoCategory.includes(cat);
                     return (
@@ -631,7 +640,7 @@ export function FilterSidebar({ filters, selectedFilters, onFilterChange, onClea
               </button>
               
               {expandedSections.tipoObjeto && (
-                <div className="space-y-2.5 pl-2">
+                <div className={`space-y-2.5 pl-2 ${getScrollClasses(filters.tipoObjeto.length)}`} style={filters.tipoObjeto.length > 6 ? { maxHeight: '300px', overflowY: 'auto' } : {}}>
                   {filters.tipoObjeto.map((tipo) => {
                     const isSelected = selectedFilters.tipoObjeto.includes(tipo);
                     return (
@@ -689,7 +698,7 @@ export function FilterSidebar({ filters, selectedFilters, onFilterChange, onClea
               </button>
               
               {expandedSections.samr && (
-                <div className="space-y-2.5 pl-2">
+                <div className={`space-y-2.5 pl-2 ${getScrollClasses(filters.samr.length)}`} style={filters.samr.length > 6 ? { maxHeight: '300px', overflowY: 'auto' } : {}}>
                   {filters.samr.map((nivel) => {
                     const isSelected = selectedFilters.samr.includes(nivel);
                     return (
@@ -747,7 +756,7 @@ export function FilterSidebar({ filters, selectedFilters, onFilterChange, onClea
               </button>
               
               {expandedSections.volumes && (
-                <div className="space-y-2.5 pl-2">
+                <div className={`space-y-2.5 pl-2 ${getScrollClasses(filters.volumes.length)}`} style={filters.volumes.length > 6 ? { maxHeight: '300px', overflowY: 'auto' } : {}}>
                   {filters.volumes.map((volume) => {
                     const isSelected = selectedFilters.volumes.includes(volume);
                     return (

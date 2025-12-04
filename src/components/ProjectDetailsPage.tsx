@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, BookOpen, Clock, Check, ExternalLink, Eye, Sparkles, Play, Book, FileText, ArrowLeft, Heart, Link as LinkIcon, Settings, Download, Layers } from 'lucide-react';
 import { ProjectCard } from './ProjectCard';
 import { getCurriculumColor, getComponentFullName, getSegmentFullName, getMarcaFullName } from '../utils/curriculumColors';
@@ -50,6 +50,11 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
   const [showVideo, setShowVideo] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
 
+  // Garantir que sempre rola para o topo quando a página de detalhes é aberta (sem animação)
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [project.id]);
+
   // Mock data for demonstration
   const odaDetails = {
     views: "1.245",
@@ -85,7 +90,7 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
         <div className="mb-6">
           <button
             onClick={onBack}
-            className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-50 border-2 border-gray-300 rounded-[20px] transition-all font-semibold text-foreground shadow-sm hover:shadow-md"
+            className="flex items-center gap-2 px-4 py-2.5 bg-white hover:bg-gray-50 border-2 border-gray-300 rounded-[20px] transition-all font-semibold text-foreground shadow-sm hover:shadow-md cursor-pointer"
           >
             <ArrowLeft className="w-5 h-5" />
             <span>Voltar ao Acervo</span>

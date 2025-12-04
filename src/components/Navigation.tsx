@@ -6,12 +6,13 @@ interface NavigationProps {
   onSearchChange: (query: string) => void;
   onNavigateToSettings?: () => void;
   onNavigateToFavorites?: () => void;
+  onNavigateToGallery?: () => void;
   contentTypeFilter: 'Todos' | 'Audiovisual' | 'OED';
   onContentTypeChange: (type: 'Todos' | 'Audiovisual' | 'OED') => void;
   hideSearch?: boolean;
 }
 
-export function Navigation({ searchQuery, onSearchChange, onNavigateToSettings, onNavigateToFavorites, contentTypeFilter, onContentTypeChange, hideSearch = false }: NavigationProps) {
+export function Navigation({ searchQuery, onSearchChange, onNavigateToSettings, onNavigateToFavorites, onNavigateToGallery, contentTypeFilter, onContentTypeChange, hideSearch = false }: NavigationProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -25,7 +26,10 @@ export function Navigation({ searchQuery, onSearchChange, onNavigateToSettings, 
       <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Logo and brand - aligned left */}
-          <div className="flex items-center gap-3 group cursor-pointer">
+          <div 
+            onClick={() => onNavigateToGallery?.()}
+            className="flex items-center gap-3 group cursor-pointer"
+          >
             <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-300">
               <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
             </div>

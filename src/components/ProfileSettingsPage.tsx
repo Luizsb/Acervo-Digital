@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ArrowLeft, User, Mail, Briefcase, Lock, Settings, Heart, LogOut } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, User, Mail, Lock, Settings, Heart, LogOut } from 'lucide-react';
 
 interface ProfileSettingsPageProps {
   onBack: () => void;
@@ -8,6 +8,40 @@ interface ProfileSettingsPageProps {
 
 export function ProfileSettingsPage({ onBack, onNavigateToFavorites }: ProfileSettingsPageProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [originalName, setOriginalName] = useState('');
+  const [originalEmail, setOriginalEmail] = useState('');
+
+  // Carregar dados do localStorage ao montar o componente
+  useEffect(() => {
+    const savedName = localStorage.getItem('userName') || 'Maria Silva Santos';
+    const savedEmail = localStorage.getItem('userEmail') || 'maria.santos@escola.edu.br';
+    
+    setName(savedName);
+    setEmail(savedEmail);
+    setOriginalName(savedName);
+    setOriginalEmail(savedEmail);
+  }, []);
+
+  const handleSave = () => {
+    // Salvar no localStorage
+    localStorage.setItem('userName', name);
+    localStorage.setItem('userEmail', email);
+    
+    // Atualizar valores originais
+    setOriginalName(name);
+    setOriginalEmail(email);
+  };
+
+  const handleCancel = () => {
+    // Restaurar valores originais
+    setName(originalName);
+    setEmail(originalEmail);
+  };
+
+  // Verificar se houve mudanças
+  const hasChanges = name !== originalName || email !== originalEmail;
 
   return (
     <div className="min-h-screen bg-background">
@@ -19,7 +53,7 @@ export function ProfileSettingsPage({ onBack, onNavigateToFavorites }: ProfileSe
             <div className="flex items-center gap-3">
               <button
                 onClick={onBack}
-                className="flex items-center gap-2 text-white hover:bg-white/20 backdrop-blur-sm px-3 py-2 rounded-[20px] transition-all duration-300 border border-white/40 hover:border-white/60 font-semibold text-sm"
+                className="flex items-center gap-2 text-white hover:bg-white/20 backdrop-blur-sm px-3 py-2 rounded-[20px] transition-all duration-300 border border-white/40 hover:border-white/60 font-semibold text-sm cursor-pointer"
               >
                 <ArrowLeft className="w-4 h-4" />
                 <span className="hidden sm:inline">Voltar</span>
@@ -65,8 +99,8 @@ export function ProfileSettingsPage({ onBack, onNavigateToFavorites }: ProfileSe
                             <User className="w-6 h-6 text-white" />
                           </div>
                           <div>
-                            <p className="font-bold text-gray-900">Usuário</p>
-                            <p className="text-sm text-gray-500">Consultor Pedagógico</p>
+                            <p className="font-bold text-gray-900">{name || 'Usuário'}</p>
+                            <p className="text-sm text-gray-500">Perfil</p>
                           </div>
                         </div>
                       </div>
@@ -125,7 +159,8 @@ export function ProfileSettingsPage({ onBack, onNavigateToFavorites }: ProfileSe
                 </label>
                 <input
                   type="text"
-                  defaultValue="Maria Silva Santos"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
                   className="w-full px-4 py-2.5 bg-white border-2 border-gray-200 rounded-[20px] focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none text-foreground text-sm"
                 />
               </div>
@@ -138,32 +173,33 @@ export function ProfileSettingsPage({ onBack, onNavigateToFavorites }: ProfileSe
                 </label>
                 <input
                   type="email"
-                  defaultValue="maria.santos@escola.edu.br"
-                  className="w-full px-4 py-2.5 bg-white border-2 border-gray-200 rounded-[20px] focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none text-foreground text-sm"
-                />
-              </div>
-
-              {/* Role Field */}
-              <div className="space-y-2">
-                <label className="flex items-center gap-2 text-foreground text-sm font-semibold">
-                  <Briefcase className="w-4 h-4 text-primary" />
-                  Cargo
-                </label>
-                <input
-                  type="text"
-                  defaultValue="Consultora Pedagógica"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="w-full px-4 py-2.5 bg-white border-2 border-gray-200 rounded-[20px] focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none text-foreground text-sm"
                 />
               </div>
             </div>
 
             <div className="mt-6 flex flex-col sm:flex-row gap-2">
-              <button className="px-5 py-2.5 bg-primary text-white rounded-[20px] hover:bg-[#013668] hover:shadow-md transition-all font-semibold text-sm shadow-sm">
+              <button 
+                onClick={handleSave}
+                disabled={!hasChanges}
+                className={`px-5 py-2.5 rounded-[20px] hover:shadow-md transition-all font-semibold text-sm shadow-sm cursor-pointer ${
+                  hasChanges 
+                    ? 'bg-primary text-white hover:bg-[#013668]' 
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+              >
                 Salvar Alterações
               </button>
-              <button className="px-5 py-2.5 border-2 border-gray-300 rounded-[20px] hover:bg-gray-50 transition-all font-semibold text-foreground text-sm">
-                Cancelar
-              </button>
+              {hasChanges && (
+                <button 
+                  onClick={handleCancel}
+                  className="px-5 py-2.5 border-2 border-gray-300 rounded-[20px] hover:bg-gray-50 transition-all font-semibold text-foreground text-sm cursor-pointer"
+                >
+                  Cancelar
+                </button>
+              )}
             </div>
           </div>
 
