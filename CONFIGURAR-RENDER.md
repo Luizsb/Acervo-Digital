@@ -11,14 +11,24 @@ https://dashboard.render.com
 2. Vá em **Environment** (menu lateral)
 3. Encontre a variável **DATABASE_URL**
 4. Clique para editar
-5. Cole a connection string do Supabase:
+5. **USE CONNECTION POOLING** (Recomendado para Render):
 
-```
-postgresql://postgres:MZDL%40teCg2Xxg3f@db.adungjmhuibxvgiqrume.supabase.co:5432/postgres?sslmode=require&connect_timeout=10
-```
+   No Supabase Dashboard → Settings → Database → **Connection pooling**
+   - Use a aba **"Session"** ou **"Transaction"**
+   - Copie a connection string que usa porta **6543**
+   - Formato esperado:
+   ```
+   postgresql://postgres.adungjmhuibxvgiqrume:MZDL%40teCg2Xxg3f@aws-0-us-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true&connection_limit=1
+   ```
+   
+   **OU se não encontrar pooling, use direta:**
+   ```
+   postgresql://postgres:MZDL%40teCg2Xxg3f@db.adungjmhuibxvgiqrume.supabase.co:5432/postgres?sslmode=require&connect_timeout=10
+   ```
 
 **IMPORTANTE**: 
 - Substitua `MZDL%40teCg2Xxg3f` pela sua senha do Supabase (codificada)
+- **PREFIRA connection pooling** (porta 6543) - funciona melhor no Render
 - Se a senha mudar, atualize aqui também
 
 6. Clique em **Save Changes**
@@ -53,8 +63,10 @@ Após configurar a `DATABASE_URL`, o Render vai:
 ## 🐛 Se der erro:
 
 **"Can't reach database server"**
-- Verifique se a connection string está correta
+- ✅ **SOLUÇÃO**: Use **Connection Pooling** (porta 6543) ao invés de conexão direta
+- Verifique se a connection string está correta no Render
 - Verifique se o Supabase está ativo
+- Veja arquivo `SOLUCAO-ERRO-RENDER-SUPABASE.md` para mais detalhes
 
 **"relation does not exist"**
 - As tabelas já foram criadas no Supabase

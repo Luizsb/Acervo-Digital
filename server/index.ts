@@ -364,8 +364,8 @@ async function checkAndSeedDatabase() {
 }
 
 // Start server
-const server = app.listen(PORT, async () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+const server = app.listen(PORT, '0.0.0.0', async () => {
+  console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
   console.log(`📊 Prisma connected to database`);
   
   // Verificar dados em background (não bloquear o servidor)
