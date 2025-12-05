@@ -7,6 +7,7 @@ const prisma = new PrismaClient();
 // GET /api/odas - Buscar todos os ODAs
 router.get('/', async (req, res) => {
   try {
+    console.log('📊 GET /api/odas - Buscando ODAs...');
     const { tipoConteudo, search, limit, offset } = req.query;
 
     const where: any = {};
@@ -25,7 +26,7 @@ router.get('/', async (req, res) => {
       ];
     }
 
-    const odas = await (prisma.oDA.findMany as any)({
+    const odas = await prisma.oDA.findMany({
       where,
       include: {
         bncc: true, // Incluir dados da BNCC relacionada
@@ -36,6 +37,8 @@ router.get('/', async (req, res) => {
     });
 
     const total = await prisma.oDA.count({ where });
+    
+    console.log(`✅ GET /api/odas - Retornando ${odas.length} ODAs (total: ${total})`);
 
     res.json({
       data: odas,
@@ -44,8 +47,12 @@ router.get('/', async (req, res) => {
       offset: offset ? parseInt(offset as string) : null,
     });
   } catch (error: any) {
-    console.error('Error fetching ODAs:', error);
-    res.status(500).json({ error: error.message });
+    console.error('❌ Error fetching ODAs:', error);
+    console.error('Stack:', error.stack);
+    res.status(500).json({ 
+      error: error.message,
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
