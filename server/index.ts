@@ -367,9 +367,24 @@ async function checkAndSeedDatabase() {
 const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on http://0.0.0.0:${PORT}`);
   console.log(`📊 Prisma connected to database`);
+  console.log(`✅ Server is listening on port ${PORT}`);
   
   // Verificar dados em background (não bloquear o servidor)
   checkAndSeedDatabase().catch(console.error);
+});
+
+// Tratamento de erros do servidor
+server.on('error', (error: any) => {
+  console.error('❌ Server error:', error);
+  if (error.code === 'EADDRINUSE') {
+    console.error(`Port ${PORT} is already in use`);
+  }
+});
+
+// Garantir que o servidor está escutando
+server.on('listening', () => {
+  const addr = server.address();
+  console.log(`✅ Server successfully bound to ${typeof addr === 'string' ? addr : `${addr?.address}:${addr?.port}`}`);
 });
 
 // Graceful shutdown
