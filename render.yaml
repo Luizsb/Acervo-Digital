@@ -12,7 +12,7 @@ services:
       - key: PORT
         value: 3001
       - key: DATABASE_URL
-        value: file:./prisma/dev.db
+        value: # Configure manualmente no Render com a connection string do Supabase
       - key: CORS_ORIGIN
         fromService:
           name: acervo-digital-frontend
