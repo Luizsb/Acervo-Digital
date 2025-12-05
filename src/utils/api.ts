@@ -56,6 +56,11 @@ export function apiODAToFrontend(oda: ODA): any {
   // Usar apenas a habilidade da tabela BNCC
   const bnccDescription = (oda as any).bncc?.habilidade || undefined;
   
+  // Debug: verificar se escalaSamr está presente
+  if (process.env.NODE_ENV === 'development' && !oda.escalaSamr) {
+    console.log(`⚠️ ODA ${oda.id} (${oda.titulo}) não tem escalaSamr`);
+  }
+  
   return {
     id: oda.id,
     codigoODA: oda.codigoOda || undefined,
@@ -76,7 +81,7 @@ export function apiODAToFrontend(oda: ODA): any {
     marca: oda.marca || undefined,
     contentType: oda.tipoConteudo,
     videoCategory: oda.categoriaVideo || undefined,
-    samr: oda.escalaSamr || undefined,
+    samr: oda.escalaSamr || undefined, // Mapear escalaSamr para samr
     tipoObjeto: oda.tipoObjeto || undefined,
     description: oda.descricao || undefined,
     learningObjectives: oda.objetivosAprendizagem ? JSON.parse(oda.objetivosAprendizagem) : undefined,
