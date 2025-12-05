@@ -224,28 +224,32 @@ router.post('/excel', async (req, res) => {
 // GET /api/migration/status - Verificar status da migração
 router.get('/status', async (req, res) => {
   try {
+    console.log('📊 Verificando status da migração...');
     const count = await prisma.oDA.count();
-    // Tentar acessar BNCC de diferentes formas
+    console.log(`✅ ODAs count: ${count}`);
+    
     let bnccCount = 0;
     try {
       bnccCount = await (prisma as any).bNCC.count();
-    } catch (e) {
-      // Se bNCC não funcionar, tentar bncc (minúsculo)
-      try {
-        bnccCount = await (prisma as any).bncc.count();
-      } catch (e2) {
-        console.warn('Não foi possível contar BNCC:', e2);
-        bnccCount = 0;
-      }
+      console.log(`✅ BNCC count: ${bnccCount}`);
+    } catch (bnccError: any) {
+      console.error('❌ Erro ao contar BNCC:', bnccError.message);
+      // Retornar 0 se não conseguir contar, mas não falhar a requisição
+      bnccCount = 0;
     }
+    
     res.json({
       totalODAs: count,
       totalBNCC: bnccCount,
       databaseExists: true,
     });
   } catch (error: any) {
-    console.error('Erro em /api/migration/status:', error);
-    res.status(500).json({ error: error.message || 'Erro ao verificar status' });
+    console.error('❌ Erro em /api/migration/status:', error);
+    console.error('Stack:', error.stack);
+    res.status(500).json({ 
+      error: error.message || 'Erro ao verificar status',
+      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    });
   }
 });
 
