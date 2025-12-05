@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { PrismaClient } from '@prisma/client';
+import prisma from './lib/prisma';
 import odasRoutes from './routes/odas';
 import migrationRoutes from './routes/migration';
 import bnccRoutes from './routes/bncc';
@@ -12,7 +12,6 @@ import * as XLSX from 'xlsx';
 dotenv.config();
 
 const app = express();
-const prisma = new PrismaClient();
 const PORT = Number(process.env.PORT) || 3001;
 
 // Middleware
