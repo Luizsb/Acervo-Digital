@@ -223,32 +223,49 @@ router.post('/excel', async (req, res) => {
 
 // GET /api/migration/status - Verificar status da migração
 router.get('/status', async (req, res) => {
+  let count = 0;
+  let bnccCount = 0;
+  let hasError = false;
+  let errorMessage = '';
+  
   try {
     console.log('📊 Verificando status da migração...');
-    const count = await prisma.oDA.count();
-    console.log(`✅ ODAs count: ${count}`);
     
-    let bnccCount = 0;
+    // Tentar contar ODAs
+    try {
+      count = await prisma.oDA.count();
+      console.log(`✅ ODAs count: ${count}`);
+    } catch (odaError: any) {
+      console.error('❌ Erro ao contar ODAs:', odaError.message);
+      hasError = true;
+      errorMessage += `ODAs: ${odaError.message}; `;
+    }
+    
+    // Tentar contar BNCC
     try {
       bnccCount = await (prisma as any).bNCC.count();
       console.log(`✅ BNCC count: ${bnccCount}`);
     } catch (bnccError: any) {
       console.error('❌ Erro ao contar BNCC:', bnccError.message);
-      // Retornar 0 se não conseguir contar, mas não falhar a requisição
-      bnccCount = 0;
+      hasError = true;
+      errorMessage += `BNCC: ${bnccError.message}; `;
     }
     
+    // Sempre retornar resposta, mesmo com erros parciais
     res.json({
       totalODAs: count,
       totalBNCC: bnccCount,
-      databaseExists: true,
+      databaseExists: !hasError,
+      ...(hasError && { warning: errorMessage.trim() })
     });
   } catch (error: any) {
-    console.error('❌ Erro em /api/migration/status:', error);
-    console.error('Stack:', error.stack);
-    res.status(500).json({ 
-      error: error.message || 'Erro ao verificar status',
-      details: process.env.NODE_ENV === 'development' ? error.stack : undefined
+    console.error('❌ Erro crítico em /api/migration/status:', error);
+    // Retornar resposta mesmo em caso de erro crítico
+    res.status(200).json({ 
+      totalODAs: count,
+      totalBNCC: bnccCount,
+      databaseExists: false,
+      error: error.message || 'Erro ao verificar status'
     });
   }
 });
