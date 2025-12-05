@@ -149,6 +149,14 @@ function mapRowToODA(row: any, index: number): any {
   const samr = findColumn(row, ['Escala SAMR', 'SAMR', 'Escala', 'Samr']);
   const videoUrl = findColumn(row, ['Link', 'Link repositório', 'Link Repositório', 'Link do ODA', 'Link ODA', 'URL', 'Url', 'Repositório', 'Repositorio']);
   const status = findColumn(row, ['Status', 'Estado']);
+  const descricao = findColumn(row, ['Descrição', 'Descricao', 'Descrição do recurso', 'Descricao do recurso', 'Descrição Recurso', 'Descricao Recurso']);
+  const duracao = findColumn(row, ['Duração', 'Duracao', 'Duração (min)', 'Duracao (min)', 'Tempo', 'Tempo de duração']);
+  const pagina = findColumn(row, ['Página', 'Pagina', 'Pág', 'Pag']);
+  const categoriaVideo = findColumn(row, ['Categoria vídeo', 'Categoria video', 'Categoria Vídeo', 'Categoria Video', 'Categoria do vídeo']);
+  const objetivosAprendizagem = findColumn(row, ['Objetivos de aprendizagem', 'Objetivos de Aprendizagem', 'Objetivos', 'Objetivo']);
+  const recursosPedagogicos = findColumn(row, ['Recursos pedagógicos', 'Recursos pedagogicos', 'Recursos Pedagógicos', 'Recursos', 'Recurso pedagógico']);
+  const requisitosTecnicos = findColumn(row, ['Requisitos técnicos', 'Requisitos tecnicos', 'Requisitos Técnicos', 'Requisitos', 'Requisito técnico']);
+  const urlMetodologiaPdf = findColumn(row, ['URL Metodologia PDF', 'Url Metodologia PDF', 'Metodologia PDF', 'PDF Metodologia', 'Link Metodologia']);
 
   // Buscar BNCC
   const rowKeys = Object.keys(row);
@@ -205,6 +213,20 @@ function mapRowToODA(row: any, index: number): any {
     return colors[tag] || 'bg-gray-600';
   };
 
+  // Processar campos JSON (arrays)
+  const processJsonArray = (value: string): string | null => {
+    if (!value || value.trim() === '') return null;
+    try {
+      // Se já é um JSON válido, retornar como está
+      JSON.parse(value);
+      return value;
+    } catch {
+      // Se não é JSON, converter para array JSON
+      const items = value.split(',').map(item => item.trim()).filter(item => item !== '');
+      return items.length > 0 ? JSON.stringify(items) : null;
+    }
+  };
+
   return {
     codigoOda: codigoODA || null,
     titulo: title,
@@ -216,12 +238,20 @@ function mapRowToODA(row: any, index: number): any {
     linkRepositorio: videoUrl || null,
     codigoBncc: bnccCode || null,
     categoria: tipoObjeto || null,
+    duracao: duracao || null,
     volume: volume || null,
     segmento: segmento || null,
+    pagina: pagina || null,
     marca: marca || null,
     tipoConteudo: 'OED' as const,
+    categoriaVideo: categoriaVideo || null,
     escalaSamr: samr || null,
     tipoObjeto: tipoObjeto || null,
+    descricao: descricao || null,
+    objetivosAprendizagem: objetivosAprendizagem ? processJsonArray(objetivosAprendizagem) : null,
+    recursosPedagogicos: recursosPedagogicos ? processJsonArray(recursosPedagogicos) : null,
+    requisitosTecnicos: requisitosTecnicos || null,
+    urlMetodologiaPdf: urlMetodologiaPdf || null,
     status: status || null,
   };
 }
