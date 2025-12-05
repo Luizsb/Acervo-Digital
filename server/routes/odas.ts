@@ -38,6 +38,12 @@ router.get('/', async (req, res) => {
     const total = await prisma.oDA.count({ where });
     
     console.log(`✅ GET /api/odas - Retornando ${odas.length} ODAs (total: ${total})`);
+    
+    // Log para debug: verificar se escalaSamr está presente
+    if (odas.length > 0) {
+      const firstOda = odas[0] as any;
+      console.log(`📊 Primeiro ODA - escalaSamr: ${firstOda.escalaSamr || 'null/undefined'}`);
+    }
 
     res.json({
       data: odas,
