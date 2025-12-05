@@ -225,14 +225,27 @@ router.post('/excel', async (req, res) => {
 router.get('/status', async (req, res) => {
   try {
     const count = await prisma.oDA.count();
-    const bnccCount = await (prisma as any).bNCC.count();
+    // Tentar acessar BNCC de diferentes formas
+    let bnccCount = 0;
+    try {
+      bnccCount = await (prisma as any).bNCC.count();
+    } catch (e) {
+      // Se bNCC não funcionar, tentar bncc (minúsculo)
+      try {
+        bnccCount = await (prisma as any).bncc.count();
+      } catch (e2) {
+        console.warn('Não foi possível contar BNCC:', e2);
+        bnccCount = 0;
+      }
+    }
     res.json({
       totalODAs: count,
       totalBNCC: bnccCount,
       databaseExists: true,
     });
   } catch (error: any) {
-    res.status(500).json({ error: error.message });
+    console.error('Erro em /api/migration/status:', error);
+    res.status(500).json({ error: error.message || 'Erro ao verificar status' });
   }
 });
 
