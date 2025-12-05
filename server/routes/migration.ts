@@ -1,11 +1,10 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 import * as XLSX from 'xlsx';
 import path from 'path';
 import fs from 'fs';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // Função auxiliar para encontrar coluna
 function findColumn(row: any, possibleNames: string[]): string {

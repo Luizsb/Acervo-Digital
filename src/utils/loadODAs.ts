@@ -1,4 +1,4 @@
-import { fetchAllODAs, apiODAToFrontend, getMigrationStatus, migrateExcel } from './api';
+import { fetchAllODAs, apiODAToFrontend } from './api';
 import { ODAFromExcel } from './importODAs';
 
 /**
@@ -6,51 +6,19 @@ import { ODAFromExcel } from './importODAs';
  */
 export async function loadODAsFromDatabase(): Promise<ODAFromExcel[]> {
   try {
-    console.log('🔄 loadODAsFromDatabase: Verificando status do banco...');
-    // Verificar status do banco
-    const status = await getMigrationStatus();
-    console.log('📊 Status do banco:', status);
-
-    // Se não houver dados no banco, migrar da planilha
-    if (status.totalODAs === 0) {
-      console.log('📦 Banco de dados vazio. Iniciando migração da planilha...');
-      
-      try {
-        const migrationResult = await migrateExcel(false);
-        
-        if (migrationResult.success) {
-          console.log(`✅ Migração concluída: ${migrationResult.imported} ODAs importados`);
-        } else {
-          console.warn('⚠️ Migração falhou:', migrationResult.errors);
-        }
-      } catch (migrationError) {
-        console.error('Erro na migração:', migrationError);
-        // Continuar tentando carregar mesmo se a migração falhar
-      }
-    }
-
-    // Carregar ODAs da API
-    console.log('🔄 loadODAsFromDatabase: Carregando ODAs da API...');
+    // Carregar ODAs diretamente da API (dados já estão no Supabase)
+    console.log('🔄 loadODAsFromDatabase: Carregando ODAs do Supabase...');
     const odas = await fetchAllODAs();
-    console.log(`✅ loadODAsFromDatabase: ${odas.length} ODAs carregados da API`);
+    console.log(`✅ loadODAsFromDatabase: ${odas.length} ODAs carregados do Supabase`);
     
     // Converter para formato do frontend
     const converted = odas.map(apiODAToFrontend);
     console.log(`✅ loadODAsFromDatabase: ${converted.length} ODAs convertidos para frontend`);
     return converted;
   } catch (error) {
-    console.error('❌ Erro ao carregar ODAs da API:', error);
-    // Fallback: tentar carregar da planilha diretamente
-    try {
-      console.log('🔄 Tentando fallback: carregar da planilha...');
-      const { importODAsOnly } = await import('./importODAs');
-      const fallbackODAs = await importODAsOnly();
-      console.log(`✅ Fallback: ${fallbackODAs.length} ODAs carregados da planilha`);
-      return fallbackODAs;
-    } catch (fallbackError) {
-      console.error('❌ Erro ao carregar da planilha também:', fallbackError);
-      return [];
-    }
+    console.error('❌ Erro ao carregar ODAs do Supabase:', error);
+    // Retornar array vazio se houver erro (não tentar planilha)
+    return [];
   }
 }
 

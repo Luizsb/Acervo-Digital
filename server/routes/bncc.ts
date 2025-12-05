@@ -1,10 +1,9 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 import * as fs from 'fs';
 import path from 'path';
 
 const router = express.Router();
-const prisma = new PrismaClient();
 
 // GET /api/bncc/:codigo - Buscar habilidade BNCC por código
 router.get('/:codigo', async (req, res) => {
