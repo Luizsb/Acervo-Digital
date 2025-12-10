@@ -166,6 +166,12 @@ const segmentNameMap: Record<string, string> = {
   'AF': 'Anos Finais',
   'ANOS FINAIS': 'Anos Finais',
   'FINAIS': 'Anos Finais',
+  
+  'EM': 'Ensino Médio',
+  'ENSINO MÉDIO': 'Ensino Médio',
+  'ENSINO MEDIO': 'Ensino Médio',
+  'MÉDIO': 'Ensino Médio',
+  'MEDIO': 'Ensino Médio',
 };
 
 // Função para converter sigla de segmento em nome completo
@@ -186,7 +192,7 @@ export function getSegmentFullName(segment: string): string {
 }
 
 // Ordem específica para segmentos no filtro
-export const SEGMENT_ORDER = ['Educação Infantil', 'Anos Iniciais', 'Anos Finais'];
+export const SEGMENT_ORDER = ['Educação Infantil', 'Anos Iniciais', 'Anos Finais', 'Ensino Médio'];
 
 // Função para ordenar segmentos na ordem específica
 export function sortSegments(segments: string[]): string[] {
