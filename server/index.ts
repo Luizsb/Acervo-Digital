@@ -5,6 +5,7 @@ import prisma from './lib/prisma';
 import odasRoutes from './routes/odas';
 import migrationRoutes from './routes/migration';
 import bnccRoutes from './routes/bncc';
+import audiovisualRoutes from './routes/audiovisual';
 import * as fs from 'fs';
 import path from 'path';
 import * as XLSX from 'xlsx';
@@ -31,6 +32,7 @@ app.get('/health', (req, res) => {
 app.use('/api/odas', odasRoutes);
 app.use('/api/migration', migrationRoutes);
 app.use('/api/bncc', bnccRoutes);
+app.use('/api/audiovisual', audiovisualRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

@@ -17,410 +17,12 @@ import {
 import { BookOpen, Video, Gamepad2 } from "lucide-react";
 import { ODAFromExcel } from "./utils/importODAs";
 import { loadODAsFromDatabase } from "./utils/loadODAs";
+import { loadAudiovisualFromDatabase } from "./utils/loadAudiovisual";
 import { getComponentFullName, getSegmentFullName, sortSegments, getMarcaFullName } from "./utils/curriculumColors";
 import { Pagination } from "./components/Pagination";
 import { ScrollToTop } from "./components/ScrollToTop";
 
-// Vídeo Aulas - mantidas como estão (hardcoded) - APENAS VÍDEO AULAS (contentType: "Audiovisual")
-const videoAulas = [
-  {
-    id: 1,
-    title: "Contação de Histórias Interativa",
-    tag: "Língua Portuguesa",
-    tags: ["Língua Portuguesa"],
-    tagColor: "bg-blue-600",
-    location: "1º ano",
-    image:
-      "https://images.unsplash.com/photo-1755469013282-028a1d33fac6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080",
-    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-    bnccCode: "EF15LP15",
-    bnccDescription:
-      "Reconhecer que os textos literários fazem parte do mundo do imaginário",
-    category: "Contação de história",
-    duration: "10 min",
-    volume: "Volume 1",
-    segmento: "AF",
-    pagina: "42-48",
-    marca: "CQT",
-    contentType: "Audiovisual",
-    videoCategory: "Contação de história",
-    samr: "Ampliação",
-    description: "Uma experiência envolvente de contação de histórias que estimula a imaginação e desenvolve habilidades de leitura e compreensão textual através de narrativas animadas e interativas.",
-    learningObjectives: [
-      "Desenvolver o gosto pela leitura literária",
-      "Compreender elementos narrativos básicos",
-      "Ampliar o vocabulário e repertório cultural"
-    ],
-    technicalRequirements: undefined,
-    metodologiaPdfUrl: "https://example.com/orientacoes-metodologicas-portugues-1ano.pdf",
-  },
-  {
-    id: 3,
-    title: "Ciclo da Água na Natureza",
-    tag: "Ciências",
-    tags: ["Ciências"],
-    tagColor: "bg-green-600",
-    location: "3º ano",
-    image:
-      "https://images.unsplash.com/photo-1761701249977-bacdc4fa1608?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080",
-    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-    bnccCode: "EF03CI08",
-    bnccDescription:
-      "Observar, identificar e registrar os períodos diários",
-    category: "Vídeo Aula",
-    duration: "8 min",
-    volume: "Volume 1",
-    segmento: "EI",
-    pagina: "58-65",
-    marca: "SPE",
-    contentType: "Audiovisual",
-    videoCategory: "Vídeo Aula",
-    samr: "Ampliação",
-    metodologiaPdfUrl: "https://example.com/orientacoes-metodologicas-ciencias-3ano.pdf",
-  },
-  {
-    id: 5,
-    title: "Paisagens e Lugares do Brasil",
-    tag: "Geografia",
-    tags: ["Geografia"],
-    tagColor: "bg-amber-600",
-    location: "3º ano",
-    image:
-      "https://images.unsplash.com/photo-1759956210563-f1fec129fd4a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080",
-    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-    bnccCode: "EF03GE02",
-    bnccDescription:
-      "Identificar as características das paisagens naturais e antrópicas",
-    category: "Vídeo Aula",
-    duration: "9 min",
-    volume: "Volume 2",
-    segmento: "AI",
-    pagina: "34-45",
-    marca: "SAE",
-    contentType: "Audiovisual",
-    videoCategory: "Vídeo Aula",
-    samr: "Substituição",
-    metodologiaPdfUrl: "https://example.com/orientacoes-metodologicas-geografia-3ano.pdf",
-  },
-  {
-    id: 8,
-    title: "Animais e Seus Habitats",
-    tag: "Ciências",
-    tags: ["Ciências"],
-    tagColor: "bg-teal-600",
-    location: "2º ano",
-    image:
-      "https://images.unsplash.com/photo-1474511320723-9a56873867b5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080",
-    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-    bnccCode: "EF02CI04",
-    bnccDescription:
-      "Descrever características de plantas e animais",
-    category: "Videorresolução",
-    duration: "11 min",
-    volume: "Volume 2",
-    segmento: "AI",
-    pagina: "46-54",
-    marca: "SAE",
-    contentType: "Audiovisual",
-    videoCategory: "Videorresolução",
-    samr: "Substituição",
-  },
-  {
-    id: 11,
-    title: "Sistema Solar e Planetas",
-    tag: "Ciências",
-    tags: ["Ciências"],
-    tagColor: "bg-violet-600",
-    location: "4º ano",
-    image:
-      "https://images.unsplash.com/photo-1614732414444-096e5f1122d5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080",
-    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-    bnccCode: "EF04CI11",
-    bnccDescription:
-      "Associar os movimentos cíclicos da Lua e da Terra",
-    category: "Vídeo Aula",
-    duration: "10 min",
-    volume: "Volume 3",
-    segmento: "AF",
-    pagina: "88-95",
-    marca: "SAE",
-    contentType: "Audiovisual",
-    videoCategory: "Vídeo Aula",
-    samr: "Ampliação",
-  },
-  {
-    id: 13,
-    title: "Abertura - Bem-vindos ao Ano Letivo",
-    tag: "História",
-    tags: ["História"],
-    tagColor: "bg-fuchsia-600",
-    location: "3º ano",
-    image:
-      "https://images.unsplash.com/photo-1516979187457-637abb4f9353?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080",
-    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-    bnccCode: "EF03HI06",
-    bnccDescription:
-      "Identificar os registros de memória na cidade",
-    category: "Abertura",
-    duration: "3 min",
-    volume: "Volume 1",
-    segmento: "EI",
-    pagina: "1-5",
-    marca: "CQT",
-    contentType: "Audiovisual",
-    videoCategory: "Abertura",
-    samr: "Substituição",
-  },
-  {
-    id: 15,
-    title: "Material Complementar - Dicas de Estudo",
-    tag: "Língua Portuguesa",
-    tags: ["Língua Portuguesa"],
-    tagColor: "bg-sky-600",
-    location: "4º ano",
-    image:
-      "https://images.unsplash.com/photo-1455390582262-044cdead277a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080",
-    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-    bnccCode: "EF04LP13",
-    bnccDescription:
-      "Identificar e reproduzir características da conversação",
-    category: "Material Complementar",
-    duration: "5 min",
-    volume: "Volume 3",
-    segmento: "AF",
-    pagina: "65-72",
-    marca: "SPE",
-    contentType: "Audiovisual",
-    videoCategory: "Material Complementar",
-    samr: "Substituição",
-  },
-  {
-    id: 17,
-    title: "Plantas e Fotossíntese",
-    tag: "Ciências",
-    tags: ["Ciências"],
-    tagColor: "bg-green-700",
-    location: "3º ano",
-    image:
-      "https://images.unsplash.com/photo-1466781783364-36c955e42a7f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080",
-    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-    bnccCode: "EF03CI04",
-    bnccDescription:
-      "Identificar características sobre plantas",
-    category: "Vídeo Aula",
-    duration: "9 min",
-    volume: "Volume 1",
-    segmento: "EI",
-    pagina: "24-30",
-    marca: "SAE",
-    contentType: "Audiovisual",
-    videoCategory: "Vídeo Aula",
-    samr: "Ampliação",
-  },
-  {
-    id: 20,
-    title: "Clima e Temperatura",
-    tag: "Geografia",
-    tags: ["Geografia"],
-    tagColor: "bg-blue-700",
-    location: "4º ano",
-    image:
-      "https://images.unsplash.com/photo-1601134467661-3d775b999c8b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080",
-    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-    bnccCode: "EF04GE11",
-    bnccDescription:
-      "Identificar as características das paisagens naturais",
-    category: "Vídeo Resolução",
-    duration: "8 min",
-    volume: "Volume 3",
-    segmento: "AF",
-    pagina: "102-108",
-    marca: "SAE",
-    contentType: "Audiovisual",
-    videoCategory: "Vídeo Resolução",
-    samr: "Substituição",
-  },
-  {
-    id: 21,
-    title: "Tutorial: Como Usar a Régua",
-    tag: "Matemática",
-    tags: ["Matemática"],
-    tagColor: "bg-yellow-700",
-    location: "2º ano",
-    image:
-      "https://images.unsplash.com/photo-1596495577886-d920f1fb7238?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080",
-    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-    bnccCode: "EF02MA16",
-    bnccDescription: "Estimar, medir e comparar comprimentos",
-    category: "Tutoriais",
-    duration: "7 min",
-    volume: "Volume 1",
-    segmento: "AI",
-    pagina: "68-74",
-    marca: "CQT",
-    contentType: "Audiovisual",
-    videoCategory: "Tutoriais",
-    samr: "Substituição",
-  },
-  {
-    id: 22,
-    title: "Cantiga: Ciranda, Cirandinha",
-    tag: "Arte",
-    tags: ["Arte"],
-    tagColor: "bg-pink-700",
-    location: "1º ano",
-    image:
-      "https://images.unsplash.com/photo-1511379938547-c1f69419868d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080",
-    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-    bnccCode: "EF15AR13",
-    bnccDescription:
-      "Identificar e apreciar formas distintas de manifestações da dança",
-    category: "Cantiga",
-    duration: "4 min",
-    volume: "Volume 1",
-    segmento: "EI",
-    pagina: "32-36",
-    marca: "SAE",
-    contentType: "Audiovisual",
-    videoCategory: "Cantiga",
-    samr: "Ampliação",
-  },
-  {
-    id: 23,
-    title: "Brincadeiras de Mão: Adoleta",
-    tag: "Arte",
-    tags: ["Arte"],
-    tagColor: "bg-rose-700",
-    location: "2º ano",
-    image:
-      "https://images.unsplash.com/photo-1586600189090-a59b231d0a73?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080",
-    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-    bnccCode: "EF15AR08",
-    bnccDescription:
-      "Experimentar e apreciar formas distintas de manifestações artísticas",
-    category: "Brincadeiras de mão",
-    duration: "5 min",
-    volume: "Volume 2",
-    segmento: "AI",
-    pagina: "78-82",
-    marca: "SPE",
-    contentType: "Audiovisual",
-    videoCategory: "Brincadeiras de mão",
-    samr: "Ampliação",
-  },
-  {
-    id: 24,
-    title: "Mapa Mental: Sistema Digestório",
-    tag: "Ciências",
-    tags: ["Ciências"],
-    tagColor: "bg-green-500",
-    location: "5º ano",
-    image:
-      "https://images.unsplash.com/photo-1466781783364-36c955e42a7f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080",
-    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-    bnccCode: "EF05CI06",
-    bnccDescription:
-      "Selecionar argumentos que justifiquem hábitos saudáveis",
-    category: "Mapa Mental",
-    duration: "6 min",
-    volume: "Volume 3",
-    segmento: "AI",
-    pagina: "112-118",
-    marca: "CQT",
-    contentType: "Audiovisual",
-    videoCategory: "Mapa Mental",
-    samr: "Modificação",
-  },
-  {
-    id: 25,
-    title: "Trilhas: Descobrindo o Alfabeto",
-    tag: "Língua Portuguesa",
-    tags: ["Língua Portuguesa"],
-    tagColor: "bg-blue-500",
-    location: "1º ano",
-    image:
-      "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080",
-    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-    bnccCode: "EF01LP05",
-    bnccDescription:
-      "Reconhecer o sistema de escrita alfabética",
-    category: "Trilhas",
-    duration: "9 min",
-    volume: "Volume 1",
-    segmento: "AF",
-    pagina: "22-28",
-    marca: "SAE",
-    contentType: "Audiovisual",
-    videoCategory: "Trilhas",
-    samr: "Ampliação",
-  },
-  {
-    id: 26,
-    title: "Conteúdo na Prática: Experimento de Flutuação",
-    tag: "Ciências",
-    tags: ["Ciências"],
-    tagColor: "bg-teal-500",
-    location: "3º ano",
-    image:
-      "https://images.unsplash.com/photo-1761701249977-bacdc4fa1608?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080",
-    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-    bnccCode: "EF03CI02",
-    bnccDescription:
-      "Experimentar e relatar o que ocorre com materiais",
-    category: "Conteúdo na Prática",
-    duration: "13 min",
-    volume: "Volume 2",
-    segmento: "EI",
-    pagina: "42-50",
-    marca: "SPE",
-    contentType: "Audiovisual",
-    videoCategory: "Conteúdo na Prática",
-    samr: "Redefinição",
-  },
-  {
-    id: 27,
-    title: "Animação: A Jornada da Água",
-    tag: "Geografia",
-    tags: ["Geografia"],
-    tagColor: "bg-cyan-500",
-    location: "4º ano",
-    image:
-      "https://images.unsplash.com/photo-1524661135-423995f22d0b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080",
-    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-    // Exemplo sem código BNCC e descrição (informações faltando)
-    category: "Animação",
-    duration: "8 min",
-    volume: "Volume 2",
-    // Sem livro e página (informações faltando)
-    marca: "CQT",
-    contentType: "Audiovisual",
-    videoCategory: "Animação",
-    samr: "Ampliação",
-  },
-  {
-    id: 28,
-    title: "Videoabertura: Bem-vindos à Matemática",
-    tag: "Matemática",
-    tags: ["Matemática"],
-    tagColor: "bg-orange-500",
-    location: "3º ano",
-    image:
-      "https://images.unsplash.com/photo-1596495577886-d920f1fb7238?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080",
-    videoUrl: "https://www.youtube.com/embed/dQw4w9WgXcQ",
-    bnccCode: "EF03MA01",
-    bnccDescription:
-      "Ler, escrever e comparar números naturais",
-    category: "Videoabertura",
-    // Sem duração (informação faltando)
-    // Sem volume (informação faltando)
-    segmento: "EI",
-    pagina: "2-6",
-    marca: "SAE",
-    contentType: "Audiovisual",
-    videoCategory: "Videoabertura",
-    // Sem SAMR (informação faltando)
-  },
-];
+// Audiovisuais agora são carregados do banco de dados via loadAudiovisualFromDatabase()
 
 // Componentes Curriculares permitidos (matérias escolares)
 const COMPONENTES_CURRICULARES = [
@@ -436,23 +38,25 @@ const COMPONENTES_CURRICULARES = [
 
 export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedProject, setSelectedProject] = useState<ODAFromExcel | typeof videoAulas[0] | null>(null);
+  const [selectedProject, setSelectedProject] = useState<ODAFromExcel | null>(null);
   const [currentPage, setCurrentPage] = useState<
     "home" | "gallery" | "settings" | "favorites"
   >("home");
   const [favorites, setFavorites] = useState<number[]>([]);
   const [odasFromExcel, setOdasFromExcel] = useState<ODAFromExcel[]>([]);
+  const [audiovisualFromDB, setAudiovisualFromDB] = useState<ODAFromExcel[]>([]);
+  const [serverConnectionError, setServerConnectionError] = useState<string | null>(null);
   
   // Carregar ODAs do banco de dados ao montar o componente
   useEffect(() => {
     const loadODAs = async () => {
       try {
+        setServerConnectionError(null);
         const odas = await loadODAsFromDatabase();
-        // IDs dos vídeos hardcoded: 1-28 (e possivelmente mais)
         // Garantir que ODAs sempre tenham IDs > 1000 para evitar conflitos
         const odasWithAdjustedIds = odas.map((oda, index) => {
           const originalId = oda.id || 0;
-          // Se o ID original for <= 100, ajustar para evitar conflito com vídeos
+          // Ajustar IDs para faixa segura
           const adjustedId = originalId > 0 && originalId <= 100 
             ? originalId + 10000  // Mover para faixa segura
             : (originalId > 0 ? originalId : (index + 1) + 10000);
@@ -463,18 +67,55 @@ export default function App() {
         });
         setOdasFromExcel(odasWithAdjustedIds);
         console.log(`✅ ${odasWithAdjustedIds.length} ODAs carregados do banco de dados`);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Erro ao carregar ODAs do banco de dados:', error);
+        // Verificar se é erro de conexão
+        if (error?.message?.includes('Failed to fetch') || 
+            error?.message?.includes('ConnectionError') ||
+            error?.message?.includes('ERR_CONNECTION_REFUSED') ||
+            error?.name === 'TypeError') {
+          setServerConnectionError(
+            'Servidor backend não está rodando. Por favor, inicie o servidor em um terminal separado.'
+          );
+        }
       }
     };
     
     loadODAs();
   }, []);
+
+  // Carregar Audiovisuais do banco de dados
+  useEffect(() => {
+    const loadAudiovisual = async () => {
+      try {
+        setServerConnectionError(null);
+        const audiovisual = await loadAudiovisualFromDatabase();
+        // IDs dos audiovisuais: usar IDs > 50000 para evitar conflitos
+        const audiovisualWithAdjustedIds = audiovisual.map((av, index) => {
+          const originalId = av.id || 0;
+          const adjustedId = originalId > 0 
+            ? originalId + 50000  // Mover para faixa segura
+            : (index + 1) + 50000;
+          return {
+            ...av,
+            id: adjustedId,
+          };
+        });
+        setAudiovisualFromDB(audiovisualWithAdjustedIds);
+        console.log(`✅ ${audiovisualWithAdjustedIds.length} Audiovisuais carregados do banco de dados`);
+      } catch (error: any) {
+        console.error('Erro ao carregar Audiovisuais do banco de dados:', error);
+        // Não mostrar erro de conexão novamente se já foi mostrado
+      }
+    };
+    
+    loadAudiovisual();
+  }, []);
   
-  // Combinar vídeo aulas (mantidas) com ODAs da planilha
+  // Combinar ODAs e Audiovisuais do banco de dados
   const projects = [
-    ...videoAulas, // Vídeo aulas mantidas como estão
-    ...odasFromExcel, // ODAs carregados da planilha
+    ...odasFromExcel, // ODAs carregados do banco
+    ...audiovisualFromDB, // Audiovisuais carregados do banco
   ];
   const [contentTypeFilter, setContentTypeFilter] = useState<
     "Todos" | "Audiovisual" | "OED"
@@ -492,6 +133,8 @@ export default function App() {
     videoCategory: [] as string[],
     samr: [] as string[],
     volumes: [] as string[],
+    vestibular: [] as string[],
+    capitulo: [] as string[],
   });
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [currentPageNumber, setCurrentPageNumber] = useState(1);
@@ -705,8 +348,24 @@ export default function App() {
             .filter((v): v is string => Boolean(v)),
         ),
       ).sort(),
+      vestibular: Array.from(
+        new Set(
+          contentTypeFilteredProjects
+            .filter((p) => p.contentType === "Audiovisual" && 'vestibular' in p)
+            .map((p) => (p as any).vestibular)
+            .filter((v): v is string => Boolean(v)),
+        ),
+      ).sort(),
+      capitulo: Array.from(
+        new Set(
+          contentTypeFilteredProjects
+            .filter((p) => p.contentType === "Audiovisual" && 'capitulo' in p)
+            .map((p) => (p as any).capitulo)
+            .filter((v): v is string => Boolean(v)),
+        ),
+      ).sort(),
     };
-  }, [contentTypeFilteredProjects, projects, odasFromExcel]);
+  }, [contentTypeFilteredProjects, projects, odasFromExcel, audiovisualFromDB]);
 
   // Filter ODAs based on search query and selected filters
   const filteredProjects = contentTypeFilteredProjects.filter(
@@ -732,7 +391,16 @@ export default function App() {
           .includes(searchQuery.toLowerCase()) ||
         (project.tags || []).some((tag) =>
           tag.toLowerCase().includes(searchQuery.toLowerCase()),
-        );
+        ) ||
+        // Campos específicos de audiovisual
+        ((project as any).vestibular?.toLowerCase() || '')
+          .includes(searchQuery.toLowerCase()) ||
+        ((project as any).capitulo?.toLowerCase() || '')
+          .includes(searchQuery.toLowerCase()) ||
+        ((project as any).enunciado?.toLowerCase() || '')
+          .includes(searchQuery.toLowerCase()) ||
+        ((project as any).nomeCapitulo?.toLowerCase() || '')
+          .includes(searchQuery.toLowerCase());
 
       // Filter by anos (usar normalização para comparar)
       const normalizeAnoForComparison = (ano: string): string => {
@@ -834,6 +502,20 @@ export default function App() {
         (project.volume &&
           selectedFilters.volumes.includes(project.volume));
 
+      // Filter by vestibular (Audiovisual only)
+      const matchesVestibular =
+        selectedFilters.vestibular.length === 0 ||
+        (project.contentType === "Audiovisual" && 'vestibular' in project &&
+          (project as any).vestibular &&
+          selectedFilters.vestibular.includes((project as any).vestibular));
+
+      // Filter by capitulo (Audiovisual only)
+      const matchesCapitulo =
+        selectedFilters.capitulo.length === 0 ||
+        (project.contentType === "Audiovisual" && 'capitulo' in project &&
+          (project as any).capitulo &&
+          selectedFilters.capitulo.includes((project as any).capitulo));
+
       return (
         matchesSearch &&
         matchesAnos &&
@@ -845,7 +527,9 @@ export default function App() {
         matchesTipoObjeto &&
         matchesVideoCategory &&
         matchesSAMR &&
-        matchesVolumes
+        matchesVolumes &&
+        matchesVestibular &&
+        matchesCapitulo
       );
     },
   );
@@ -929,6 +613,8 @@ export default function App() {
       videoCategory: [],
       samr: [],
       volumes: [],
+      vestibular: [],
+      capitulo: [],
     });
   };
 
@@ -1035,6 +721,43 @@ export default function App() {
         onContentTypeChange={handleContentTypeChange}
       />
 
+      {/* Server Connection Error Alert */}
+      {serverConnectionError && (
+        <div className="bg-red-50 border-l-4 border-red-500 p-4 mx-4 mt-4 rounded-md">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3 flex-1">
+              <h3 className="text-sm font-medium text-red-800">
+                Erro de Conexão com o Servidor
+              </h3>
+              <div className="mt-2 text-sm text-red-700">
+                <p>{serverConnectionError}</p>
+                <div className="mt-3">
+                  <p className="font-semibold">Para iniciar o servidor:</p>
+                  <ol className="list-decimal list-inside mt-1 space-y-1">
+                    <li>Abra um novo terminal</li>
+                    <li>Execute: <code className="bg-red-100 px-2 py-1 rounded">npm run server:dev</code></li>
+                    <li>Ou: <code className="bg-red-100 px-2 py-1 rounded">cd server && npm run dev</code></li>
+                  </ol>
+                </div>
+              </div>
+              <div className="mt-4">
+                <button
+                  onClick={() => setServerConnectionError(null)}
+                  className="text-sm font-medium text-red-800 hover:text-red-900 underline"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Mobile Active Filters Display */}
       <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-3">
         {/* Active Filters Display */}
@@ -1096,6 +819,12 @@ export default function App() {
                     else if (category === "volumes")
                       badgeColor =
                         "bg-rose-100 text-rose-700 border-rose-300";
+                    else if (category === "vestibular")
+                      badgeColor =
+                        "bg-indigo-100 text-indigo-700 border-indigo-300";
+                    else if (category === "capitulo")
+                      badgeColor =
+                        "bg-teal-100 text-teal-700 border-teal-300";
 
                     return (
                       <button

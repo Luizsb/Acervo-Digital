@@ -72,3 +72,32 @@ model BNCC {
   @@map("bncc")
 }
 
+model Audiovisual {
+  id                Int      @id @default(autoincrement())
+  codigo            String?  @unique @map("codigo")
+  marca             String?  @map("marca")
+  segmento          String?  @map("segmento")
+  anoSerieModulo    String?  @map("ano_serie_modulo")
+  volume            String?  @map("volume")
+  componente        String?  @map("componente")
+  capitulo          String?  @map("capitulo")
+  nomeCapitulo      String?  @map("nome_capitulo")
+  categoriaVideo    String?  @map("categoria_video")
+  vestibular        String?  @map("vestibular")
+  enunciado         String?  @map("enunciado")
+  link              String?  @map("link")
+  imagem            String?  @map("imagem")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  
+  @@index([marca])
+  @@index([segmento])
+  @@index([anoSerieModulo])
+  @@index([componente])
+  @@index([volume])
+  @@index([categoriaVideo])
+  @@index([vestibular])
+  @@index([capitulo])
+  @@map("audiovisual")
+}
+

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { X, BookOpen, Clock, Share2, Check, ExternalLink, Star, Eye, Sparkles, Play, Book, FileText, Layers, Link as LinkIcon } from 'lucide-react';
 import { getComponentFullName, getSegmentFullName } from '../utils/curriculumColors';
+import { VideoThumbnail } from './VideoThumbnail';
 
 interface Project {
   id: number;
@@ -100,27 +101,40 @@ export function ProjectModal({ project, isOpen, onClose }: ProjectModalProps) {
                 <div className="relative aspect-video w-full bg-black rounded-2xl overflow-hidden shadow-2xl">
                   {!showVideo ? (
                     <>
-                      <img
-                        src={project.image}
-                        alt={project.title}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          // Fallback para imagem padrão se a thumb não existir
-                          const target = e.target as HTMLImageElement;
-                          const defaultImage = 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080';
-                          if (!target.src.includes(defaultImage)) {
-                            target.src = defaultImage;
-                          }
-                        }}
-                      />
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
-                        <button
-                          onClick={() => setShowVideo(true)}
-                          className="w-20 h-20 bg-white/95 backdrop-blur-sm rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-2xl group"
-                        >
-                          <Play className="w-10 h-10 text-primary ml-1 group-hover:text-purple-600 transition-colors" fill="currentColor" />
-                        </button>
-                      </div>
+                      {project.contentType === 'Audiovisual' && project.videoUrl ? (
+                        <VideoThumbnail
+                          videoUrl={project.videoUrl}
+                          fallbackImage={project.image}
+                          alt={project.title}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <img
+                          src={project.image}
+                          alt={project.title}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            // Fallback para imagem padrão se a thumb não existir
+                            const target = e.target as HTMLImageElement;
+                            const defaultImage = 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080';
+                            if (!target.src.includes(defaultImage)) {
+                              target.src = defaultImage;
+                            }
+                          }}
+                        />
+                      )}
+                      {/* Botão de play para audiovisuais */}
+                      {project.contentType === 'Audiovisual' && project.videoUrl && (
+                        <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                          <button
+                            onClick={() => setShowVideo(true)}
+                            className="w-20 h-20 bg-white/95 backdrop-blur-sm rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-2xl group"
+                            aria-label="Reproduzir vídeo"
+                          >
+                            <Play className="w-10 h-10 text-primary ml-1 group-hover:text-purple-600 transition-colors" fill="currentColor" />
+                          </button>
+                        </div>
+                      )}
                       <div className="absolute bottom-4 left-4 right-4">
                         <div className="flex items-center gap-2">
                           {project.volume && (

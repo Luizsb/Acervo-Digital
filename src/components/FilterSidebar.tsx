@@ -14,6 +14,8 @@ interface FilterSidebarProps {
     videoCategory: string[];
     samr: string[];
     volumes: string[];
+    vestibular: string[];
+    capitulo: string[];
   };
   selectedFilters: {
     anos: string[];
@@ -26,6 +28,8 @@ interface FilterSidebarProps {
     videoCategory: string[];
     samr: string[];
     volumes: string[];
+    vestibular: string[];
+    capitulo: string[];
   };
   onFilterChange: (category: string, value: string) => void;
   onClearFilters: () => void;
@@ -38,6 +42,8 @@ export function FilterSidebar({ filters, selectedFilters, onFilterChange, onClea
     tags: false,
     bncc: false,
     segmentos: false,
+    vestibular: false,
+    capitulo: false,
     categorias: false,
     marcas: false,
     tipoObjeto: false,
@@ -65,12 +71,16 @@ export function FilterSidebar({ filters, selectedFilters, onFilterChange, onClea
     selectedFilters.tipoObjeto.length > 0 ||
     selectedFilters.videoCategory.length > 0 ||
     selectedFilters.samr.length > 0 ||
-    selectedFilters.volumes.length > 0;
+    selectedFilters.volumes.length > 0 ||
+    selectedFilters.vestibular.length > 0 ||
+    selectedFilters.capitulo.length > 0;
 
   const totalActiveFilters = 
     selectedFilters.anos.length +
     selectedFilters.tags.length +
     selectedFilters.bnccCodes.length +
+    selectedFilters.vestibular.length +
+    selectedFilters.capitulo.length +
     selectedFilters.segmentos.length +
     selectedFilters.categorias.length +
     selectedFilters.marcas.length +
@@ -785,6 +795,122 @@ export function FilterSidebar({ filters, selectedFilters, onFilterChange, onClea
                           isSelected ? 'text-rose-700' : 'text-muted-foreground group-hover:text-secondary'
                         }`}>
                           {volume}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* Vestibular Filter - Only for Audiovisual */}
+        {(contentType === 'Audiovisual' || contentType === 'Todos') && filters.vestibular.length > 0 && (
+          <>
+            <div className="h-0.5 bg-gray-200 rounded-full my-4"></div>
+
+            <div className="space-y-3 py-2">
+              <button
+                onClick={() => toggleSection('vestibular')}
+                className="w-full flex items-center justify-between group hover:bg-gray-100 p-3 rounded-xl transition-all duration-300"
+              >
+                <h6 className="text-foreground group-hover:text-secondary transition-colors font-bold text-base">Vestibular</h6>
+                {expandedSections.vestibular ? (
+                  <ChevronUp className="w-6 h-6 text-secondary transition-transform duration-300 group-hover:scale-110" />
+                ) : (
+                  <ChevronDown className="w-6 h-6 text-muted-foreground transition-transform duration-300 group-hover:scale-110" />
+                )}
+              </button>
+              
+              {expandedSections.vestibular && (
+                <div className={`space-y-2.5 pl-2 ${getScrollClasses(filters.vestibular.length)}`} style={filters.vestibular.length > 6 ? { maxHeight: '300px', overflowY: 'auto' } : {}}>
+                  {filters.vestibular.map((vest) => {
+                    const isSelected = selectedFilters.vestibular.includes(vest);
+                    return (
+                      <label
+                        key={vest}
+                        className={`flex items-center gap-3 cursor-pointer group p-3 rounded-xl transition-all duration-300 ${
+                          isSelected 
+                            ? 'bg-indigo-100 border-2 border-indigo-300 shadow-md' 
+                            : 'hover:bg-gray-50 border-2 border-transparent'
+                        }`}
+                      >
+                        <div className="relative">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => onFilterChange('vestibular', vest)}
+                            className="w-5 h-5 rounded-lg border-2 border-border text-indigo-600 focus:ring-2 focus:ring-indigo-500 cursor-pointer appearance-none checked:bg-indigo-600 checked:border-indigo-600 transition-all duration-300 shadow-sm"
+                          />
+                          {isSelected && (
+                            <svg className="w-5 h-5 absolute inset-0 text-white pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
+                        <span className={`text-base font-semibold transition-colors ${
+                          isSelected ? 'text-indigo-700' : 'text-muted-foreground group-hover:text-secondary'
+                        }`}>
+                          {vest}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* Capítulo Filter - Only for Audiovisual */}
+        {(contentType === 'Audiovisual' || contentType === 'Todos') && filters.capitulo.length > 0 && (
+          <>
+            <div className="h-0.5 bg-gray-200 rounded-full my-4"></div>
+
+            <div className="space-y-3 py-2">
+              <button
+                onClick={() => toggleSection('capitulo')}
+                className="w-full flex items-center justify-between group hover:bg-gray-100 p-3 rounded-xl transition-all duration-300"
+              >
+                <h6 className="text-foreground group-hover:text-secondary transition-colors font-bold text-base">Capítulo</h6>
+                {expandedSections.capitulo ? (
+                  <ChevronUp className="w-6 h-6 text-secondary transition-transform duration-300 group-hover:scale-110" />
+                ) : (
+                  <ChevronDown className="w-6 h-6 text-muted-foreground transition-transform duration-300 group-hover:scale-110" />
+                )}
+              </button>
+              
+              {expandedSections.capitulo && (
+                <div className={`space-y-2.5 pl-2 ${getScrollClasses(filters.capitulo.length)}`} style={filters.capitulo.length > 6 ? { maxHeight: '300px', overflowY: 'auto' } : {}}>
+                  {filters.capitulo.map((cap) => {
+                    const isSelected = selectedFilters.capitulo.includes(cap);
+                    return (
+                      <label
+                        key={cap}
+                        className={`flex items-center gap-3 cursor-pointer group p-3 rounded-xl transition-all duration-300 ${
+                          isSelected 
+                            ? 'bg-teal-100 border-2 border-teal-300 shadow-md' 
+                            : 'hover:bg-gray-50 border-2 border-transparent'
+                        }`}
+                      >
+                        <div className="relative">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => onFilterChange('capitulo', cap)}
+                            className="w-5 h-5 rounded-lg border-2 border-border text-teal-600 focus:ring-2 focus:ring-teal-500 cursor-pointer appearance-none checked:bg-teal-600 checked:border-teal-600 transition-all duration-300 shadow-sm"
+                          />
+                          {isSelected && (
+                            <svg className="w-5 h-5 absolute inset-0 text-white pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
+                        <span className={`text-base font-semibold transition-colors ${
+                          isSelected ? 'text-teal-700' : 'text-muted-foreground group-hover:text-secondary'
+                        }`}>
+                          {cap}
                         </span>
                       </label>
                     );

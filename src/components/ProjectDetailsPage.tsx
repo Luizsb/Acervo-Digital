@@ -3,6 +3,7 @@ import { X, BookOpen, Clock, Check, ExternalLink, Eye, Sparkles, Play, Book, Fil
 import { ProjectCard } from './ProjectCard';
 import { getCurriculumColor, getComponentFullName, getSegmentFullName, getMarcaFullName } from '../utils/curriculumColors';
 import { ScrollToTop } from './ScrollToTop';
+import { VideoThumbnail } from './VideoThumbnail';
 
 const DEFAULT_TECHNICAL_REQUIREMENTS = "Navegador web atualizado (Chrome, Firefox, Safari)\nConexão com internet (mínimo 2 Mbps)\nDispositivos compatíveis: computador, tablet ou smartphone\nNão requer instalação de software adicional";
 
@@ -104,13 +105,12 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
             {/* Video Preview Section */}
             <div className="w-full">
               <div className="relative aspect-video w-full bg-black rounded-[20px] overflow-hidden shadow-lg">
-                {/* Verificar se é videoaula para mostrar o player */}
+                {/* Verificar se é audiovisual para mostrar o player */}
                 {(() => {
-                  const isVideoAula = project.contentType === 'Audiovisual' && 
-                    (project.category === 'Vídeo Aula' || project.videoCategory === 'Vídeo Aula');
+                  const isAudiovisual = project.contentType === 'Audiovisual' && project.videoUrl;
                   
-                  if (isVideoAula && showVideo) {
-                    // Mostrar iframe do vídeo para videoaulas
+                  if (isAudiovisual && showVideo) {
+                    // Mostrar iframe do vídeo para audiovisuais
                     return (
                       <iframe
                         src={project.videoUrl}
@@ -120,28 +120,38 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
                       />
                     );
                   } else {
-                    // Mostrar imagem (com ou sem botão de play dependendo se é videoaula)
+                    // Mostrar imagem (com botão de play se for audiovisual)
                     return (
                       <>
-                        <img
-                          src={project.image}
-                          alt={project.title}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            // Fallback para imagem padrão se a thumb não existir
-                            const target = e.target as HTMLImageElement;
-                            const defaultImage = 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080';
-                            if (!target.src.includes(defaultImage)) {
-                              target.src = defaultImage;
-                            }
-                          }}
-                        />
-                        {/* Botão de play apenas para videoaulas */}
-                        {isVideoAula && (
+                        {isAudiovisual && project.videoUrl ? (
+                          <VideoThumbnail
+                            videoUrl={project.videoUrl}
+                            fallbackImage={project.image}
+                            alt={project.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <img
+                            src={project.image}
+                            alt={project.title}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              // Fallback para imagem padrão se a thumb não existir
+                              const target = e.target as HTMLImageElement;
+                              const defaultImage = 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080';
+                              if (!target.src.includes(defaultImage)) {
+                                target.src = defaultImage;
+                              }
+                            }}
+                          />
+                        )}
+                        {/* Botão de play para TODOS os audiovisuais */}
+                        {isAudiovisual && (
                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                             <button
                               onClick={() => setShowVideo(true)}
                               className="w-20 h-20 bg-white rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-lg group"
+                              aria-label="Reproduzir vídeo"
                             >
                               <Play className="w-10 h-10 text-primary ml-1 group-hover:text-secondary transition-colors" fill="currentColor" />
                             </button>

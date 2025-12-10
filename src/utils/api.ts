@@ -1,3 +1,5 @@
+import { getVideoThumbnail } from './videoThumbnails';
+
 const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3001/api';
 
 export interface BNCC {
@@ -114,14 +116,28 @@ export async function fetchAllODAs(params?: {
     queryParams.append('offset', params.offset.toString());
   }
 
-  const response = await fetch(`${API_BASE_URL}/odas?${queryParams.toString()}`);
-  
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
+  try {
+    const response = await fetch(`${API_BASE_URL}/odas?${queryParams.toString()}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
 
-  const data: ODAResponse = await response.json();
-  return data.data;
+    const data: ODAResponse = await response.json();
+    return data.data;
+  } catch (error: any) {
+    // Melhorar mensagem de erro para conexão recusada
+    if (error?.message?.includes('Failed to fetch') || error?.name === 'TypeError') {
+      const connectionError = new Error(
+        `Não foi possível conectar ao servidor backend em ${API_BASE_URL}. ` +
+        `Certifique-se de que o servidor está rodando na porta 3001. ` +
+        `Execute 'npm run server:dev' em um terminal separado.`
+      );
+      connectionError.name = 'ConnectionError';
+      throw connectionError;
+    }
+    throw error;
+  }
 }
 
 // Buscar ODA por ID
@@ -202,6 +218,158 @@ export async function countODAs(tipoConteudo?: 'Audiovisual' | 'OED' | 'Todos'):
 
   const data = await response.json();
   return data.count;
+}
+
+// ==================== AUDIOVISUAL ====================
+
+export interface Audiovisual {
+  id: number;
+  codigo?: string | null;
+  marca?: string | null;
+  segmento?: string | null;
+  anoSerieModulo?: string | null;
+  volume?: string | null;
+  componente?: string | null;
+  capitulo?: string | null;
+  nomeCapitulo?: string | null;
+  categoriaVideo?: string | null;
+  vestibular?: string | null;
+  enunciado?: string | null;
+  link?: string | null;
+  imagem?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AudiovisualResponse {
+  data: Audiovisual[];
+  total: number;
+  limit?: number | null;
+  offset?: number | null;
+}
+
+// Buscar todos os audiovisuais
+export async function fetchAllAudiovisual(params?: {
+  search?: string;
+  marca?: string;
+  segmento?: string;
+  anoSerieModulo?: string;
+  volume?: string;
+  componente?: string;
+  categoriaVideo?: string;
+  vestibular?: string;
+  capitulo?: string;
+  limit?: number;
+  offset?: number;
+}): Promise<Audiovisual[]> {
+  const queryParams = new URLSearchParams();
+  
+  if (params?.search) {
+    queryParams.append('search', params.search);
+  }
+  if (params?.marca) {
+    queryParams.append('marca', params.marca);
+  }
+  if (params?.segmento) {
+    queryParams.append('segmento', params.segmento);
+  }
+  if (params?.anoSerieModulo) {
+    queryParams.append('anoSerieModulo', params.anoSerieModulo);
+  }
+  if (params?.volume) {
+    queryParams.append('volume', params.volume);
+  }
+  if (params?.componente) {
+    queryParams.append('componente', params.componente);
+  }
+  if (params?.categoriaVideo) {
+    queryParams.append('categoriaVideo', params.categoriaVideo);
+  }
+  if (params?.vestibular) {
+    queryParams.append('vestibular', params.vestibular);
+  }
+  if (params?.capitulo) {
+    queryParams.append('capitulo', params.capitulo);
+  }
+  if (params?.limit) {
+    queryParams.append('limit', params.limit.toString());
+  }
+  if (params?.offset) {
+    queryParams.append('offset', params.offset.toString());
+  }
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/audiovisual?${queryParams.toString()}`);
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data: AudiovisualResponse = await response.json();
+    return data.data;
+  } catch (error: any) {
+    if (error?.message?.includes('Failed to fetch') || error?.name === 'TypeError') {
+      const connectionError = new Error(
+        `Não foi possível conectar ao servidor backend em ${API_BASE_URL}. ` +
+        `Certifique-se de que o servidor está rodando na porta 3001.`
+      );
+      connectionError.name = 'ConnectionError';
+      throw connectionError;
+    }
+    throw error;
+  }
+}
+
+// Converter Audiovisual para formato do frontend
+export function audiovisualToFrontend(audiovisual: Audiovisual): any {
+  return {
+    id: audiovisual.id,
+    codigoODA: audiovisual.codigo || undefined,
+    title: audiovisual.nomeCapitulo || audiovisual.codigo || 'Sem título',
+    tag: audiovisual.componente || '',
+    tags: audiovisual.componente ? [audiovisual.componente] : [],
+    tagColor: getTagColor(audiovisual.componente || ''),
+    location: audiovisual.anoSerieModulo || '',
+    image: getVideoThumbnail(audiovisual.link || undefined, audiovisual.imagem || undefined),
+    videoUrl: audiovisual.link || undefined,
+    category: audiovisual.categoriaVideo || undefined,
+    volume: (() => {
+      const vol = audiovisual.volume;
+      if (!vol) return undefined;
+      const trimmed = vol.trim();
+      // Se for apenas um número, adiciona "Volume" antes
+      if (/^\d+$/.test(trimmed)) {
+        return `Volume ${trimmed}`;
+      }
+      // Se já começar com "Volume", retorna como está
+      if (/^volume\s+/i.test(trimmed)) {
+        return trimmed;
+      }
+      return trimmed;
+    })(),
+    segmento: audiovisual.segmento || undefined,
+    marca: audiovisual.marca || undefined,
+    contentType: 'Audiovisual' as const,
+    videoCategory: audiovisual.categoriaVideo || undefined,
+    capitulo: audiovisual.capitulo || undefined,
+    vestibular: audiovisual.vestibular || undefined,
+    enunciado: audiovisual.enunciado || undefined,
+  };
+}
+
+// Função auxiliar para obter cor da tag
+function getTagColor(tag: string): string {
+  const colors: Record<string, string> = {
+    'Língua Portuguesa': 'bg-blue-600',
+    'Matemática': 'bg-yellow-600',
+    'Ciências': 'bg-green-600',
+    'História': 'bg-purple-600',
+    'Geografia': 'bg-amber-600',
+    'Arte': 'bg-pink-600',
+    'Inglês': 'bg-indigo-600',
+    'Educação Física': 'bg-lime-600',
+  };
+  return colors[tag] || 'bg-gray-600';
 }
 
 // Migrar planilha Excel
