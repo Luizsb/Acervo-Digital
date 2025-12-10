@@ -20,6 +20,8 @@ server/.env.local
 # Database
 *.db
 *.db-journal
+*.db-shm
+*.db-wal
 server/prisma/prisma/dev.db
 server/prisma/prisma/dev.db-journal
 server/prisma/dev.db
