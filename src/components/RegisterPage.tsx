@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, User, Mail, Lock, UserPlus, Eye, EyeOff } from 'lucide-react';
+import { isValidEmail } from '../utils/validation';
 
 interface RegisterPageProps {
   onBack: () => void;
@@ -26,6 +27,10 @@ export function RegisterPage({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (!isValidEmail(email.trim())) {
+      setError('Informe um e-mail válido.');
+      return;
+    }
     if (password !== confirmPassword) {
       setError('As senhas não coincidem.');
       return;
@@ -36,7 +41,7 @@ export function RegisterPage({
     }
     setLoading(true);
     try {
-      const result = await register(name.trim(), email.trim(), password);
+      const result = await register(name.trim(), email.trim().toLowerCase(), password);
       if (result.ok) {
         onRegisterSuccess();
       } else {

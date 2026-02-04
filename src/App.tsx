@@ -38,11 +38,17 @@ const LoginPage = lazy(() =>
 const RegisterPage = lazy(() =>
   import("./components/RegisterPage").then((m) => ({ default: m.RegisterPage }))
 );
+const ForgotPasswordPage = lazy(() =>
+  import("./components/ForgotPasswordPage").then((m) => ({ default: m.ForgotPasswordPage }))
+);
+const ResetPasswordPage = lazy(() =>
+  import("./components/ResetPasswordPage").then((m) => ({ default: m.ResetPasswordPage }))
+);
 
 function PageLoader() {
   return (
-    <div className="min-h-[40vh] flex items-center justify-center">
-      <p className="text-primary font-semibold">Carregando...</p>
+    <div className="min-h-screen w-full flex items-center justify-center bg-background">
+      <p className="text-primary font-semibold text-lg">Carregando...</p>
     </div>
   );
 }
@@ -351,9 +357,10 @@ export default function App() {
   }, [user]);
 
   // Se estiver em área que exige login (acervo, conta, favoritos) sem estar logado, redireciona para login
-  // (precisa ficar junto com os outros hooks, antes de qualquer return condicional)
+  // (não redireciona se estiver em forgot/reset)
   useEffect(() => {
     if (authLoading || user !== null) return;
+    if (currentPage === "forgot" || currentPage === "reset") return;
     if (selectedProject) {
       setSelectedProject(null);
       setReturnToAfterLogin("gallery");
@@ -366,8 +373,8 @@ export default function App() {
     }
   }, [authLoading, user, currentPage, selectedProject]);
 
-  // Enquanto restaura sessão (localStorage), evita flash ou tela em branco
-  if (authLoading && currentPage !== "home") {
+  // Enquanto restaura sessão (localStorage), evita flash ou tela em branco (exceto home, login, register, forgot, reset)
+  if (authLoading && !["home", "login", "register", "forgot", "reset"].includes(currentPage)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <p className="text-primary font-semibold">Carregando...</p>
@@ -411,6 +418,7 @@ export default function App() {
           }}
           login={login}
           onNavigateToRegister={handleNavigateToRegister}
+          onNavigateToForgot={() => setCurrentPage("forgot")}
         />
       </Suspense>
     );
@@ -428,6 +436,30 @@ export default function App() {
           }}
           register={register}
           onNavigateToLogin={() => setCurrentPage("login")}
+        />
+      </Suspense>
+    );
+  }
+
+  // Show forgot password page
+  if (currentPage === "forgot") {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <ForgotPasswordPage
+          onBack={() => setCurrentPage("login")}
+          onNavigateToLogin={() => setCurrentPage("login")}
+        />
+      </Suspense>
+    );
+  }
+
+  // Show reset password page (token in URL hash)
+  if (currentPage === "reset") {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <ResetPasswordPage
+          onBack={() => setCurrentPage("login")}
+          onSuccess={() => setCurrentPage("login")}
         />
       </Suspense>
     );
@@ -471,10 +503,11 @@ export default function App() {
           setCurrentPage(returnToAfterLogin);
           if (returnToAfterLogin === "gallery") setSelectedProject(null);
         }}
-        login={login}
+login={login}
+        onNavigateToForgot={() => setCurrentPage("forgot")}
       />
-      </Suspense>
-    );
+    </Suspense>
+  );
   }
 
   // If a project is selected, show the details page instead of the gallery

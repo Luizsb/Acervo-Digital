@@ -43,8 +43,20 @@ DATABASE_URL="postgresql://..."   # ou file:./prisma/dev.db para SQLite
 PORT=3001
 CORS_ORIGIN=http://localhost:3000
 JWT_SECRET=sua-chave-secreta-longa-e-aleatoria
-JWT_EXPIRES_IN=7d
+JWT_EXPIRES_IN=365d
+
+# E-mail (Esqueci minha senha - token por e-mail). Sem isso, a opção "Esqueci minha senha" retorna erro.
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=seu-email@gmail.com
+SMTP_PASS=senha-de-app-do-google
+EMAIL_FROM=seu-email@gmail.com
+APP_URL=http://localhost:3000
 ```
+
+**Gmail:** em [Conta Google](https://myaccount.google.com/) → Segurança → Verificação em 2 etapas ativada → "Senhas de app" → gere uma senha e use em `SMTP_PASS`. Use `SMTP_HOST=smtp.gmail.com`, `SMTP_PORT=587`.
+
+**Outros (Outlook, SendGrid, etc.):** use o host/porta do provedor e usuário/senha do SMTP.
 
 Opcional na raiz (`.env`): `VITE_API_URL=http://localhost:3001/api`
 

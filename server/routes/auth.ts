@@ -144,4 +144,45 @@ router.post('/logout', (_req, res) => {
   res.json({ ok: true });
 });
 
+// POST /api/auth/forgot-password - orienta a contatar o administrador (sem envio de e-mail nem geração de token)
+router.post('/forgot-password', authLimiter, (_req, res) => {
+  res.json({
+    message: 'Para redefinir sua senha, entre em contato com o administrador do sistema.',
+  });
+});
+
+// POST /api/auth/reset-password - redefinir senha com token
+router.post('/reset-password', authLimiter, async (req, res) => {
+  try {
+    const { token, newPassword } = req.body;
+    if (!token || !newPassword) {
+      return res.status(400).json({ error: 'Token e nova senha são obrigatórios.' });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ error: 'A senha deve ter pelo menos 6 caracteres.' });
+    }
+    if (newPassword.length > PASSWORD_MAX_LENGTH) {
+      return res.status(400).json({ error: `A senha deve ter no máximo ${PASSWORD_MAX_LENGTH} caracteres.` });
+    }
+    const user = await prisma.user.findFirst({
+      where: {
+        resetToken: token,
+        resetTokenExpires: { gt: new Date() },
+      },
+    });
+    if (!user) {
+      return res.status(400).json({ error: 'Link inválido ou expirado. Solicite uma nova redefinição.' });
+    }
+    const passwordHash = await bcrypt.hash(newPassword, SALT_ROUNDS);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash, resetToken: null, resetTokenExpires: null },
+    });
+    res.json({ message: 'Senha alterada com sucesso. Faça login com a nova senha.' });
+  } catch (err: any) {
+    console.error('Auth reset-password error:', err);
+    res.status(500).json({ error: err.message || 'Erro ao redefinir senha.' });
+  }
+});
+
 export default router;

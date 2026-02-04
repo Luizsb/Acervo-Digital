@@ -86,6 +86,28 @@ export async function apiUpdateMe(params: { name?: string; currentPassword?: str
   return data;
 }
 
+export async function apiForgotPassword(email: string): Promise<{ message: string; emailExists: boolean; token?: string }> {
+  const res = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email.trim().toLowerCase() }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || data.message || 'Erro ao solicitar redefinição.');
+  return data;
+}
+
+export async function apiResetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+  const res = await fetch(`${API_BASE_URL}/auth/reset-password`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, newPassword }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Erro ao redefinir senha.');
+  return data;
+}
+
 // Favoritos do usuário logado
 export async function apiFavoritesGet(): Promise<number[]> {
   const token = getAuthToken();

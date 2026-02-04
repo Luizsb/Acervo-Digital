@@ -16,6 +16,12 @@ describe('hashRouting', () => {
       expect(getInitialPageFromHash('#/favoritos')).toBe('favorites');
       expect(getInitialPageFromHash('#/login')).toBe('login');
       expect(getInitialPageFromHash('#/registro')).toBe('register');
+      expect(getInitialPageFromHash('#/esqueci-senha')).toBe('forgot');
+      expect(getInitialPageFromHash('#/redefinir-senha')).toBe('reset');
+    });
+
+    it('ignora query string ao mapear página', () => {
+      expect(getInitialPageFromHash('#/redefinir-senha?token=abc123')).toBe('reset');
     });
 
     it('retorna "home" para hash desconhecido', () => {
@@ -31,6 +37,8 @@ describe('hashRouting', () => {
       { page: 'favorites', expected: '#/favoritos' },
       { page: 'login', expected: '#/login' },
       { page: 'register', expected: '#/registro' },
+      { page: 'forgot', expected: '#/esqueci-senha' },
+      { page: 'reset', expected: '#/redefinir-senha' },
     ];
 
     it('retorna hash correto para cada página', () => {
@@ -42,7 +50,7 @@ describe('hashRouting', () => {
 
   describe('round-trip', () => {
     it('getHashFromPage + getInitialPageFromHash restaura a página', () => {
-      const pages: PageKey[] = ['home', 'gallery', 'settings', 'favorites', 'login', 'register'];
+      const pages: PageKey[] = ['home', 'gallery', 'settings', 'favorites', 'login', 'register', 'forgot', 'reset'];
       pages.forEach((page) => {
         const hash = getHashFromPage(page);
         const restored = getInitialPageFromHash(hash);

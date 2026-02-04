@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Mail, Lock, LogIn, Eye, EyeOff } from 'lucide-react';
+import { isValidEmail } from '../utils/validation';
 
 interface LoginPageProps {
   onBack: () => void;
   onLoginSuccess: () => void;
   login: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>;
   onNavigateToRegister?: () => void;
+  onNavigateToForgot?: () => void;
 }
 
-export function LoginPage({ onBack, onLoginSuccess, login, onNavigateToRegister }: LoginPageProps) {
+export function LoginPage({ onBack, onLoginSuccess, login, onNavigateToRegister, onNavigateToForgot }: LoginPageProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -18,9 +20,13 @@ export function LoginPage({ onBack, onLoginSuccess, login, onNavigateToRegister 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (!isValidEmail(email.trim())) {
+      setError('Informe um e-mail válido.');
+      return;
+    }
     setLoading(true);
     try {
-      const result = await login(email, password);
+      const result = await login(email.trim().toLowerCase(), password);
       if (result.ok) {
         onLoginSuccess();
       } else {
@@ -119,6 +125,17 @@ export function LoginPage({ onBack, onLoginSuccess, login, onNavigateToRegister 
                   </button>
                 </div>
               </div>
+              {onNavigateToForgot && (
+                <div className="text-right">
+                  <button
+                    type="button"
+                    onClick={onNavigateToForgot}
+                    className="text-sm font-medium text-primary hover:underline"
+                  >
+                    Esqueci minha senha
+                  </button>
+                </div>
+              )}
 
               <button
                 type="submit"

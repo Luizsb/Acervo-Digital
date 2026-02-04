@@ -29,6 +29,6 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
 }
 
 export function signToken(payload: JwtPayload): string {
-  const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
+  const expiresIn = process.env.JWT_EXPIRES_IN || '365d';
   return jwt.sign(payload, JWT_SECRET, { expiresIn } as jwt.SignOptions);
 }
