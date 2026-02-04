@@ -132,9 +132,10 @@ export function RegisterPage({
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Mínimo 6 caracteres"
+                    onChange={(e) => setPassword(e.target.value.slice(0, 14))}
+                    placeholder="Min. 6, max. 14 caracteres"
                     autoComplete="new-password"
+                    maxLength={14}
                     className="w-full px-4 py-2.5 pr-12 bg-white border-2 border-gray-200 rounded-[20px] focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none text-foreground text-sm"
                   />
                   <button
@@ -157,9 +158,10 @@ export function RegisterPage({
                   <input
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    onChange={(e) => setConfirmPassword(e.target.value.slice(0, 14))}
                     placeholder="Repita a senha"
                     autoComplete="new-password"
+                    maxLength={14}
                     className="w-full px-4 py-2.5 pr-12 bg-white border-2 border-gray-200 rounded-[20px] focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none text-foreground text-sm"
                   />
                   <button

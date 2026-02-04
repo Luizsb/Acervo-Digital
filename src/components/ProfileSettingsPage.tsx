@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, User, Mail, Lock, Settings, Heart, LogOut } from 'lucide-react';
+import { ArrowLeft, User, Mail, Lock, Settings, Heart, LogOut, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { apiUpdateMe } from '../utils/api';
 
@@ -23,6 +23,12 @@ export function ProfileSettingsPage({ onBack, onNavigateToFavorites }: ProfileSe
   const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [passwordSaving, setPasswordSaving] = useState(false);
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmNewPassword, setShowConfirmNewPassword] = useState(false);
+
+  const PASSWORD_MIN_LENGTH = 6;
+  const PASSWORD_MAX_LENGTH = 14;
 
   // Inicializar com usuário logado ou localStorage (modo offline/demo)
   useEffect(() => {
@@ -95,8 +101,12 @@ export function ProfileSettingsPage({ onBack, onNavigateToFavorites }: ProfileSe
       setPasswordError('Informe a senha atual.');
       return;
     }
-    if (newPassword.length < 6) {
-      setPasswordError('A nova senha deve ter pelo menos 6 caracteres.');
+    if (newPassword.length < PASSWORD_MIN_LENGTH) {
+      setPasswordError(`A nova senha deve ter pelo menos ${PASSWORD_MIN_LENGTH} caracteres.`);
+      return;
+    }
+    if (newPassword.length > PASSWORD_MAX_LENGTH) {
+      setPasswordError(`A senha deve ter no máximo ${PASSWORD_MAX_LENGTH} caracteres.`);
       return;
     }
     if (newPassword !== confirmNewPassword) {
@@ -321,40 +331,75 @@ export function ProfileSettingsPage({ onBack, onNavigateToFavorites }: ProfileSe
                         <Lock className="w-4 h-4 text-primary" />
                         Senha atual
                       </label>
-                      <input
-                        type="password"
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        placeholder="••••••••"
-                        autoComplete="current-password"
-                        className="w-full px-4 py-2.5 bg-white border-2 border-gray-200 rounded-[20px] focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-foreground text-sm"
-                      />
+                      <div className="relative">
+                        <input
+                          type={showCurrentPassword ? 'text' : 'password'}
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.target.value.slice(0, PASSWORD_MAX_LENGTH))}
+                          placeholder="••••••••"
+                          autoComplete="current-password"
+                          maxLength={PASSWORD_MAX_LENGTH}
+                          className="w-full px-4 py-2.5 pr-12 bg-white border-2 border-gray-200 rounded-[20px] focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-foreground text-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowCurrentPassword((v) => !v)}
+                          className="absolute right-0 top-0 bottom-0 flex items-center justify-center w-12 text-gray-500 hover:text-primary rounded-r-[18px] transition-colors"
+                          aria-label={showCurrentPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                        >
+                          {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                      </div>
                     </div>
                     <div className="space-y-2">
                       <label className="flex items-center gap-2 text-foreground text-sm font-semibold">
                         Nova senha
                       </label>
-                      <input
-                        type="password"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        placeholder="Mínimo 6 caracteres"
-                        autoComplete="new-password"
-                        className="w-full px-4 py-2.5 bg-white border-2 border-gray-200 rounded-[20px] focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-foreground text-sm"
-                      />
+                      <div className="relative">
+                        <input
+                          type={showNewPassword ? 'text' : 'password'}
+                          value={newPassword}
+                          onChange={(e) => setNewPassword(e.target.value.slice(0, PASSWORD_MAX_LENGTH))}
+                          placeholder={`Min. ${PASSWORD_MIN_LENGTH}, max. ${PASSWORD_MAX_LENGTH} caracteres`}
+                          autoComplete="new-password"
+                          maxLength={PASSWORD_MAX_LENGTH}
+                          className="w-full px-4 py-2.5 pr-12 bg-white border-2 border-gray-200 rounded-[20px] focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-foreground text-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowNewPassword((v) => !v)}
+                          className="absolute right-0 top-0 bottom-0 flex items-center justify-center w-12 text-gray-500 hover:text-primary rounded-r-[18px] transition-colors"
+                          aria-label={showNewPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                        >
+                          {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{newPassword.length}/{PASSWORD_MAX_LENGTH}</p>
                     </div>
                     <div className="space-y-2">
                       <label className="flex items-center gap-2 text-foreground text-sm font-semibold">
                         Confirmar nova senha
                       </label>
-                      <input
-                        type="password"
-                        value={confirmNewPassword}
-                        onChange={(e) => setConfirmNewPassword(e.target.value)}
-                        placeholder="Repita a nova senha"
-                        autoComplete="new-password"
-                        className="w-full px-4 py-2.5 bg-white border-2 border-gray-200 rounded-[20px] focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-foreground text-sm"
-                      />
+                      <div className="relative">
+                        <input
+                          type={showConfirmNewPassword ? 'text' : 'password'}
+                          value={confirmNewPassword}
+                          onChange={(e) => setConfirmNewPassword(e.target.value.slice(0, PASSWORD_MAX_LENGTH))}
+                          placeholder="Repita a nova senha"
+                          autoComplete="new-password"
+                          maxLength={PASSWORD_MAX_LENGTH}
+                          className="w-full px-4 py-2.5 pr-12 bg-white border-2 border-gray-200 rounded-[20px] focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-foreground text-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowConfirmNewPassword((v) => !v)}
+                          className="absolute right-0 top-0 bottom-0 flex items-center justify-center w-12 text-gray-500 hover:text-primary rounded-r-[18px] transition-colors"
+                          aria-label={showConfirmNewPassword ? 'Ocultar senha' : 'Mostrar senha'}
+                        >
+                          {showConfirmNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                        </button>
+                      </div>
+                      <p className="text-xs text-muted-foreground">{confirmNewPassword.length}/{PASSWORD_MAX_LENGTH}</p>
                     </div>
                   </div>
                   <div className="mt-6 flex flex-wrap gap-2">

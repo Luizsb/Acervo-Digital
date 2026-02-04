@@ -6,6 +6,7 @@ import { authMiddleware, signToken, AuthRequest } from '../middleware/auth';
 
 const router = express.Router();
 const SALT_ROUNDS = 10;
+const PASSWORD_MAX_LENGTH = 14;
 
 // Rate limit: 5 tentativas por IP a cada 15 minutos para login/registro
 const authLimiter = rateLimit({
@@ -26,6 +27,9 @@ router.post('/register', authLimiter, async (req, res) => {
     const emailTrim = String(email).trim().toLowerCase();
     if (password.length < 6) {
       return res.status(400).json({ error: 'A senha deve ter pelo menos 6 caracteres.' });
+    }
+    if (password.length > PASSWORD_MAX_LENGTH) {
+      return res.status(400).json({ error: `A senha deve ter no máximo ${PASSWORD_MAX_LENGTH} caracteres.` });
     }
     const existing = await prisma.user.findUnique({ where: { email: emailTrim } });
     if (existing) {
@@ -112,6 +116,7 @@ router.patch('/me', authMiddleware, async (req: AuthRequest, res) => {
     const data: { name?: string; passwordHash?: string } = {};
     if (typeof name === 'string' && name.trim()) data.name = name.trim();
     if (typeof newPassword === 'string' && newPassword.length >= 6) {
+      if (newPassword.length > PASSWORD_MAX_LENGTH) return res.status(400).json({ error: `A senha deve ter no máximo ${PASSWORD_MAX_LENGTH} caracteres.` });
       if (!currentPassword) return res.status(400).json({ error: 'Senha atual é obrigatória para alterar a senha.' });
       const user = await prisma.user.findUnique({ where: { id: req.user.userId } });
       if (!user) return res.status(404).json({ error: 'Usuário não encontrado.' });

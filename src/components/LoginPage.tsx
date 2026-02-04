@@ -103,9 +103,10 @@ export function LoginPage({ onBack, onLoginSuccess, login, onNavigateToRegister 
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => setPassword(e.target.value.slice(0, 14))}
                     placeholder="••••••••"
                     autoComplete="current-password"
+                    maxLength={14}
                     className="w-full px-4 py-2.5 pr-12 bg-white border-2 border-gray-200 rounded-[20px] focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none text-foreground text-sm"
                   />
                   <button

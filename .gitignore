@@ -60,6 +60,7 @@ desktop.ini
 *.tmp
 *.temp
 .cache/
+*.zip
 
 # Public assets (manter estrutura mas não commitar imagens grandes)
 # public/thumbs/ - manter apenas estrutura se necessário
