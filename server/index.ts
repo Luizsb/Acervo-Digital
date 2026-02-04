@@ -6,6 +6,8 @@ import odasRoutes from './routes/odas';
 import migrationRoutes from './routes/migration';
 import bnccRoutes from './routes/bncc';
 import audiovisualRoutes from './routes/audiovisual';
+import authRoutes from './routes/auth';
+import favoritesRoutes from './routes/favorites';
 import * as fs from 'fs';
 import path from 'path';
 import * as XLSX from 'xlsx';
@@ -33,6 +35,8 @@ app.use('/api/odas', odasRoutes);
 app.use('/api/migration', migrationRoutes);
 app.use('/api/bncc', bnccRoutes);
 app.use('/api/audiovisual', audiovisualRoutes);
+app.use('/api/auth', authRoutes);
+app.use('/api/users/me/favorites', favoritesRoutes);
 
 // Error handling middleware
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {

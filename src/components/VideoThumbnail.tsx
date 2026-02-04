@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { getVideoThumbnail, getVideoThumbnailAsync, extractVimeoVideoId } from '../utils/videoThumbnails';
+import React, { useState, useEffect, useRef } from 'react';
+import { getVideoThumbnail, getVideoThumbnailAsync, extractVimeoVideoId, isVimeoDefaultThumbnail } from '../utils/videoThumbnails';
 
 interface VideoThumbnailProps {
   videoUrl?: string;
@@ -23,6 +23,7 @@ export function VideoThumbnail({
   const [thumbnailUrl, setThumbnailUrl] = useState<string>('');
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
+  const backupThumbnailRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!videoUrl) {
@@ -31,13 +32,23 @@ export function VideoThumbnail({
       return;
     }
 
-    // Primeiro, tenta método direto (rápido)
+    // Se a "capa" do projeto for a thumbnail padrão do Vimeo (capa listrada), ignorar e usar frame dos 6s
+    const useCustomCover = fallbackImage && !isVimeoDefaultThumbnail(fallbackImage);
+    if (useCustomCover) {
+      setThumbnailUrl(fallbackImage);
+      setIsLoading(false);
+      backupThumbnailRef.current = null;
+      getVideoThumbnailAsync(videoUrl, undefined, 6).then((url) => {
+        backupThumbnailRef.current = url;
+      }).catch(() => {});
+      return;
+    }
+
+    // Sem capa customizada (ou era capa listrada): usa thumbnail dos primeiros 6 segundos (oEmbed)
     const directThumbnail = getVideoThumbnail(videoUrl, fallbackImage);
     setThumbnailUrl(directThumbnail);
     setIsLoading(false);
 
-    // Se for Vimeo, tenta buscar via oEmbed em background para melhor qualidade
-    // Usa os primeiros 6 segundos do vídeo para a thumbnail
     const vimeoId = extractVimeoVideoId(videoUrl);
     if (vimeoId) {
       getVideoThumbnailAsync(videoUrl, fallbackImage, 6)
@@ -46,15 +57,18 @@ export function VideoThumbnail({
             setThumbnailUrl(betterThumbnail);
           }
         })
-        .catch(() => {
-          // Se oEmbed falhar, mantém o método direto
-        });
+        .catch(() => {});
     }
   }, [videoUrl, fallbackImage]);
 
   const handleError = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     setHasError(true);
-    
+    // Se a capa do projeto falhou, usa thumbnail dos primeiros 6s (backup)
+    if (backupThumbnailRef.current) {
+      setThumbnailUrl(backupThumbnailRef.current);
+      setHasError(false);
+      return;
+    }
     // Tenta diferentes tamanhos de thumbnail do Vimeo
     const vimeoId = extractVimeoVideoId(videoUrl || '');
     if (vimeoId) {

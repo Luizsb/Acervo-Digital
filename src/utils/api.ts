@@ -1,6 +1,132 @@
 import { getVideoThumbnail } from './videoThumbnails';
+import type { Project } from '../types/project';
 
-const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = import.meta.env?.VITE_API_URL || 'http://localhost:3001/api';
+
+const AUTH_TOKEN_KEY = 'acervo_token';
+
+export function getAuthToken(): string | null {
+  try {
+    return localStorage.getItem(AUTH_TOKEN_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export function setAuthToken(token: string): void {
+  try {
+    localStorage.setItem(AUTH_TOKEN_KEY, token);
+  } catch {
+    // ignore
+  }
+}
+
+export function clearAuthToken(): void {
+  try {
+    localStorage.removeItem(AUTH_TOKEN_KEY);
+  } catch {
+    // ignore
+  }
+}
+
+// Auth API
+export interface AuthUserResponse {
+  id: number;
+  email: string;
+  name: string | null;
+  role?: string;
+}
+
+export async function apiLogin(email: string, password: string): Promise<{ token: string; user: AuthUserResponse }> {
+  const res = await fetch(`${API_BASE_URL}/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Erro ao entrar.');
+  return data;
+}
+
+export async function apiRegister(name: string, email: string, password: string): Promise<{ token: string; user: AuthUserResponse }> {
+  const res = await fetch(`${API_BASE_URL}/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: name.trim(), email: email.trim().toLowerCase(), password }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Erro ao cadastrar.');
+  return data;
+}
+
+export async function apiAuthMe(): Promise<AuthUserResponse | null> {
+  const token = getAuthToken();
+  if (!token) return null;
+  const res = await fetch(`${API_BASE_URL}/auth/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (res.status === 401) return null;
+  if (!res.ok) throw new Error('Erro ao verificar sessão.');
+  return res.json();
+}
+
+export async function apiUpdateMe(params: { name?: string; currentPassword?: string; newPassword?: string }): Promise<AuthUserResponse> {
+  const token = getAuthToken();
+  if (!token) throw new Error('Não autorizado.');
+  const res = await fetch(`${API_BASE_URL}/auth/me`, {
+    method: 'PATCH',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(params),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Erro ao atualizar.');
+  return data;
+}
+
+// Favoritos do usuário logado
+export async function apiFavoritesGet(): Promise<number[]> {
+  const token = getAuthToken();
+  if (!token) return [];
+  const res = await fetch(`${API_BASE_URL}/users/me/favorites`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (res.status === 401) return [];
+  if (!res.ok) throw new Error('Erro ao carregar favoritos.');
+  return res.json();
+}
+
+export async function apiFavoriteAdd(projectId: number): Promise<void> {
+  const token = getAuthToken();
+  if (!token) throw new Error('Não autorizado.');
+  const res = await fetch(`${API_BASE_URL}/users/me/favorites`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ projectId }),
+  });
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error || 'Erro ao adicionar favorito.');
+  }
+}
+
+export async function apiFavoriteRemove(projectId: number): Promise<void> {
+  const token = getAuthToken();
+  if (!token) throw new Error('Não autorizado.');
+  const res = await fetch(`${API_BASE_URL}/users/me/favorites/${projectId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error || 'Erro ao remover favorito.');
+  }
+}
 
 export interface BNCC {
   id: number;
@@ -54,9 +180,8 @@ export interface ODAResponse {
 }
 
 // Converter ODA da API para formato do frontend
-export function apiODAToFrontend(oda: ODA): any {
-  // Usar apenas a habilidade da tabela BNCC
-  const bnccDescription = (oda as any).bncc?.habilidade || undefined;
+export function apiODAToFrontend(oda: ODA): Project {
+  const bnccDescription = oda.bncc?.habilidade ?? undefined;
   
   // Debug: verificar se escalaSamr está presente
   if (process.env.NODE_ENV === 'development' && !oda.escalaSamr) {

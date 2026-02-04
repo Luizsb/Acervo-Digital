@@ -3,29 +3,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { X, BookOpen, Clock, Share2, Check, ExternalLink, Star, Eye, Sparkles, Play, Book, FileText, Layers, Link as LinkIcon } from 'lucide-react';
 import { getComponentFullName, getSegmentFullName } from '../utils/curriculumColors';
 import { VideoThumbnail } from './VideoThumbnail';
-
-interface Project {
-  id: number;
-  title: string;
-  tag: string;
-  tags?: string[];
-  tagColor: string;
-  location: string;
-  image: string;
-  videoUrl?: string;
-  bnccCode?: string;
-  bnccDescription?: string;
-  category?: string;
-  duration?: string;
-  volume?: string;
-  segmento?: string;
-  pagina?: string;
-  contentType?: string;
-  videoCategory?: string;
-  description?: string;
-  learningObjectives?: string[];
-  pedagogicalResources?: string[];
-}
+import { getVimeoEmbedUrl } from '../utils/videoThumbnails';
+import type { Project } from '../types/project';
 
 interface ProjectModalProps {
   project: Project | null;
@@ -152,7 +131,7 @@ export function ProjectModal({ project, isOpen, onClose }: ProjectModalProps) {
                     </>
                   ) : (
                     <iframe
-                      src={project.videoUrl}
+                      src={project.videoUrl ? getVimeoEmbedUrl(project.videoUrl, { autoplay: true }) : ''}
                       className="w-full h-full"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen

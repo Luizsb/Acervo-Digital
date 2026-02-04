@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Search, Menu, X, BookOpen, User, Heart, Settings, LogOut, Video, Gamepad2 } from 'lucide-react';
+import { Search, X, BookOpen, User, LogIn } from 'lucide-react';
+import type { AuthUser } from '../contexts/AuthContext';
+import { ProfileMenu } from './ProfileMenu';
 
 interface NavigationProps {
   searchQuery: string;
@@ -7,12 +9,15 @@ interface NavigationProps {
   onNavigateToSettings?: () => void;
   onNavigateToFavorites?: () => void;
   onNavigateToGallery?: () => void;
+  onNavigateToLogin?: () => void;
   contentTypeFilter: 'Todos' | 'Audiovisual' | 'OED';
   onContentTypeChange: (type: 'Todos' | 'Audiovisual' | 'OED') => void;
   hideSearch?: boolean;
+  user?: AuthUser | null;
+  onLogout?: () => void;
 }
 
-export function Navigation({ searchQuery, onSearchChange, onNavigateToSettings, onNavigateToFavorites, onNavigateToGallery, contentTypeFilter, onContentTypeChange, hideSearch = false }: NavigationProps) {
+export function Navigation({ searchQuery, onSearchChange, onNavigateToSettings, onNavigateToFavorites, onNavigateToGallery, onNavigateToLogin, contentTypeFilter, onContentTypeChange, hideSearch = false, user = null, onLogout }: NavigationProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -69,69 +74,39 @@ export function Navigation({ searchQuery, onSearchChange, onNavigateToSettings, 
               </div>
             )}
 
-            {/* Profile Menu */}
+            {/* Entrar (sem login) ou Menu do usuário (logado) */}
             <div className="relative">
-              <button
-                onClick={() => setIsProfileOpen(!isProfileOpen)}
-                className="p-3 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all duration-300 group"
-              >
-                <User className="w-5 h-5 text-gray-700 group-hover:text-primary transition-colors" />
-              </button>
-
-              {/* Profile Dropdown */}
-              {isProfileOpen && (
+              {user ? (
                 <>
-                  {/* Backdrop to close menu */}
-                  <div 
-                    className="fixed inset-0 z-40" 
-                    onClick={() => setIsProfileOpen(false)}
-                  ></div>
-                  
-                  <div className="absolute right-0 top-full mt-3 w-72 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 overflow-hidden">
-                    <div className="p-5 border-b border-gray-100">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
-                          <User className="w-6 h-6 text-white" />
-                        </div>
-                        <div>
-                          <p className="font-bold text-gray-900">Usuário</p>
-                          <p className="text-sm text-gray-500">Consultor Pedagógico</p>
-                        </div>
+                  <button
+                    onClick={() => setIsProfileOpen(!isProfileOpen)}
+                    className="p-3 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all duration-300 group"
+                  >
+                    <User className="w-5 h-5 text-gray-700 group-hover:text-primary transition-colors" />
+                  </button>
+                  {isProfileOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setIsProfileOpen(false)} />
+                      <div className="absolute right-0 top-full mt-3 z-50">
+                        <ProfileMenu
+                          user={user}
+                          onClose={() => setIsProfileOpen(false)}
+                          onNavigateToSettings={() => onNavigateToSettings?.()}
+                          onNavigateToFavorites={() => onNavigateToFavorites?.()}
+                          onLogout={() => onLogout?.()}
+                        />
                       </div>
-                    </div>
-
-                    <div className="p-2">
-                      <button 
-                        onClick={() => {
-                          setIsProfileOpen(false);
-                          onNavigateToSettings?.();
-                        }}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 rounded-xl transition-all duration-200 group"
-                      >
-                        <Settings className="w-5 h-5 text-gray-600 group-hover:text-primary transition-colors" />
-                        <span className="font-semibold text-gray-700 group-hover:text-primary">Minha Conta</span>
-                      </button>
-                      
-                      <button 
-                        onClick={() => {
-                          setIsProfileOpen(false);
-                          onNavigateToFavorites?.();
-                        }}
-                        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 rounded-xl transition-all duration-200 group"
-                      >
-                        <Heart className="w-5 h-5 text-gray-600 group-hover:text-secondary transition-colors" />
-                        <span className="font-semibold text-gray-700 group-hover:text-secondary">Meus Favoritos</span>
-                      </button>
-
-                      <div className="h-px bg-gray-100 my-2"></div>
-
-                      <button className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 rounded-xl transition-all duration-200 group">
-                        <LogOut className="w-5 h-5 text-gray-600 group-hover:text-red-600 transition-colors" />
-                        <span className="font-semibold text-gray-700 group-hover:text-red-600">Sair</span>
-                      </button>
-                    </div>
-                  </div>
+                    </>
+                  )}
                 </>
+              ) : (
+                <button
+                  onClick={onNavigateToLogin}
+                  className="flex items-center gap-2 px-4 py-2.5 bg-white text-primary border-2 border-white/60 hover:bg-white/90 rounded-xl font-semibold text-sm transition-all shadow-md"
+                >
+                  <LogIn className="w-5 h-5" />
+                  <span>Entrar</span>
+                </button>
               )}
             </div>
           </div>
@@ -148,13 +123,17 @@ export function Navigation({ searchQuery, onSearchChange, onNavigateToSettings, 
               </button>
             )}
             
-            {/* Mobile Profile Button */}
-            <button
-              onClick={() => setIsProfileOpen(!isProfileOpen)}
-              className="p-2.5 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all duration-300"
-            >
-              <User className="w-5 h-5 text-gray-700" />
-            </button>
+            {/* Mobile: Entrar ou Profile */}
+            {user ? (
+              <button onClick={() => setIsProfileOpen(!isProfileOpen)} className="p-2.5 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all duration-300">
+                <User className="w-5 h-5 text-gray-700" />
+              </button>
+            ) : (
+              <button onClick={onNavigateToLogin} className="flex items-center gap-2 px-3 py-2.5 bg-white text-primary border border-white/60 rounded-xl font-semibold text-sm">
+                <LogIn className="w-5 h-5" />
+                <span>Entrar</span>
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -198,49 +177,16 @@ export function Navigation({ searchQuery, onSearchChange, onNavigateToSettings, 
             onClick={() => setIsProfileOpen(false)}
           ></div>
           
-          <div className="lg:hidden absolute top-full right-4 mt-2 w-72 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 overflow-hidden">
-            <div className="p-5 border-b border-gray-100">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
-                  <User className="w-6 h-6 text-white" />
-                </div>
-                <div>
-                  <p className="font-bold text-gray-900">Usuário</p>
-                  <p className="text-sm text-gray-500">Consultor Pedagógico</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="p-2">
-              <button 
-                onClick={() => {
-                  setIsProfileOpen(false);
-                  onNavigateToSettings?.();
-                }}
-                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 rounded-xl transition-all duration-200 group"
-              >
-                <Settings className="w-5 h-5 text-gray-600 group-hover:text-primary transition-colors" />
-                <span className="font-semibold text-gray-700 group-hover:text-primary">Minha Conta</span>
-              </button>
-              
-              <button 
-                onClick={() => {
-                  setIsProfileOpen(false);
-                  onNavigateToFavorites?.();
-                }}
-                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 rounded-xl transition-all duration-200 group"
-              >
-                <Heart className="w-5 h-5 text-gray-600 group-hover:text-secondary transition-colors" />
-                <span className="font-semibold text-gray-700 group-hover:text-secondary">Meus Favoritos</span>
-              </button>
-
-              <div className="h-px bg-gray-100 my-2"></div>
-
-              <button className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 rounded-xl transition-all duration-200 group">
-                <LogOut className="w-5 h-5 text-gray-600 group-hover:text-red-600 transition-colors" />
-                <span className="font-semibold text-gray-700 group-hover:text-red-600">Sair</span>
-              </button>
-            </div>
+          <div className="lg:hidden absolute top-full right-4 mt-2 z-50">
+            {user && (
+              <ProfileMenu
+                user={user}
+                onClose={() => setIsProfileOpen(false)}
+                onNavigateToSettings={() => onNavigateToSettings?.()}
+                onNavigateToFavorites={() => onNavigateToFavorites?.()}
+                onLogout={() => onLogout?.()}
+              />
+            )}
           </div>
         </>
       )}

@@ -52,12 +52,16 @@
             "xlsx": "^0.18.5"
       },
       "devDependencies": {
+            "@testing-library/dom": "^10.4.1",
+            "@testing-library/react": "^16.3.2",
             "@types/cors": "^2.8.19",
             "@types/express": "^5.0.6",
             "@types/node": "^20.19.25",
             "@vitejs/plugin-react-swc": "^3.10.2",
+            "jsdom": "^28.0.0",
             "prisma": "^7.0.1",
-            "vite": "6.3.5"
+            "vite": "6.3.5",
+            "vitest": "^4.0.18"
       },
       "scripts": {
             "dev": "vite",
@@ -68,6 +72,7 @@
             "prisma:generate": "cd server && npx prisma generate",
             "prisma:migrate": "cd server && npx prisma migrate dev",
             "prisma:studio": "cd server && npx prisma studio",
-            "check:supabase": "cd server && npm run check:supabase"
+            "check:supabase": "cd server && npm run check:supabase",
+            "test": "vitest run"
       }
 }

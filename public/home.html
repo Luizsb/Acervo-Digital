@@ -2264,23 +2264,23 @@ SOFTWARE.
                     </div>
                 </div>
             </section>
-            <section class="bg-[#002B5C] py-16 text-white relative overflow-hidden">
+            <section id="stats-section" class="bg-[#002B5C] py-16 text-white relative overflow-hidden">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
                     <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
                         <div>
-                            <div class="text-4xl lg:text-5xl font-bold mb-2">5k+</div>
+                            <div class="text-4xl lg:text-5xl font-bold mb-2"><span class="stats-count" data-end="5000" data-format="k">0</span></div>
                             <div class="text-blue-200 font-medium">Recursos Digitais</div>
                         </div>
                         <div>
-                            <div class="text-4xl lg:text-5xl font-bold mb-2">200+</div>
+                            <div class="text-4xl lg:text-5xl font-bold mb-2"><span class="stats-count" data-end="200" data-suffix="+">0</span></div>
                             <div class="text-blue-200 font-medium">Escolas Parceiras</div>
                         </div>
                         <div>
-                            <div class="text-4xl lg:text-5xl font-bold mb-2">50k+</div>
+                            <div class="text-4xl lg:text-5xl font-bold mb-2"><span class="stats-count" data-end="50000" data-format="k">0</span></div>
                             <div class="text-blue-200 font-medium">Alunos Impactados</div>
                         </div>
                         <div>
-                            <div class="text-4xl lg:text-5xl font-bold mb-2">100%</div>
+                            <div class="text-4xl lg:text-5xl font-bold mb-2"><span class="stats-count" data-end="100" data-suffix="%">0</span></div>
                             <div class="text-blue-200 font-medium">Aprovado por Profs</div>
                         </div>
                     </div>
@@ -2457,8 +2457,54 @@ SOFTWARE.
             }
         }
 
-        // Adicionar event listeners para os botões
+        // Efeito de número subindo na seção de estatísticas
+        function formatStatsValue(current, end, format, suffix) {
+            if (format === 'k') {
+                var k = Math.floor(current / 1000);
+                return k + 'k+';
+            }
+            if (suffix) return Math.round(current) + suffix;
+            return Math.round(current);
+        }
+        function animateStats() {
+            var section = document.getElementById('stats-section');
+            if (!section) return;
+            var counters = section.querySelectorAll('.stats-count');
+            var duration = 1800;
+            var startTime = null;
+            function run(timestamp) {
+                if (!startTime) startTime = timestamp;
+                var elapsed = timestamp - startTime;
+                var progress = Math.min(elapsed / duration, 1);
+                progress = 1 - Math.pow(1 - progress, 2.5);
+                counters.forEach(function(el) {
+                    var end = parseInt(el.getAttribute('data-end'), 10);
+                    var format = el.getAttribute('data-format');
+                    var suffix = el.getAttribute('data-suffix') || '';
+                    var current = end * progress;
+                    el.textContent = formatStatsValue(current, end, format, suffix);
+                });
+                if (progress < 1) requestAnimationFrame(run);
+            }
+            requestAnimationFrame(run);
+        }
+        function initStatsCountUp() {
+            var section = document.getElementById('stats-section');
+            if (!section) return;
+            var observer = new IntersectionObserver(function(entries) {
+                entries.forEach(function(entry) {
+                    if (entry.isIntersecting) {
+                        animateStats();
+                        observer.disconnect();
+                    }
+                });
+            }, { threshold: 0.2, rootMargin: '0px 0px -50px 0px' });
+            observer.observe(section);
+        }
+
+            // Adicionar event listeners para os botões
         document.addEventListener('DOMContentLoaded', function() {
+            initStatsCountUp();
             // Encontrar todos os botões "Acessar Acervo" no menu mobile
             const mobileButtons = document.querySelectorAll('button');
             mobileButtons.forEach(button => {

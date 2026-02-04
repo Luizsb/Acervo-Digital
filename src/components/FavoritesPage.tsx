@@ -1,24 +1,9 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Heart, Sparkles, User, Settings, LogOut } from 'lucide-react';
+import { ArrowLeft, Heart, Sparkles, User } from 'lucide-react';
 import { ProjectGrid } from './ProjectGrid';
-
-interface Project {
-  id: number;
-  title: string;
-  tag: string;
-  tags?: string[];
-  tagColor: string;
-  location: string;
-  image: string;
-  videoUrl?: string;
-  bnccCode?: string;
-  bnccDescription?: string;
-  category?: string;
-  duration?: string;
-  volume?: string;
-  segmento?: string;
-  pagina?: string;
-}
+import { ProfileMenu } from './ProfileMenu';
+import type { AuthUser } from '../contexts/AuthContext';
+import type { Project } from '../types/project';
 
 interface FavoritesPageProps {
   onBack: () => void;
@@ -27,9 +12,22 @@ interface FavoritesPageProps {
   onProjectClick: (project: Project) => void;
   onToggleFavorite?: (projectId: number) => void;
   onNavigateToSettings?: () => void;
+  onNavigateToFavorites?: () => void;
+  onLogout?: () => void;
+  user?: AuthUser | null;
 }
 
-export function FavoritesPage({ onBack, favorites, projects, onProjectClick, onToggleFavorite, onNavigateToSettings }: FavoritesPageProps) {
+export function FavoritesPage({
+  onBack,
+  favorites,
+  projects,
+  onProjectClick,
+  onToggleFavorite,
+  onNavigateToSettings,
+  onNavigateToFavorites,
+  onLogout,
+  user,
+}: FavoritesPageProps) {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   // Garantir que favorites é um array e filtrar corretamente
   const validFavorites = Array.isArray(favorites) ? favorites.map(id => Number(id)) : [];
@@ -86,57 +84,25 @@ export function FavoritesPage({ onBack, favorites, projects, onProjectClick, onT
                   <User className="w-5 h-5 text-gray-700 group-hover:text-primary transition-colors" />
                 </button>
 
-                {/* Profile Dropdown */}
-                {isProfileOpen && (
+                {/* Profile Dropdown - reutiliza ProfileMenu */}
+                {isProfileOpen && user && (
                   <>
-                    {/* Backdrop to close menu */}
-                    <div 
-                      className="fixed inset-0 z-40" 
+                    <div
+                      className="fixed inset-0 z-40"
                       onClick={() => setIsProfileOpen(false)}
-                    ></div>
-                    
-                    <div className="absolute right-0 top-full mt-3 w-72 bg-white border border-gray-200 rounded-2xl shadow-xl z-50 overflow-hidden">
-                      <div className="p-5 border-b border-gray-100">
-                        <div className="flex items-center gap-4">
-                          <div className="w-12 h-12 bg-primary rounded-xl flex items-center justify-center">
-                            <User className="w-6 h-6 text-white" />
-                          </div>
-                          <div>
-                            <p className="font-bold text-gray-900">Usuário</p>
-                            <p className="text-sm text-gray-500">Consultor Pedagógico</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="p-2">
-                        <button 
-                          onClick={() => {
-                            setIsProfileOpen(false);
-                            onNavigateToSettings?.();
-                          }}
-                          className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 rounded-xl transition-all duration-200 group"
-                        >
-                          <Settings className="w-5 h-5 text-gray-600 group-hover:text-primary transition-colors" />
-                          <span className="font-semibold text-gray-700 group-hover:text-primary">Minha Conta</span>
-                        </button>
-                        
-                        <button 
-                          onClick={() => {
-                            setIsProfileOpen(false);
-                          }}
-                          className="w-full flex items-center gap-3 px-4 py-3 bg-gray-50 rounded-xl transition-all duration-200 group"
-                        >
-                          <Heart className="w-5 h-5 text-secondary transition-colors" />
-                          <span className="font-semibold text-secondary">Meus Favoritos</span>
-                        </button>
-
-                        <div className="h-px bg-gray-100 my-2"></div>
-
-                        <button className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 rounded-xl transition-all duration-200 group">
-                          <LogOut className="w-5 h-5 text-gray-600 group-hover:text-red-600 transition-colors" />
-                          <span className="font-semibold text-gray-700 group-hover:text-red-600">Sair</span>
-                        </button>
-                      </div>
+                      aria-hidden="true"
+                    />
+                    <div className="absolute right-0 top-full mt-3 z-50">
+                      <ProfileMenu
+                        user={user}
+                        onClose={() => setIsProfileOpen(false)}
+                        onNavigateToSettings={() => onNavigateToSettings?.()}
+                        onNavigateToFavorites={() => {
+                          setIsProfileOpen(false);
+                          onNavigateToFavorites?.();
+                        }}
+                        onLogout={() => onLogout?.()}
+                      />
                     </div>
                   </>
                 )}

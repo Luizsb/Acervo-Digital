@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowLeft, User, Mail, Lock, Settings, Heart, LogOut } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { apiUpdateMe } from '../utils/api';
 
 interface ProfileSettingsPageProps {
   onBack: () => void;
@@ -7,41 +9,115 @@ interface ProfileSettingsPageProps {
 }
 
 export function ProfileSettingsPage({ onBack, onNavigateToFavorites }: ProfileSettingsPageProps) {
+  const { user: authUser, updateUser } = useAuth();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [originalName, setOriginalName] = useState('');
   const [originalEmail, setOriginalEmail] = useState('');
+  const [saveError, setSaveError] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [passwordSectionExpanded, setPasswordSectionExpanded] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [passwordSaving, setPasswordSaving] = useState(false);
 
-  // Carregar dados do localStorage ao montar o componente
+  // Inicializar com usuário logado ou localStorage (modo offline/demo)
   useEffect(() => {
-    const savedName = localStorage.getItem('userName') || 'Maria Silva Santos';
-    const savedEmail = localStorage.getItem('userEmail') || 'maria.santos@escola.edu.br';
-    
-    setName(savedName);
-    setEmail(savedEmail);
-    setOriginalName(savedName);
-    setOriginalEmail(savedEmail);
-  }, []);
+    if (authUser) {
+      setName(authUser.name || '');
+      setEmail(authUser.email || '');
+      setOriginalName(authUser.name || '');
+      setOriginalEmail(authUser.email || '');
+    } else {
+      const savedName = localStorage.getItem('userName') || '';
+      const savedEmail = localStorage.getItem('userEmail') || '';
+      setName(savedName || 'Usuário');
+      setEmail(savedEmail || '');
+      setOriginalName(savedName || 'Usuário');
+      setOriginalEmail(savedEmail || '');
+    }
+  }, [authUser]);
 
-  const handleSave = () => {
-    // Salvar no localStorage
-    localStorage.setItem('userName', name);
-    localStorage.setItem('userEmail', email);
-    
-    // Atualizar valores originais
-    setOriginalName(name);
-    setOriginalEmail(email);
+  const handleSave = async () => {
+    setSaveError('');
+    setSaving(true);
+    try {
+      if (authUser) {
+        const updated = await apiUpdateMe({ name: name.trim() });
+        updateUser({
+          id: updated.id,
+          email: updated.email,
+          name: updated.name ?? updated.email.split('@')[0],
+          role: updated.role,
+        });
+      } else {
+        localStorage.setItem('userName', name);
+        localStorage.setItem('userEmail', email);
+      }
+      setOriginalName(name);
+      setOriginalEmail(email);
+    } catch (err: any) {
+      setSaveError(err.message || 'Erro ao salvar.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleCancel = () => {
-    // Restaurar valores originais
     setName(originalName);
     setEmail(originalEmail);
   };
 
-  // Verificar se houve mudanças
-  const hasChanges = name !== originalName || email !== originalEmail;
+  const handleTogglePasswordSection = () => {
+    if (!passwordSectionExpanded) {
+      setPasswordError('');
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmNewPassword('');
+    }
+    setPasswordSectionExpanded((prev) => !prev);
+  };
+
+  const handleClosePasswordSection = () => {
+    setPasswordSectionExpanded(false);
+    setPasswordError('');
+    setCurrentPassword('');
+    setNewPassword('');
+    setConfirmNewPassword('');
+  };
+
+  const handleChangePassword = async () => {
+    setPasswordError('');
+    if (!currentPassword.trim()) {
+      setPasswordError('Informe a senha atual.');
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordError('A nova senha deve ter pelo menos 6 caracteres.');
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setPasswordError('A nova senha e a confirmação não coincidem.');
+      return;
+    }
+    setPasswordSaving(true);
+    try {
+      await apiUpdateMe({ currentPassword: currentPassword, newPassword });
+      handleClosePasswordSection();
+    } catch (err: any) {
+      setPasswordError(err.message || 'Erro ao alterar senha.');
+    } finally {
+      setPasswordSaving(false);
+    }
+  };
+
+  // Quando logado, só nome pode ser alterado; sem login, nome e email (localStorage)
+  const hasChanges = authUser
+    ? name.trim() !== originalName
+    : name !== originalName || email !== originalEmail;
 
   return (
     <div className="min-h-screen bg-background">
@@ -165,7 +241,7 @@ export function ProfileSettingsPage({ onBack, onNavigateToFavorites }: ProfileSe
                 />
               </div>
 
-              {/* Email Field */}
+              {/* Email Field - somente leitura quando logado (não alteramos email na API) */}
               <div className="space-y-2">
                 <label className="flex items-center gap-2 text-foreground text-sm font-semibold">
                   <Mail className="w-4 h-4 text-primary" />
@@ -174,23 +250,28 @@ export function ProfileSettingsPage({ onBack, onNavigateToFavorites }: ProfileSe
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-white border-2 border-gray-200 rounded-[20px] focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none text-foreground text-sm"
+                  onChange={(e) => !authUser && setEmail(e.target.value)}
+                  readOnly={!!authUser}
+                  className={`w-full px-4 py-2.5 bg-white border-2 border-gray-200 rounded-[20px] focus:border-primary focus:ring-2 focus:ring-primary/20 transition-all outline-none text-foreground text-sm ${authUser ? 'bg-gray-50 cursor-default' : ''}`}
                 />
               </div>
             </div>
 
+            {saveError && (
+              <p className="mt-2 text-sm text-red-600">{saveError}</p>
+            )}
+
             <div className="mt-6 flex flex-col sm:flex-row gap-2">
               <button 
                 onClick={handleSave}
-                disabled={!hasChanges}
-                className={`px-5 py-2.5 rounded-[20px] hover:shadow-md transition-all font-semibold text-sm shadow-sm cursor-pointer ${
-                  hasChanges 
-                    ? 'bg-primary text-white hover:bg-[#013668]' 
+                disabled={!hasChanges || saving}
+                className={`px-5 py-2.5 rounded-[20px] hover:shadow-md transition-all font-semibold text-sm shadow-sm ${
+                  hasChanges && !saving
+                    ? 'bg-primary text-white hover:bg-[#013668] cursor-pointer'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >
-                Salvar Alterações
+                {saving ? 'Salvando...' : 'Salvar Alterações'}
               </button>
               {hasChanges && (
                 <button 
@@ -208,7 +289,12 @@ export function ProfileSettingsPage({ onBack, onNavigateToFavorites }: ProfileSe
             <h3 className="mb-6 text-primary font-extrabold">Segurança</h3>
             
             <div className="space-y-4">
-              <button className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-[20px] border-2 border-gray-200 hover:border-primary transition-all group">
+              <button
+                type="button"
+                onClick={authUser ? handleTogglePasswordSection : undefined}
+                disabled={!authUser}
+                className="w-full flex items-center justify-between p-4 bg-gray-50 rounded-[20px] border-2 border-gray-200 hover:border-primary transition-all group disabled:opacity-60 disabled:cursor-not-allowed"
+              >
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-secondary rounded-full">
                     <Lock className="w-5 h-5 text-white" />
@@ -218,8 +304,78 @@ export function ProfileSettingsPage({ onBack, onNavigateToFavorites }: ProfileSe
                     <p className="text-xs text-muted-foreground">Atualizar senha de acesso</p>
                   </div>
                 </div>
-                <ArrowLeft className="w-5 h-5 text-primary rotate-180 group-hover:translate-x-1 transition-transform" />
+                <ArrowLeft className={`w-5 h-5 text-primary transition-transform ${passwordSectionExpanded ? 'rotate-90' : 'rotate-180 group-hover:translate-x-1'}`} />
               </button>
+
+              {/* Seção expandida: formulário de alterar senha */}
+              {passwordSectionExpanded && (
+                <div className="pt-8 mt-4 border-t border-gray-200">
+                  {passwordError && (
+                    <div className="mb-4 px-4 py-3 bg-red-50 border border-red-200 rounded-[20px] text-sm text-red-800">
+                      {passwordError}
+                    </div>
+                  )}
+                  <div className="space-y-4">
+                    <div className="space-y-2 mt-2">
+                      <label className="flex items-center gap-2 text-foreground text-sm font-semibold">
+                        <Lock className="w-4 h-4 text-primary" />
+                        Senha atual
+                      </label>
+                      <input
+                        type="password"
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
+                        placeholder="••••••••"
+                        autoComplete="current-password"
+                        className="w-full px-4 py-2.5 bg-white border-2 border-gray-200 rounded-[20px] focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-foreground text-sm"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-2 text-foreground text-sm font-semibold">
+                        Nova senha
+                      </label>
+                      <input
+                        type="password"
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        placeholder="Mínimo 6 caracteres"
+                        autoComplete="new-password"
+                        className="w-full px-4 py-2.5 bg-white border-2 border-gray-200 rounded-[20px] focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-foreground text-sm"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="flex items-center gap-2 text-foreground text-sm font-semibold">
+                        Confirmar nova senha
+                      </label>
+                      <input
+                        type="password"
+                        value={confirmNewPassword}
+                        onChange={(e) => setConfirmNewPassword(e.target.value)}
+                        placeholder="Repita a nova senha"
+                        autoComplete="new-password"
+                        className="w-full px-4 py-2.5 bg-white border-2 border-gray-200 rounded-[20px] focus:border-primary focus:ring-2 focus:ring-primary/20 outline-none text-foreground text-sm"
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-6 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={handleChangePassword}
+                      disabled={passwordSaving}
+                      className="px-5 py-2.5 rounded-[20px] bg-primary text-white font-semibold hover:bg-[#013668] transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {passwordSaving ? 'Salvando...' : 'Alterar senha'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleClosePasswordSection}
+                      className="px-5 py-2.5 border-2 border-gray-300 rounded-[20px] hover:bg-gray-50 font-semibold text-foreground text-sm"
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

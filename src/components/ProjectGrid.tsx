@@ -1,15 +1,7 @@
 import React from 'react';
 import { ProjectCard } from './ProjectCard';
 import { ProjectListItem } from './ProjectListItem';
-
-interface Project {
-  id: number;
-  title: string;
-  tag: string;
-  tagColor: string;
-  location: string;
-  image: string;
-}
+import type { Project } from '../types/project';
 
 interface ProjectGridProps {
   projects: Project[];

@@ -3,6 +3,44 @@
  */
 
 /**
+ * Verifica se a URL é a thumbnail padrão do Vimeo (capa listrada que queremos evitar)
+ * @param url - URL da imagem (ex: https://i.vimeocdn.com/video/123_640.jpg)
+ */
+export function isVimeoDefaultThumbnail(url: string | undefined): boolean {
+  return !!url && /i\.vimeocdn\.com\/video\//i.test(url);
+}
+
+/**
+ * Parâmetros para deixar o embed do Vimeo mais limpo (sem título, byline, retrato, badge, logo).
+ * Reduz botões de engajamento e sensação de "redirecionar ao Vimeo".
+ */
+const VIMEO_CLEAN_PARAMS = [
+  'title=0',
+  'byline=0',
+  'portrait=0',
+  'badge=0',
+  'vimeo_logo=0',
+  'dnt=1', // Do Not Track - reduz analytics no player
+].join('&');
+
+/**
+ * Monta a URL do embed do Vimeo com player limpo (sem favorito, byline, logo etc.) e opção de autoplay.
+ * @param videoUrl - URL do vídeo (ex: https://player.vimeo.com/video/123?h=xxx)
+ * @param options - { autoplay: true } para iniciar ao abrir
+ */
+export function getVimeoEmbedUrl(videoUrl: string, options?: { autoplay?: boolean }): string {
+  if (!videoUrl) return videoUrl;
+  const sep = videoUrl.includes('?') ? '&' : '?';
+  const extra = options?.autoplay ? '&autoplay=1' : '';
+  return `${videoUrl}${sep}${VIMEO_CLEAN_PARAMS}${extra}`;
+}
+
+/** @deprecated Use getVimeoEmbedUrl(url, { autoplay: true }) */
+export function getVimeoUrlWithAutoplay(videoUrl: string): string {
+  return getVimeoEmbedUrl(videoUrl, { autoplay: true });
+}
+
+/**
  * Extrai o ID do vídeo do Vimeo a partir da URL
  * @param url - URL do Vimeo (ex: https://player.vimeo.com/video/780826423?h=6c0fc1f)
  * @returns ID do vídeo ou null
@@ -43,31 +81,41 @@ function normalizeVimeoUrl(url: string): string | null {
   return null;
 }
 
+// Cache de IDs de vídeos em que o oEmbed retornou 404 (vídeo privado/inexistente).
+// Evita chamadas repetidas e reduz erros no console.
+const oEmbed404Cache = new Set<string>();
+
 /**
  * Obtém thumbnail do Vimeo usando oEmbed API (método recomendado)
- * A thumbnail retornada pelo oEmbed geralmente é do início do vídeo (primeiros segundos)
+ * Vídeos privados ou sem oEmbed retornam 404; nesses casos usamos o cache para não repetir a requisição.
  * @param videoUrl - URL do vídeo do Vimeo
  * @returns URL da thumbnail ou null
  */
 async function getVimeoThumbnailFromOEmbed(videoUrl: string): Promise<string | null> {
+  const vimeoId = extractVimeoVideoId(videoUrl);
+  if (!vimeoId) return null;
+
+  if (oEmbed404Cache.has(vimeoId)) {
+    return null;
+  }
+
   try {
     const normalizedUrl = normalizeVimeoUrl(videoUrl);
     if (!normalizedUrl) return null;
     
-    // Usa oEmbed para obter thumbnail oficial do Vimeo
-    // A thumbnail do oEmbed geralmente é capturada dos primeiros segundos do vídeo
     const oEmbedUrl = `https://vimeo.com/api/oembed.json?url=${encodeURIComponent(normalizedUrl)}`;
     const response = await fetch(oEmbedUrl);
+    
+    if (response.status === 404) {
+      oEmbed404Cache.add(vimeoId);
+      return null;
+    }
     
     if (!response.ok) return null;
     
     const data = await response.json();
-    
-    // O oEmbed retorna thumbnail_url que geralmente é do início do vídeo
-    // Se disponível, também tenta thumbnail_url_with_play_button (sem botão de play)
     return data.thumbnail_url || data.thumbnail_url_with_play_button || null;
-  } catch (error) {
-    console.warn('Erro ao buscar thumbnail do Vimeo via oEmbed:', error);
+  } catch {
     return null;
   }
 }

@@ -1,9 +1,7 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, Suspense, lazy } from "react";
 import { Navigation } from "./components/Navigation";
 import { ProjectGrid } from "./components/ProjectGrid";
-import { ProjectDetailsPage } from "./components/ProjectDetailsPage";
-import { ProfileSettingsPage } from "./components/ProfileSettingsPage";
-import { FavoritesPage } from "./components/FavoritesPage";
+import { useAuth } from "./contexts/AuthContext";
 import { FilterSidebar } from "./components/FilterSidebar";
 import { MobileFilterDrawer } from "./components/MobileFilterDrawer";
 import {
@@ -18,11 +16,36 @@ import { BookOpen, Video, Gamepad2 } from "lucide-react";
 import { ODAFromExcel } from "./utils/importODAs";
 import { loadODAsFromDatabase } from "./utils/loadODAs";
 import { loadAudiovisualFromDatabase } from "./utils/loadAudiovisual";
-import { getComponentFullName, getSegmentFullName, sortSegments, getMarcaFullName } from "./utils/curriculumColors";
+import { apiFavoritesGet, apiFavoriteAdd, apiFavoriteRemove } from "./utils/api";
 import { Pagination } from "./components/Pagination";
 import { ScrollToTop } from "./components/ScrollToTop";
+import { useProjectFilters } from "./hooks/useProjectFilters";
+import { getInitialPageFromHash, getHashFromPage, type PageKey } from "./utils/hashRouting";
 
-// Audiovisuais agora são carregados do banco de dados via loadAudiovisualFromDatabase()
+// Lazy load de páginas pesadas para reduzir bundle inicial
+const ProjectDetailsPage = lazy(() =>
+  import("./components/ProjectDetailsPage").then((m) => ({ default: m.ProjectDetailsPage }))
+);
+const ProfileSettingsPage = lazy(() =>
+  import("./components/ProfileSettingsPage").then((m) => ({ default: m.ProfileSettingsPage }))
+);
+const FavoritesPage = lazy(() =>
+  import("./components/FavoritesPage").then((m) => ({ default: m.FavoritesPage }))
+);
+const LoginPage = lazy(() =>
+  import("./components/LoginPage").then((m) => ({ default: m.LoginPage }))
+);
+const RegisterPage = lazy(() =>
+  import("./components/RegisterPage").then((m) => ({ default: m.RegisterPage }))
+);
+
+function PageLoader() {
+  return (
+    <div className="min-h-[40vh] flex items-center justify-center">
+      <p className="text-primary font-semibold">Carregando...</p>
+    </div>
+  );
+}
 
 // Componentes Curriculares permitidos (matérias escolares)
 const COMPONENTES_CURRICULARES = [
@@ -39,14 +62,32 @@ const COMPONENTES_CURRICULARES = [
 export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProject, setSelectedProject] = useState<ODAFromExcel | null>(null);
-  const [currentPage, setCurrentPage] = useState<
-    "home" | "gallery" | "settings" | "favorites"
-  >("home");
+  const [currentPage, setCurrentPageState] = useState<PageKey>(getInitialPageFromHash);
+
+  const setCurrentPage = (page: PageKey) => {
+    setCurrentPageState(page);
+    const hash = getHashFromPage(page);
+    if (window.location.hash !== hash) {
+      window.history.replaceState(null, "", hash === "#" ? "#" : hash);
+    }
+  };
+
+  // Ao carregar/atualizar a página, restaurar currentPage a partir do hash (ex.: F5 no acervo)
+  useEffect(() => {
+    const onHashChange = () => setCurrentPageState(getInitialPageFromHash());
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+  const [returnToAfterLogin, setReturnToAfterLogin] = useState<"gallery" | "settings" | "favorites">("gallery");
+  const { user, login, logout, register, loading: authLoading } = useAuth();
   const [favorites, setFavorites] = useState<number[]>([]);
   const [odasFromExcel, setOdasFromExcel] = useState<ODAFromExcel[]>([]);
   const [audiovisualFromDB, setAudiovisualFromDB] = useState<ODAFromExcel[]>([]);
+  const [loadingODAs, setLoadingODAs] = useState(true);
+  const [loadingAudiovisual, setLoadingAudiovisual] = useState(true);
   const [serverConnectionError, setServerConnectionError] = useState<string | null>(null);
-  
+  const projectsLoading = loadingODAs || loadingAudiovisual;
+
   // Carregar ODAs do banco de dados ao montar o componente
   useEffect(() => {
     const loadODAs = async () => {
@@ -69,7 +110,6 @@ export default function App() {
         console.log(`✅ ${odasWithAdjustedIds.length} ODAs carregados do banco de dados`);
       } catch (error: any) {
         console.error('Erro ao carregar ODAs do banco de dados:', error);
-        // Verificar se é erro de conexão
         if (error?.message?.includes('Failed to fetch') || 
             error?.message?.includes('ConnectionError') ||
             error?.message?.includes('ERR_CONNECTION_REFUSED') ||
@@ -78,9 +118,10 @@ export default function App() {
             'Servidor backend não está rodando. Por favor, inicie o servidor em um terminal separado.'
           );
         }
+      } finally {
+        setLoadingODAs(false);
       }
     };
-    
     loadODAs();
   }, []);
 
@@ -105,10 +146,10 @@ export default function App() {
         console.log(`✅ ${audiovisualWithAdjustedIds.length} Audiovisuais carregados do banco de dados`);
       } catch (error: any) {
         console.error('Erro ao carregar Audiovisuais do banco de dados:', error);
-        // Não mostrar erro de conexão novamente se já foi mostrado
+      } finally {
+        setLoadingAudiovisual(false);
       }
     };
-    
     loadAudiovisual();
   }, []);
   
@@ -120,28 +161,27 @@ export default function App() {
   const [contentTypeFilter, setContentTypeFilter] = useState<
     "Todos" | "Audiovisual" | "OED"
   >("Todos");
-  const [isMobileFilterOpen, setIsMobileFilterOpen] =
-    useState(false);
-  const [selectedFilters, setSelectedFilters] = useState({
-    anos: [] as string[],
-    tags: [] as string[],
-    bnccCodes: [] as string[],
-    segmentos: [] as string[],
-    categorias: [] as string[],
-    marcas: [] as string[],
-    tipoObjeto: [] as string[],
-    videoCategory: [] as string[],
-    samr: [] as string[],
-    volumes: [] as string[],
-    vestibular: [] as string[],
-    capitulo: [] as string[],
-  });
+  const [isMobileFilterOpen, setIsMobileFilterOpen] = useState(false);
+  const {
+    filterOptions,
+    selectedFilters,
+    handleFilterChange,
+    handleClearFilters,
+    filteredProjects,
+    contentTypeFilteredProjects,
+  } = useProjectFilters(projects, contentTypeFilter, searchQuery);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [currentPageNumber, setCurrentPageNumber] = useState(1);
   const [showWelcomeBanner, setShowWelcomeBanner] = useState(true);
 
-  // Load favorites from localStorage
+  // Load favorites: from API when logged in, else from localStorage
   useEffect(() => {
+    if (user) {
+      apiFavoritesGet()
+        .then((ids) => setFavorites(Array.isArray(ids) ? ids : []))
+        .catch(() => setFavorites([]));
+      return;
+    }
     try {
       const savedFavorites = localStorage.getItem("favorites");
       if (savedFavorites) {
@@ -152,387 +192,55 @@ export default function App() {
       }
     } catch (error) {
       console.error('Erro ao carregar favoritos do localStorage:', error);
-      // Limpar localStorage corrompido
       localStorage.removeItem("favorites");
       setFavorites([]);
     }
-  }, []);
+  }, [user]);
 
-  // Toggle favorite
+  // Toggle favorite (API quando logado, localStorage quando não)
   const handleToggleFavorite = (projectId: number) => {
     if (!projectId || isNaN(projectId)) {
       console.error('ID de projeto inválido:', projectId);
       return;
     }
-    
+    const normalizedProjectId = Number(projectId);
+
+    if (user) {
+      const isFavorite = Array.isArray(favorites) && favorites.some((id) => Number(id) === normalizedProjectId);
+      setFavorites((prev) => {
+        const current = Array.isArray(prev) ? prev.map(Number) : [];
+        const next = isFavorite
+          ? current.filter((id) => id !== normalizedProjectId)
+          : [...current.filter((id) => id !== normalizedProjectId), normalizedProjectId];
+        return Array.from(new Set(next));
+      });
+      if (isFavorite) {
+        apiFavoriteRemove(normalizedProjectId).catch(() => {
+          setFavorites((prev) => [...prev.filter((id) => id !== normalizedProjectId), normalizedProjectId]);
+        });
+      } else {
+        apiFavoriteAdd(normalizedProjectId).catch(() => {
+          setFavorites((prev) => prev.filter((id) => id !== normalizedProjectId));
+        });
+      }
+      return;
+    }
+
     setFavorites((prev) => {
-      // Garantir que prev é um array válido
       const currentFavorites = Array.isArray(prev) ? prev : [];
-      
-      // Normalizar IDs para comparação (garantir que são números)
-      const normalizedProjectId = Number(projectId);
-      const normalizedFavorites = currentFavorites.map(id => Number(id));
-      
-      // Verificar se já está nos favoritos
+      const normalizedFavorites = currentFavorites.map((id) => Number(id));
       const isFavorite = normalizedFavorites.includes(normalizedProjectId);
-      
-      // Remover duplicatas e criar novo array
-      const uniqueFavorites = normalizedFavorites.filter(id => id !== normalizedProjectId);
-      const newFavorites = isFavorite 
-        ? uniqueFavorites  // Remover
-        : [...uniqueFavorites, normalizedProjectId];  // Adicionar
-      
-      // Garantir que não há duplicatas
+      const uniqueFavorites = normalizedFavorites.filter((id) => id !== normalizedProjectId);
+      const newFavorites = isFavorite ? uniqueFavorites : [...uniqueFavorites, normalizedProjectId];
       const finalFavorites = Array.from(new Set(newFavorites));
-      
       try {
         localStorage.setItem("favorites", JSON.stringify(finalFavorites));
-        console.log(`Favorito ${isFavorite ? 'removido' : 'adicionado'}:`, normalizedProjectId, 'Total:', finalFavorites.length);
       } catch (error) {
         console.error('Erro ao salvar favoritos no localStorage:', error);
       }
-      
       return finalFavorites;
     });
   };
-
-  // Filter projects by content type first
-  const contentTypeFilteredProjects = useMemo(() => {
-    return contentTypeFilter === "Todos"
-      ? projects
-      : projects.filter(
-          (p) => p.contentType === contentTypeFilter,
-        );
-  }, [projects, contentTypeFilter]);
-
-  // Extract unique values for filters based on content type
-  // Usar useMemo para recalcular quando projects mudar (incluindo quando odasFromExcel for carregado)
-  const filterOptions = useMemo(() => {
-    console.log('🔄 Recalculando filterOptions...');
-    console.log('Total de projects:', projects.length);
-    console.log('ODAs da planilha:', odasFromExcel.length);
-    
-    const allBnccCodes = contentTypeFilteredProjects
-      .map((p) => p.bnccCode)
-      .filter((code) => {
-        if (!code) return false;
-        const trimmed = String(code).trim();
-        return trimmed !== '' && trimmed !== 'undefined' && trimmed !== 'null';
-      })
-      .map((code) => String(code).trim());
-    
-    const uniqueBnccCodes = Array.from(new Set(allBnccCodes));
-    console.log('📊 Códigos BNCC encontrados:', {
-      total: allBnccCodes.length,
-      únicos: uniqueBnccCodes.length,
-      primeiros: uniqueBnccCodes.slice(0, 10)
-    });
-    
-    // Normalizar anos para evitar duplicatas (maiúscula/minúscula, símbolos de grau)
-    const normalizeAnoKey = (ano: string): string => {
-      if (!ano) return '';
-      // Normalizar símbolos de grau (°, º, o) e espaços, converter para minúscula para comparação
-      return ano
-        .trim()
-        .replace(/[°ºo]/gi, '°')
-        .replace(/\s+/g, ' ')
-        .toLowerCase();
-    };
-
-    // Usar um Map para manter o valor original (primeira ocorrência)
-    const anosMap = new Map<string, string>();
-    contentTypeFilteredProjects.forEach((p) => {
-      if (p.location) {
-        const normalizedKey = normalizeAnoKey(p.location);
-        if (normalizedKey && !anosMap.has(normalizedKey)) {
-          anosMap.set(normalizedKey, p.location);
-        }
-      }
-    });
-
-    const anosUnicos = Array.from(anosMap.values()).sort((a, b) => {
-      // Ordenar numericamente quando possível
-      const numA = parseInt(a);
-      const numB = parseInt(b);
-      if (!isNaN(numA) && !isNaN(numB)) {
-        return numA - numB;
-      }
-      return a.localeCompare(b, 'pt-BR');
-    });
-
-    return {
-    anos: anosUnicos,
-    tags: Array.from(
-      new Set(
-        contentTypeFilteredProjects
-          .flatMap((p) => {
-            // Garantir que sempre temos um array de tags
-            const rawTags = p.tags && p.tags.length > 0 
-              ? p.tags 
-              : (p.tag ? [p.tag] : []);
-            // Converter para nomes completos para evitar duplicatas (ex: "ART" e "Arte" ambos viram "Arte")
-            return rawTags
-              .filter(Boolean) // Remove valores vazios/null/undefined
-              .map(tag => getComponentFullName(tag));
-          })
-          .filter(Boolean), // Remove valores vazios/null/undefined após conversão
-      ),
-    ).sort(),
-
-      // Códigos BNCC: baseados nos projetos filtrados pelo tipo de conteúdo selecionado
-      // para mostrar apenas os códigos relevantes ao filtro ativo
-      bnccCodes: Array.from(
-        new Set(
-          contentTypeFilteredProjects
-            .map((p) => p.bnccCode)
-            .filter((code) => {
-              if (!code) return false;
-              const trimmed = String(code).trim();
-              return trimmed !== '' && trimmed !== 'undefined' && trimmed !== 'null';
-            })
-            .map((code) => String(code).trim()),
-        ),
-      ).sort(),
-    segmentos: sortSegments(
-      Array.from(
-        new Set(
-          contentTypeFilteredProjects
-            .map((p) => p.segmento)
-            .filter(Boolean)
-            .map(seg => getSegmentFullName(seg || '')) // Converter para nomes completos antes de criar o Set
-        )
-      )
-    ) as string[],
-    categorias: Array.from(
-      new Set(
-        contentTypeFilteredProjects
-          .map((p) => p.category)
-          .filter((cat): cat is string => Boolean(cat)),
-      ),
-    ).sort(),
-    marcas: Array.from(
-      new Set(
-        contentTypeFilteredProjects
-          .map((p) => p.marca)
-          .filter(Boolean)
-            .map(marca => getMarcaFullName(marca || '')) // Converter para nomes completos antes de criar o Set
-      ),
-    ).sort(),
-    tipoObjeto: Array.from(
-      new Set(
-        contentTypeFilteredProjects
-          .filter((p) => p.contentType === "OED" && 'tipoObjeto' in p)
-          .map((p) => (p as ODAFromExcel).tipoObjeto)
-          .filter(Boolean) as string[],
-      ),
-    ).sort(),
-    videoCategory: Array.from(
-      new Set(
-        contentTypeFilteredProjects
-          .filter((p) => p.contentType === "Audiovisual")
-          .map((p) => p.videoCategory)
-          .filter((cat): cat is string => Boolean(cat)),
-      ),
-    ).sort(),
-    samr: Array.from(
-      new Set(
-        contentTypeFilteredProjects
-          .map((p) => p.samr)
-          .filter((s): s is string => Boolean(s)),
-      ),
-    ).sort(),
-      volumes: Array.from(
-        new Set(
-          contentTypeFilteredProjects
-            .map((p) => p.volume)
-            .filter((v): v is string => Boolean(v)),
-        ),
-      ).sort(),
-      vestibular: Array.from(
-        new Set(
-          contentTypeFilteredProjects
-            .filter((p) => p.contentType === "Audiovisual" && 'vestibular' in p)
-            .map((p) => (p as any).vestibular)
-            .filter((v): v is string => Boolean(v)),
-        ),
-      ).sort(),
-      capitulo: Array.from(
-        new Set(
-          contentTypeFilteredProjects
-            .filter((p) => p.contentType === "Audiovisual" && 'capitulo' in p)
-            .map((p) => (p as any).capitulo)
-            .filter((v): v is string => Boolean(v)),
-        ),
-      ).sort(),
-    };
-  }, [contentTypeFilteredProjects, projects, odasFromExcel, audiovisualFromDB]);
-
-  // Filter ODAs based on search query and selected filters
-  const filteredProjects = contentTypeFilteredProjects.filter(
-    (project) => {
-      // Search filter
-      const matchesSearch =
-        project.title
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        project.tag
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        project.location
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase()) ||
-        (project.bnccCode?.toLowerCase() || '')
-          .includes(searchQuery.toLowerCase()) ||
-        (project.category?.toLowerCase() || '')
-          .includes(searchQuery.toLowerCase()) ||
-        (project.volume?.toLowerCase() || '')
-          .includes(searchQuery.toLowerCase()) ||
-        (project.segmento?.toLowerCase() || '')
-          .includes(searchQuery.toLowerCase()) ||
-        (project.tags || []).some((tag) =>
-          tag.toLowerCase().includes(searchQuery.toLowerCase()),
-        ) ||
-        // Campos específicos de audiovisual
-        ((project as any).vestibular?.toLowerCase() || '')
-          .includes(searchQuery.toLowerCase()) ||
-        ((project as any).capitulo?.toLowerCase() || '')
-          .includes(searchQuery.toLowerCase()) ||
-        ((project as any).enunciado?.toLowerCase() || '')
-          .includes(searchQuery.toLowerCase()) ||
-        ((project as any).nomeCapitulo?.toLowerCase() || '')
-          .includes(searchQuery.toLowerCase());
-
-      // Filter by anos (usar normalização para comparar)
-      const normalizeAnoForComparison = (ano: string): string => {
-        if (!ano) return '';
-        return ano
-          .trim()
-          .replace(/[°ºo]/gi, '°')
-          .replace(/\s+/g, ' ')
-          .toLowerCase();
-      };
-      
-      const matchesAnos =
-        selectedFilters.anos.length === 0 ||
-        (project.location && selectedFilters.anos.some(selectedAno => 
-          normalizeAnoForComparison(selectedAno) === normalizeAnoForComparison(project.location)
-        ));
-
-      // Filter by tags (Componente Curricular)
-      const matchesTags =
-        selectedFilters.tags.length === 0 ||
-        selectedFilters.tags.some(
-          (selectedTag) => {
-            // Converter o tag selecionado para nome completo (já deve estar, mas garantir)
-            const selectedTagFull = getComponentFullName(selectedTag);
-            // Verifica se o tag está nas tags do projeto ou se o tag do projeto corresponde
-            // Comparar usando nomes completos para garantir correspondência
-            const projectTags = (project.tags || []).map(t => getComponentFullName(t));
-            const projectTagFull = project.tag ? getComponentFullName(project.tag) : '';
-            return (
-              projectTags.includes(selectedTagFull) ||
-              projectTagFull === selectedTagFull
-            );
-          }
-        );
-
-      // Filter by BNCC - normaliza espaços em branco
-      const matchesBNCC =
-        selectedFilters.bnccCodes.length === 0 ||
-        (project.bnccCode && 
-         project.bnccCode.trim() !== '' &&
-         selectedFilters.bnccCodes.some(
-           (selectedCode) => project.bnccCode?.trim() === selectedCode.trim()
-         ));
-
-      // Filter by segmentos - comparar usando nomes completos
-      const matchesSegmentos =
-        selectedFilters.segmentos.length === 0 ||
-        (project.segmento && selectedFilters.segmentos.some(
-          (selectedSegment) => {
-            const selectedSegmentFull = getSegmentFullName(selectedSegment);
-            const projectSegmentFull = getSegmentFullName(project.segmento || '');
-            return projectSegmentFull === selectedSegmentFull;
-          }
-        ));
-
-      // Filter by categorias
-      const matchesCategorias =
-        selectedFilters.categorias.length === 0 ||
-        (project.category && selectedFilters.categorias.includes(project.category));
-
-      // Filter by marcas
-      // Filter by marcas - comparar usando nomes completos
-      const matchesMarcas =
-        selectedFilters.marcas.length === 0 ||
-        (project.marca && selectedFilters.marcas.some(
-          (selectedMarca) => {
-            const selectedMarcaFull = getMarcaFullName(selectedMarca);
-            const projectMarcaFull = getMarcaFullName(project.marca || '');
-            return projectMarcaFull === selectedMarcaFull;
-          }
-        ));
-
-      // Filter by tipo de objeto (OED only)
-      const matchesTipoObjeto =
-        selectedFilters.tipoObjeto.length === 0 ||
-        (project.contentType === "OED" && 'tipoObjeto' in project &&
-          (project as ODAFromExcel).tipoObjeto &&
-          selectedFilters.tipoObjeto.includes(
-            (project as ODAFromExcel).tipoObjeto!,
-          ));
-
-      // Filter by video category (Audiovisual only)
-      const matchesVideoCategory =
-        selectedFilters.videoCategory.length === 0 ||
-        (project.videoCategory &&
-          selectedFilters.videoCategory.includes(
-            project.videoCategory,
-          ));
-
-      // Filter by SAMR
-      const matchesSAMR =
-        selectedFilters.samr.length === 0 ||
-        (project.samr &&
-          selectedFilters.samr.includes(project.samr));
-
-      // Filter by volumes
-      const matchesVolumes =
-        selectedFilters.volumes.length === 0 ||
-        (project.volume &&
-          selectedFilters.volumes.includes(project.volume));
-
-      // Filter by vestibular (Audiovisual only)
-      const matchesVestibular =
-        selectedFilters.vestibular.length === 0 ||
-        (project.contentType === "Audiovisual" && 'vestibular' in project &&
-          (project as any).vestibular &&
-          selectedFilters.vestibular.includes((project as any).vestibular));
-
-      // Filter by capitulo (Audiovisual only)
-      const matchesCapitulo =
-        selectedFilters.capitulo.length === 0 ||
-        (project.contentType === "Audiovisual" && 'capitulo' in project &&
-          (project as any).capitulo &&
-          selectedFilters.capitulo.includes((project as any).capitulo));
-
-      return (
-        matchesSearch &&
-        matchesAnos &&
-        matchesTags &&
-        matchesBNCC &&
-        matchesSegmentos &&
-        matchesCategorias &&
-        matchesMarcas &&
-        matchesTipoObjeto &&
-        matchesVideoCategory &&
-        matchesSAMR &&
-        matchesVolumes &&
-        matchesVestibular &&
-        matchesCapitulo
-      );
-    },
-  );
 
   // Calcular paginação
   // Grid: 3 linhas x 5 colunas (2xl) = 15 itens por página
@@ -569,73 +277,103 @@ export default function App() {
   };
 
   const handleNavigateToSettings = () => {
-    setCurrentPage("settings");
     setSelectedProject(null);
+    if (!user) {
+      setReturnToAfterLogin("settings");
+      setCurrentPage("login");
+    } else {
+      setCurrentPage("settings");
+    }
   };
 
   const handleNavigateToFavorites = () => {
-    setCurrentPage("favorites");
     setSelectedProject(null);
+    if (!user) {
+      setReturnToAfterLogin("favorites");
+      setCurrentPage("login");
+    } else {
+      setCurrentPage("favorites");
+    }
   };
 
   const handleNavigateToGallery = () => {
-    setCurrentPage("gallery");
     setSelectedProject(null);
     setCurrentPageNumber(1);
+    if (!user) {
+      setReturnToAfterLogin("gallery");
+      setCurrentPage("login");
+    } else {
+      setCurrentPage("gallery");
+    }
   };
 
-  const handleFilterChange = (
-    category: string,
-    value: string,
-  ) => {
-    setSelectedFilters((prev) => {
-      const currentValues = prev[category];
-      const newValues = currentValues.includes(value)
-        ? currentValues.filter((v) => v !== value)
-        : [...currentValues, value];
-
-      return {
-        ...prev,
-        [category]: newValues,
-      };
-    });
+  const handleNavigateToLogin = () => {
+    setReturnToAfterLogin("gallery");
+    setCurrentPage("login");
+    setSelectedProject(null);
   };
 
-  const handleClearFilters = () => {
-    setSelectedFilters({
-      anos: [],
-      tags: [],
-      bnccCodes: [],
-      segmentos: [],
-      categorias: [],
-      marcas: [],
-      tipoObjeto: [],
-      videoCategory: [],
-      samr: [],
-      volumes: [],
-      vestibular: [],
-      capitulo: [],
-    });
+  const handleLogout = () => {
+    logout();
+    setCurrentPage("home");
+    setSelectedProject(null);
   };
 
-  const handleContentTypeChange = (
-    type: "Todos" | "Audiovisual" | "OED",
-  ) => {
+  const handleNavigateToRegister = () => {
+    setCurrentPage("register");
+    setSelectedProject(null);
+  };
+
+  const handleBackToHome = () => {
+    setSelectedProject(null);
+    setCurrentPage("home");
+  };
+
+  const handleContentTypeChange = (type: "Todos" | "Audiovisual" | "OED") => {
     setContentTypeFilter(type);
-    // Clear filters when changing content type
     handleClearFilters();
   };
 
-  // Listen for messages from home.html iframe to navigate to gallery
+  // Da página inicial: ao tentar acessar o Acervo, exige login primeiro
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
       if (event.data === 'navigateToAcervo') {
-        setCurrentPage('gallery');
+        if (user) {
+          setCurrentPage('gallery');
+        } else {
+          setReturnToAfterLogin('gallery');
+          setCurrentPage('login');
+        }
       }
     };
     window.addEventListener('message', handleMessage);
     return () => window.removeEventListener('message', handleMessage);
-  }, []);
+  }, [user]);
+
+  // Se estiver em área que exige login (acervo, conta, favoritos) sem estar logado, redireciona para login
+  // (precisa ficar junto com os outros hooks, antes de qualquer return condicional)
+  useEffect(() => {
+    if (authLoading || user !== null) return;
+    if (selectedProject) {
+      setSelectedProject(null);
+      setReturnToAfterLogin("gallery");
+      setCurrentPage("login");
+      return;
+    }
+    if (currentPage === "gallery" || currentPage === "settings" || currentPage === "favorites") {
+      setReturnToAfterLogin(currentPage);
+      setCurrentPage("login");
+    }
+  }, [authLoading, user, currentPage, selectedProject]);
+
+  // Enquanto restaura sessão (localStorage), evita flash ou tela em branco
+  if (authLoading && currentPage !== "home") {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-primary font-semibold">Carregando...</p>
+      </div>
+    );
+  }
 
   // Show home page
   if (currentPage === "home") {
@@ -661,14 +399,53 @@ export default function App() {
     );
   }
 
+  // Show login page
+  if (currentPage === "login") {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <LoginPage
+          onBack={handleBackToHome}
+          onLoginSuccess={() => {
+            setCurrentPage(returnToAfterLogin);
+            if (returnToAfterLogin === "gallery") setSelectedProject(null);
+          }}
+          login={login}
+          onNavigateToRegister={handleNavigateToRegister}
+        />
+      </Suspense>
+    );
+  }
+
+  // Show register page
+  if (currentPage === "register") {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <RegisterPage
+          onBack={handleBackToHome}
+          onRegisterSuccess={() => {
+            setCurrentPage(returnToAfterLogin);
+            if (returnToAfterLogin === "gallery") setSelectedProject(null);
+          }}
+          register={register}
+          onNavigateToLogin={() => setCurrentPage("login")}
+        />
+      </Suspense>
+    );
+  }
+
   // Show settings page
   if (currentPage === "settings") {
-    return <ProfileSettingsPage onBack={handleBackToGallery} onNavigateToFavorites={() => setCurrentPage('favorites')} />;
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <ProfileSettingsPage onBack={handleBackToGallery} onNavigateToFavorites={() => setCurrentPage('favorites')} />
+      </Suspense>
+    );
   }
 
   // Show favorites page
   if (currentPage === "favorites") {
     return (
+      <Suspense fallback={<PageLoader />}>
       <FavoritesPage
         onBack={handleBackToGallery}
         favorites={favorites}
@@ -676,7 +453,27 @@ export default function App() {
         onProjectClick={handleProjectClick}
         onToggleFavorite={handleToggleFavorite}
         onNavigateToSettings={handleNavigateToSettings}
+        onNavigateToFavorites={() => setCurrentPage("favorites")}
+        onLogout={handleLogout}
+        user={user}
       />
+      </Suspense>
+    );
+  }
+
+  // Proteção: se chegou aqui sem estar logado, mostrar login (evita tela em branco)
+  if (!authLoading && !user) {
+    return (
+      <Suspense fallback={<PageLoader />}>
+      <LoginPage
+        onBack={handleBackToHome}
+        onLoginSuccess={() => {
+          setCurrentPage(returnToAfterLogin);
+          if (returnToAfterLogin === "gallery") setSelectedProject(null);
+        }}
+        login={login}
+      />
+      </Suspense>
     );
   }
 
@@ -684,6 +481,7 @@ export default function App() {
   if (selectedProject) {
     const currentProject = selectedProject; // Type guard
     return (
+      <Suspense fallback={<PageLoader />}>
       <div className="min-h-screen bg-background flex flex-col">
         <Navigation
           searchQuery={searchQuery}
@@ -691,9 +489,12 @@ export default function App() {
           onNavigateToSettings={handleNavigateToSettings}
           onNavigateToFavorites={handleNavigateToFavorites}
           onNavigateToGallery={handleNavigateToGallery}
+          onNavigateToLogin={handleNavigateToLogin}
           contentTypeFilter={contentTypeFilter}
           onContentTypeChange={handleContentTypeChange}
           hideSearch={true}
+          user={user}
+          onLogout={handleLogout}
         />
         
         <ProjectDetailsPage
@@ -706,6 +507,7 @@ export default function App() {
           favorites={favorites}
         />
       </div>
+      </Suspense>
     );
   }
 
@@ -717,8 +519,11 @@ export default function App() {
         onNavigateToSettings={handleNavigateToSettings}
         onNavigateToFavorites={handleNavigateToFavorites}
         onNavigateToGallery={handleNavigateToGallery}
+        onNavigateToLogin={handleNavigateToLogin}
         contentTypeFilter={contentTypeFilter}
         onContentTypeChange={handleContentTypeChange}
+        user={user}
+        onLogout={handleLogout}
       />
 
       {/* Server Connection Error Alert */}
@@ -973,7 +778,14 @@ export default function App() {
               </div>
             </div>
 
-            {/* Results count or empty state */}
+            {/* Loading acervo ou resultados */}
+            {projectsLoading ? (
+              <div className="flex flex-col items-center justify-center min-h-[50vh] py-12">
+                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+                <p className="text-primary font-semibold">Carregando acervo...</p>
+                <p className="text-sm text-muted-foreground mt-1">Buscando ODAs e videoaulas</p>
+              </div>
+            ) : (
             <div>
               <div className="mb-8 flex items-center justify-between">
                 {filteredProjects.length > 0 && (
@@ -1115,6 +927,7 @@ export default function App() {
                 )}
               </div>
             </div>
+            )}
           </div>
         </main>
       </div>

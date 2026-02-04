@@ -2,27 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { BookOpen, Heart, Clock, Video, Gamepad2, MapPin, Play } from 'lucide-react';
 import { getCurriculumColor, getComponentFullName, getMarcaFullName } from '../utils/curriculumColors';
 import { VideoThumbnail } from './VideoThumbnail';
-
-interface Project {
-  id: number;
-  title: string;
-  tag: string;
-  tags?: string[];
-  tagColor: string;
-  location: string;
-  image: string;
-  bnccCode?: string;
-  bnccDescription?: string;
-  category?: string;
-  duration?: string;
-  volume?: string;
-  segmento?: string;
-  pagina?: string;
-  marca?: string;
-  contentType?: string;
-  videoCategory?: string;
-  samr?: string;
-}
+import type { Project } from '../types/project';
 
 interface ProjectListItemProps {
   project: Project;
@@ -66,9 +46,9 @@ export function ProjectListItem({ project, onClick, isFavorite = false, onToggle
         
         {/* Image - Tamanho aumentado para desktop */}
         <div className="relative flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-[12px] overflow-hidden bg-gray-100 thumbnail-list-item">
-          {project.contentType === 'Audiovisual' && (project as any).videoUrl ? (
+          {project.contentType === 'Audiovisual' && project.videoUrl ? (
             <VideoThumbnail
-              videoUrl={(project as any).videoUrl}
+              videoUrl={project.videoUrl}
               fallbackImage={project.image}
               alt={project.title}
               className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
@@ -89,7 +69,7 @@ export function ProjectListItem({ project, onClick, isFavorite = false, onToggle
             />
           )}
           {/* Botão de play overlay para audiovisuais */}
-          {project.contentType === 'Audiovisual' && (project as any).videoUrl && (
+          {project.contentType === 'Audiovisual' && project.videoUrl && (
             <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 flex items-center justify-center transition-all duration-300">
               <div className="w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
                 <Play className="w-4 h-4 text-primary ml-0.5" fill="currentColor" />

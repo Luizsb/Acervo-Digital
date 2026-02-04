@@ -4,38 +4,10 @@ import { ProjectCard } from './ProjectCard';
 import { getCurriculumColor, getComponentFullName, getSegmentFullName, getMarcaFullName } from '../utils/curriculumColors';
 import { ScrollToTop } from './ScrollToTop';
 import { VideoThumbnail } from './VideoThumbnail';
+import { getVimeoEmbedUrl } from '../utils/videoThumbnails';
+import type { Project } from '../types/project';
 
 const DEFAULT_TECHNICAL_REQUIREMENTS = "Navegador web atualizado (Chrome, Firefox, Safari)\nConexão com internet (mínimo 2 Mbps)\nDispositivos compatíveis: computador, tablet ou smartphone\nNão requer instalação de software adicional";
-
-interface Project {
-  id: number;
-  title: string;
-  tag: string;
-  tags?: string[];
-  tagColor: string;
-  location: string;
-  image: string;
-  videoUrl?: string;
-  bnccCode?: string;
-  bnccDescription?: string;
-  category?: string;
-  duration?: string;
-  volume?: string;
-  segmento?: string;
-  pagina?: string;
-  marca?: string;
-  contentType?: string;
-  videoCategory?: string;
-  samr?: string;
-  tipoObjeto?: string;
-  description?: string;
-  learningObjectives?: string[];
-  pedagogicalResources?: string[];
-  technicalRequirements?: string;
-  metodologiaPdfUrl?: string;
-  status?: string;
-  codigoODA?: string;
-}
 
 interface ProjectDetailsPageProps {
   project: Project;
@@ -110,10 +82,9 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
                   const isAudiovisual = project.contentType === 'Audiovisual' && project.videoUrl;
                   
                   if (isAudiovisual && showVideo) {
-                    // Mostrar iframe do vídeo para audiovisuais
                     return (
                       <iframe
-                        src={project.videoUrl}
+                        src={getVimeoEmbedUrl(project.videoUrl!, { autoplay: true })}
                         className="w-full h-full"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen

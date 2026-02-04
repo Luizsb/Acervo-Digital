@@ -101,3 +101,31 @@ model Audiovisual {
   @@map("audiovisual")
 }
 
+model User {
+  id            Int      @id @default(autoincrement())
+  email         String   @unique @map("email")
+  passwordHash String   @map("password_hash")
+  name          String?  @map("name")
+  role          String   @default("user") @map("role")
+  emailVerified Boolean  @default(false) @map("email_verified")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  favorites UserFavorite[]
+
+  @@map("users")
+}
+
+model UserFavorite {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  projectId Int      @map("project_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, projectId])
+  @@index([userId])
+  @@map("user_favorites")
+}
+

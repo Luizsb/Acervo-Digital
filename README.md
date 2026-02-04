@@ -2,156 +2,101 @@
 
 Sistema de gerenciamento e busca de Objetos Digitais de Aprendizagem (ODAs) para educação.
 
-## 🛠️ Tecnologias e Linguagens
+## Tecnologias
 
-### Frontend
-- **React 18** - Biblioteca JavaScript para construção de interfaces
-- **TypeScript** - Superset do JavaScript com tipagem estática
-- **Vite** - Build tool e dev server moderno
-- **Tailwind CSS** - Framework CSS utilitário
-- **Radix UI** - Componentes acessíveis e sem estilo
-- **Lucide React** - Biblioteca de ícones
+- **Frontend:** React 18, TypeScript, Vite, Tailwind CSS, Radix UI, Lucide React
+- **Backend:** Node.js, Express, TypeScript, Prisma
+- **Banco:** PostgreSQL (Supabase) ou SQLite
 
-### Backend
-- **Node.js** - Runtime JavaScript
-- **Express** - Framework web para Node.js
-- **TypeScript** - Tipagem estática no backend
-- **Prisma** - ORM (Object-Relational Mapping) para banco de dados
-- **PostgreSQL** (Supabase) - Banco de dados relacional
-
-### Banco de Dados
-- **Supabase** - Plataforma PostgreSQL como serviço
-- **Prisma** - ORM e gerenciamento de schema
-
-## 📁 Estrutura do Projeto
+## Estrutura
 
 ```
 Acervo Digital/
-├── src/                    # Código-fonte do frontend
-│   ├── components/         # Componentes React
-│   │   ├── ui/            # Componentes UI reutilizáveis (Radix UI)
-│   │   └── ...            # Componentes específicos da aplicação
-│   ├── utils/             # Utilitários e helpers
-│   │   ├── api.ts         # Funções de comunicação com API
-│   │   ├── curriculumColors.ts  # Mapeamento de cores e nomes
-│   │   └── ...            # Outros utilitários
-│   ├── App.tsx            # Componente principal
-│   └── main.tsx           # Ponto de entrada
-│
-├── server/                 # Código-fonte do backend
-│   ├── routes/            # Rotas da API
-│   │   ├── odas.ts        # Rotas para ODAs
-│   │   ├── audiovisual.ts # Rotas para audiovisuais
-│   │   └── bncc.ts        # Rotas para BNCC
-│   ├── prisma/            # Configuração do Prisma
-│   │   ├── schema.prisma  # Schema do banco de dados
-│   │   └── migrations/    # Migrações do banco
-│   ├── scripts/           # Scripts utilitários
-│   │   ├── migrate-audiovisual.ts
-│   │   └── ...
-│   ├── lib/               # Bibliotecas e configurações
-│   └── index.ts           # Ponto de entrada do servidor
-│
-├── public/                # Arquivos estáticos
-│   ├── ObjetosDigitais.xlsx
-│   ├── ObjetosAudiovisual.xlsx
-│   └── thumbs/            # Thumbnails das imagens
-│
-└── package.json           # Dependências e scripts do frontend
+├── src/                 # Frontend (React + Vite)
+│   ├── components/      # Componentes e ui/
+│   ├── contexts/        # Auth
+│   ├── hooks/           # useProjectFilters
+│   ├── utils/           # api, loadODAs, etc.
+│   └── types/           # Tipos (Project)
+├── server/              # Backend (Express + Prisma)
+│   ├── prisma/          # schema e migrations
+│   ├── routes/          # odas, auth, favorites, migration, bncc
+│   └── index.ts
+└── public/              # ObjetosDigitais.xlsx, ObjetosAudiovisual.xlsx, thumbs/
 ```
 
-## 🚀 Executando o Projeto
+## Instalação e execução
 
-### Pré-requisitos
-- Node.js (versão 18 ou superior)
-- npm ou yarn
-- Conta no Supabase (para banco de dados)
+### 1. Dependências
 
-### Instalação
-
-1. **Instalar dependências do frontend:**
 ```bash
 npm install
+cd server && npm install && cd ..
 ```
 
-2. **Instalar dependências do backend:**
-```bash
-cd server
-npm install
-cd ..
+### 2. Ambiente
+
+Crie `server/.env`:
+
+```env
+DATABASE_URL="postgresql://..."   # ou file:./prisma/dev.db para SQLite
+PORT=3001
+CORS_ORIGIN=http://localhost:3000
+JWT_SECRET=sua-chave-secreta-longa-e-aleatoria
+JWT_EXPIRES_IN=7d
 ```
 
-3. **Configurar variáveis de ambiente:**
-   - Crie um arquivo `server/.env` com as configurações do Supabase:
-   ```
-   DATABASE_URL="postgresql://..."
-   PORT=3001
-   CORS_ORIGIN=http://localhost:3000
-   ```
+Opcional na raiz (`.env`): `VITE_API_URL=http://localhost:3001/api`
 
-4. **Gerar cliente Prisma:**
+### 3. Prisma
+
 ```bash
 npm run prisma:generate
+cd server && npx prisma migrate dev --name init
+# ou, se o banco já existir: npx prisma db push
 ```
 
-### Desenvolvimento
+### 4. Rodar
 
-**Terminal 1 - Frontend:**
-```bash
-npm run dev
-```
-Acesse: http://localhost:3000
+**Terminal 1 – backend:**  
+`npm run server:dev` → http://localhost:3001
 
-**Terminal 2 - Backend:**
-```bash
-npm run server:dev
-```
-API disponível em: http://localhost:3001
+**Terminal 2 – frontend:**  
+`npm run dev` → http://localhost:3000
 
-### Build de Produção
+## Scripts (raiz)
 
-**Frontend:**
-```bash
-npm run build
-```
+| Script | Descrição |
+|--------|-----------|
+| `npm run dev` | Frontend em desenvolvimento |
+| `npm run build` | Build do frontend |
+| `npm run server:dev` | Backend em desenvolvimento |
+| `npm run server:build` / `server:start` | Build e start do backend |
+| `npm run prisma:generate` | Gerar cliente Prisma |
+| `npm run prisma:migrate` | Rodar migrações |
+| `npm run prisma:studio` | Abrir Prisma Studio (http://localhost:5555) |
+| `npm run test` | Testes (Vitest) |
+| `npm run check:supabase` | Verificar conexão Supabase |
 
-**Backend:**
-```bash
-npm run server:build
-npm run server:start
-```
+## API (resumo)
 
-## 📚 Scripts Disponíveis
+- **ODAs:** `GET/POST /api/odas`, `GET/PUT/DELETE /api/odas/:id`, `GET /api/odas/stats/count`
+- **Auth:** `POST /api/auth/register`, `POST /api/auth/login`, `GET/PATCH /api/auth/me`
+- **Favoritos:** `GET/POST /api/users/me/favorites`, `DELETE /api/users/me/favorites/:projectId`
+- **Migração:** `POST /api/migration/excel` (body: `{ "clearExisting": false }`), `GET /api/migration/status`
+- **BNCC:** `GET /api/bncc`, `GET /api/bncc/:codigo`
 
-### Frontend
-- `npm run dev` - Inicia servidor de desenvolvimento
-- `npm run build` - Gera build de produção
+## Planilhas Excel
 
-### Backend
-- `npm run server:dev` - Inicia servidor backend em modo desenvolvimento
-- `npm run server:build` - Compila TypeScript do backend
-- `npm run server:start` - Inicia servidor backend em produção
+- `public/ObjetosDigitais.xlsx` e `public/ObjetosAudiovisual.xlsx` são usadas na migração inicial (backend e, se a API falhar, fallback no frontend).
+- Após migrar, o sistema funciona sem as planilhas; pode mantê-las como backup. Para migrar de novo: `POST /api/migration/excel`.
 
-### Prisma
-- `npm run prisma:generate` - Gera cliente Prisma
-- `npm run prisma:migrate` - Executa migrações
-- `npm run prisma:studio` - Abre Prisma Studio (interface visual do banco)
+## Troubleshooting
 
-### Utilitários
-- `npm run check:supabase` - Verifica conexão com Supabase
+- **Prisma / SSL:** Em redes com proxy, tente `npm config set strict-ssl false` antes de `npx prisma generate` (depois volte para `true`).
+- **CORS:** Confira `CORS_ORIGIN` em `server/.env`.
+- **Erros no console (Vimeo):** Mensagens como `net::ERR_BLOCKED_BY_CLIENT` vêm do player do Vimeo (analytics); o vídeo continua funcionando, pode ignorar ou desativar bloqueador no localhost.
 
-## 🗄️ Banco de Dados
+## Documentação adicional
 
-O projeto utiliza **Supabase** (PostgreSQL) como banco de dados. As tabelas principais são:
-
-- **ODA** - Objetos Digitais de Aprendizagem
-- **Audiovisual** - Conteúdo audiovisual (vídeo aulas)
-- **BNCC** - Base Nacional Comum Curricular
-
-O schema é gerenciado pelo **Prisma** através do arquivo `server/prisma/schema.prisma`.
-
-## 📖 Documentação Adicional
-
-- `SETUP.md` - Guia detalhado de configuração
-- `README_BACKEND.md` - Documentação específica do backend
-- `PLANILHA_EXCEL.md` - Informações sobre importação de planilhas
+- `src/guidelines/Guidelines.md` – Diretrizes de design e componentes da interface.
