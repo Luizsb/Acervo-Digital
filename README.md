@@ -4,7 +4,7 @@ Sistema de gerenciamento e busca de Objetos Digitais de Aprendizagem (ODAs) para
 
 ## Tecnologias
 
-- **Frontend:** React 18, TypeScript, Vite, Tailwind CSS, Radix UI, Lucide React
+- **Frontend:** React 18, TypeScript, Vite, Tailwind CSS, Radix UI, Lucide React, Intro.js (onboarding)
 - **Backend:** Node.js, Express, TypeScript, Prisma
 - **Banco:** PostgreSQL (Supabase) ou SQLite
 
