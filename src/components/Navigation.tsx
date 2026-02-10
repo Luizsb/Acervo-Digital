@@ -47,7 +47,7 @@ export function Navigation({ searchQuery, onSearchChange, onNavigateToSettings, 
           <div className="hidden lg:flex items-center gap-4">
             {/* Desktop Search */}
             {!hideSearch && (
-              <div className="relative">
+              <div id="acervo-search" className="relative">
                 <div className={`flex items-center gap-3 px-5 py-3 bg-white rounded-xl border-2 transition-all duration-300 shadow-md ${
                   isSearchFocused ? 'border-primary shadow-lg shadow-primary/20 scale-105' : 'border-gray-300 shadow-md'
                 }`}>

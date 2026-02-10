@@ -130,4 +130,3 @@ model UserFavorite {
   @@index([userId])
   @@map("user_favorites")
 }
-

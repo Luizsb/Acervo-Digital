@@ -101,7 +101,7 @@ export function FilterSidebar({ filters, selectedFilters, onFilterChange, onClea
   };
 
   return (
-    <div className="w-full lg:w-80 p-6 bg-white border-2 border-gray-300 shadow-xl h-full overflow-y-auto">
+    <div id="acervo-filters" className="w-full lg:w-80 p-6 bg-white border-2 border-gray-300 shadow-xl h-full overflow-y-auto">
       <div className="mb-6">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-primary font-extrabold flex items-center gap-2.5 text-lg">

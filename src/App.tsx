@@ -21,6 +21,7 @@ import { Pagination } from "./components/Pagination";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { useProjectFilters } from "./hooks/useProjectFilters";
 import { getInitialPageFromHash, getHashFromPage, type PageKey } from "./utils/hashRouting";
+import { startOnboardingIfNeeded } from "./utils/onboarding";
 
 // Lazy load de páginas pesadas para reduzir bundle inicial
 const ProjectDetailsPage = lazy(() =>
@@ -179,6 +180,13 @@ export default function App() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [currentPageNumber, setCurrentPageNumber] = useState(1);
   const [showWelcomeBanner, setShowWelcomeBanner] = useState(true);
+
+  // Onboarding (tour guiado) no primeiro acesso à galeria
+  useEffect(() => {
+    if (currentPage !== "gallery") return;
+    if (projectsLoading) return;
+    startOnboardingIfNeeded();
+  }, [currentPage, projectsLoading]);
 
   // Load favorites: from API when logged in, else from localStorage
   useEffect(() => {
@@ -738,7 +746,7 @@ login={login}
           <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
             {/* Hero / Welcome Banner */}
             {showWelcomeBanner && (
-              <section className="mb-10">
+              <section id="acervo-hero" className="mb-10">
                 <div className="relative overflow-hidden bg-primary text-white shadow-md px-6 py-8 sm:px-10 sm:py-10" style={{ borderRadius: '12px' }}>
                   {/* Botão fechar */}
                   <button
@@ -766,7 +774,7 @@ login={login}
             )}
 
             {/* Content Type Selector */}
-            <div className="mb-10">
+            <div id="acervo-content-type" className="mb-10">
               <h2 className="text-gray-700 font-semibold mb-4" style={{ fontSize: '16px' }}>
                 Selecione o tipo de conteúdo
               </h2>
@@ -819,7 +827,7 @@ login={login}
                 <p className="text-sm text-muted-foreground mt-1">Buscando ODAs e videoaulas</p>
               </div>
             ) : (
-            <div>
+            <div id="acervo-project-grid">
               <div className="mb-8 flex items-center justify-between">
                 {filteredProjects.length > 0 && (
                   <p className="text-sm text-gray-500 font-semibold">

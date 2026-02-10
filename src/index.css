@@ -3290,3 +3290,68 @@ html {
     transform: translate3d(var(--tw-enter-translate-x, 0), var(--tw-enter-translate-y, 0), 0) scale3d(var(--tw-enter-scale, 1), var(--tw-enter-scale, 1), var(--tw-enter-scale, 1)) rotate(var(--tw-enter-rotate, 0));
   }
 }
+
+/* -----------------------------------------------------------------------------
+   Onboarding (Intro.js) - Estilo alinhado ao Acervo Digital
+----------------------------------------------------------------------------- */
+
+.acervo-onboarding-tooltip {
+  border-radius: 16px;
+  box-shadow: 0 18px 40px rgba(1, 36, 81, 0.18);
+  padding: 18px 20px;
+  font-family: var(--font-sans);
+}
+
+.acervo-onboarding-tooltip .introjs-tooltip-title {
+  font-size: 16px;
+  font-weight: var(--font-weight-bold);
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+
+.acervo-onboarding-tooltip .introjs-tooltiptext {
+  font-size: 13px;
+  color: var(--foreground);
+}
+
+.acervo-onboarding-tooltip .introjs-skipbutton {
+  color: var(--secondary);
+  font-weight: var(--font-weight-semibold);
+  font-size: 11px;
+  top: -20px !important;
+  right: 2px !important;
+  max-width: 60px;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.acervo-onboarding-tooltip .introjs-button {
+  border-radius: 9999px;
+  font-size: 13px;
+  padding: 6px 14px;
+  font-family: var(--font-sans);
+}
+
+.acervo-onboarding-tooltip .introjs-prevbutton,
+.acervo-onboarding-tooltip .introjs-nextbutton,
+.acervo-onboarding-tooltip .introjs-donebutton {
+  background-color: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.acervo-onboarding-tooltip .introjs-prevbutton:hover,
+.acervo-onboarding-tooltip .introjs-nextbutton:hover,
+.acervo-onboarding-tooltip .introjs-donebutton:hover {
+  background-color: #013668;
+  border-color: #013668;
+  color: var(--primary-foreground);
+}
+
+.acervo-onboarding-tooltip .introjs-bullets li a {
+  background-color: rgba(1, 36, 81, 0.2);
+}
+
+.acervo-onboarding-tooltip .introjs-bullets li a.active {
+  background-color: var(--secondary);
+}
