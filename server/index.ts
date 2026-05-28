@@ -30,6 +30,25 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+app.get('/health/supabase', async (req, res) => {
+  try {
+    await prisma.oDA.findFirst({
+      select: { id: true },
+    });
+
+    return res.status(200).json({
+      ok: true,
+      message: 'Banco Supabase consultado com sucesso',
+      checkedAt: new Date().toISOString(),
+    });
+  } catch (error: any) {
+    return res.status(500).json({
+      ok: false,
+      error: error?.message || 'Erro ao consultar banco Supabase',
+    });
+  }
+});
+
 // Routes
 app.use('/api/odas', odasRoutes);
 app.use('/api/migration', migrationRoutes);
