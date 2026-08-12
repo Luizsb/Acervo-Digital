@@ -1,7 +1,14 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'acervo-digital-secret-change-in-production';
+const configuredJwtSecret = process.env.JWT_SECRET?.trim();
+
+if (process.env.NODE_ENV === 'production' && !configuredJwtSecret) {
+  throw new Error('JWT_SECRET é obrigatório em produção.');
+}
+
+// Mantém o ambiente local simples sem permitir um segredo padrão em produção.
+const JWT_SECRET = configuredJwtSecret || 'acervo-digital-local-demo-only';
 
 export interface JwtPayload {
   userId: number;
@@ -29,6 +36,6 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
 }
 
 export function signToken(payload: JwtPayload): string {
-  const expiresIn = process.env.JWT_EXPIRES_IN || '365d';
+  const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
   return jwt.sign(payload, JWT_SECRET, { expiresIn } as jwt.SignOptions);
 }

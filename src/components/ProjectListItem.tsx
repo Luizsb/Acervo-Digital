@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { BookOpen, Heart, Clock, Video, Gamepad2, MapPin, Play } from 'lucide-react';
-import { getCurriculumColor, getComponentFullName, getMarcaFullName } from '../utils/curriculumColors';
-import { VideoThumbnail } from './VideoThumbnail';
+import { BookOpen, Heart, Clock, Video, Gamepad2, MapPin } from 'lucide-react';
+import { getCurriculumColor, getComponentFullName } from '../utils/curriculumColors';
+import { formatDuration } from '../utils/formatters';
+import { resolveMacroformato } from '../utils/macroformato';
 import type { Project } from '../types/project';
 
 interface ProjectListItemProps {
@@ -14,6 +15,8 @@ interface ProjectListItemProps {
 export function ProjectListItem({ project, onClick, isFavorite = false, onToggleFavorite }: ProjectListItemProps) {
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const itemRef = useRef<HTMLDivElement>(null);
+  const durationLabel = formatDuration(project.duration);
+  const macro = resolveMacroformato(project.macroformato);
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -46,36 +49,18 @@ export function ProjectListItem({ project, onClick, isFavorite = false, onToggle
         
         {/* Image - Tamanho aumentado para desktop */}
         <div className="relative flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-[12px] overflow-hidden bg-gray-100 thumbnail-list-item">
-          {project.contentType === 'Audiovisual' && project.videoUrl ? (
-            <VideoThumbnail
-              videoUrl={project.videoUrl}
-              fallbackImage={project.image}
-              alt={project.title}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-            />
-          ) : (
-            <img
-              src={project.image}
-              alt={project.title}
-              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-              onError={(e) => {
-                // Fallback para imagem padrão se a thumb não existir
-                const target = e.target as HTMLImageElement;
-                const defaultImage = 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080';
-                if (!target.src.includes(defaultImage)) {
-                  target.src = defaultImage;
-                }
-              }}
-            />
-          )}
-          {/* Botão de play overlay para audiovisuais */}
-          {project.contentType === 'Audiovisual' && project.videoUrl && (
-            <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 flex items-center justify-center transition-all duration-300">
-              <div className="w-8 h-8 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
-                <Play className="w-4 h-4 text-primary ml-0.5" fill="currentColor" />
-              </div>
-            </div>
-          )}
+          <img
+            src={project.image}
+            alt={project.title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              const defaultImage = 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080';
+              if (!target.src.includes(defaultImage)) {
+                target.src = defaultImage;
+              }
+            }}
+          />
         </div>
 
         {/* Content - Informações principais */}
@@ -112,11 +97,17 @@ export function ProjectListItem({ project, onClick, isFavorite = false, onToggle
           <div className="flex flex-wrap items-center gap-1.5">
             {/* Subject Tag */}
             {project.tags && project.tags.length > 0 ? (
-              <div className={`inline-flex items-center px-2 py-0.5 rounded-[12px] text-xs font-semibold border ${getCurriculumColor(project.tags[0])}`}>
+              <div
+                title="Componente curricular"
+                className={`inline-flex items-center px-2 py-0.5 rounded-[12px] text-xs font-semibold border ${getCurriculumColor(project.tags[0])}`}
+              >
                 {getComponentFullName(project.tags[0])}
               </div>
             ) : (
-              <div className={`inline-flex items-center px-2 py-0.5 rounded-[12px] text-xs font-semibold border ${getCurriculumColor(project.tag)}`}>
+              <div
+                title="Componente curricular"
+                className={`inline-flex items-center px-2 py-0.5 rounded-[12px] text-xs font-semibold border ${getCurriculumColor(project.tag)}`}
+              >
                 {getComponentFullName(project.tag)}
               </div>
             )}
@@ -130,24 +121,24 @@ export function ProjectListItem({ project, onClick, isFavorite = false, onToggle
                   project.marca === 'CQT' ? 'bg-pink-100 text-pink-700 border-pink-200' :
                   'bg-purple-100 text-purple-700 border-purple-200'
                 }`}
-                title={getMarcaFullName(project.marca)}
+                title="Marca"
               >
                 {project.marca}
               </div>
             )}
 
-            {/* BNCC Code */}
-            {project.bnccCode && (
-              <div className="inline-flex items-center px-2 py-0.5 rounded-[12px] font-mono font-bold bg-primary/10 text-primary border border-primary/20 text-xs">
-                {project.bnccCode}
+            {macro && (
+              <div title="Macroformato" className={macro.className}>
+                {macro.label}
               </div>
             )}
+
           </div>
 
           {/* Info Row - Bottom */}
           <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600">
             {/* Location/Year */}
-            <div className="flex items-center gap-1">
+            <div title="Ano / série" className="flex items-center gap-1">
               <MapPin className="w-3 h-3 text-gray-400" />
               <span className="font-medium">{project.location}</span>
             </div>
@@ -156,7 +147,10 @@ export function ProjectListItem({ project, onClick, isFavorite = false, onToggle
             {project.category && (
               <>
                 <span className="text-gray-300">•</span>
-                <div className="flex items-center gap-1">
+                <div
+                  title={project.macroformato ? "Macroformato / categoria" : "Categoria"}
+                  className="flex items-center gap-1"
+                >
                   {project.contentType === 'Audiovisual' ? (
                     <Video className="w-3 h-3 text-gray-400" />
                   ) : project.contentType === 'OED' ? (
@@ -169,21 +163,23 @@ export function ProjectListItem({ project, onClick, isFavorite = false, onToggle
               </>
             )}
 
-            {/* Duration - apenas para Vídeo Aula */}
-            {project.duration && project.contentType === 'Audiovisual' && (project.category === 'Vídeo Aula' || project.videoCategory === 'Vídeo Aula') && (
+            {durationLabel && (
               <>
                 <span className="text-gray-300">•</span>
-                <div className="flex items-center gap-1">
+                <div title="Duração" className="flex items-center gap-1">
                   <Clock className="w-3 h-3 text-gray-400" />
-                  <span className="font-medium">{project.duration}</span>
+                  <span className="font-medium">{durationLabel}</span>
                 </div>
               </>
             )}
 
             {/* Volume - Mobile hidden */}
             {project.volume && (
-              <span className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-[12px] bg-gray-100 border border-gray-200 text-xs font-bold">
-                {project.volume}
+              <span
+                title="Volume"
+                className="hidden sm:inline-flex items-center px-2 py-0.5 rounded-[12px] bg-gray-100 border border-gray-200 text-xs font-bold"
+              >
+                Vol. {project.volume}
               </span>
             )}
           </div>

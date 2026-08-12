@@ -1,5 +1,6 @@
 import { getVideoThumbnail } from './videoThumbnails';
 import type { Project } from '../types/project';
+import { extractBnccCode, extractBnccDescription, formatDuration } from './formatters';
 
 const API_BASE_URL = import.meta.env?.VITE_API_URL || 'http://localhost:3001/api';
 
@@ -190,6 +191,18 @@ export interface ODA {
   requisitosTecnicos?: string | null;
   urlMetodologiaPdf?: string | null;
   status?: string | null;
+  colecao?: string | null;
+  livro?: string | null;
+  envioEscola?: string | null;
+  blocoCapitulo?: string | null;
+  anoProducao?: string | null;
+  macroformato?: string | null;
+  palavrasChave?: string | null;
+  codigoBnccSecundaria?: string | null;
+  descricaoBnccSecundaria?: string | null;
+  tempoMedioEstimado?: string | null;
+  usuarioPrincipal?: string | null;
+  ambienteUso?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -199,6 +212,16 @@ export interface ODAResponse {
   total: number;
   limit?: number | null;
   offset?: number | null;
+}
+
+function parseJsonArray(value?: string | null): string[] {
+  if (!value) return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? parsed.filter((item) => typeof item === 'string') : [];
+  } catch {
+    return [];
+  }
 }
 
 // Converter ODA da API para formato do frontend
@@ -215,15 +238,15 @@ export function apiODAToFrontend(oda: ODA): Project {
     codigoODA: oda.codigoOda || undefined,
     title: oda.titulo,
     tag: oda.componenteCurricular || '',
-    tags: oda.tags ? JSON.parse(oda.tags) : [],
+    tags: parseJsonArray(oda.tags),
     tagColor: oda.tagColor || 'bg-gray-600',
     location: oda.anoSerie || '',
     image: oda.imagem || '',
     videoUrl: oda.linkRepositorio || undefined,
-    bnccCode: oda.codigoBncc || undefined,
-    bnccDescription: bnccDescription,
+    bnccCode: extractBnccCode(oda.codigoBncc) || undefined,
+    bnccDescription: extractBnccDescription(oda.codigoBncc, oda.descricaoBncc || bnccDescription) || undefined,
     category: oda.categoria || undefined,
-    duration: oda.duracao || undefined,
+    duration: formatDuration(oda.duracao || oda.tempoMedioEstimado) || undefined,
     volume: oda.volume || undefined,
     segmento: oda.segmento || undefined,
     pagina: oda.pagina || undefined,
@@ -233,11 +256,24 @@ export function apiODAToFrontend(oda: ODA): Project {
     samr: oda.escalaSamr || undefined, // Mapear escalaSamr para samr
     tipoObjeto: oda.tipoObjeto || undefined,
     description: oda.descricao || undefined,
-    learningObjectives: oda.objetivosAprendizagem ? JSON.parse(oda.objetivosAprendizagem) : undefined,
-    pedagogicalResources: oda.recursosPedagogicos ? JSON.parse(oda.recursosPedagogicos) : undefined,
+    learningObjectives: parseJsonArray(oda.objetivosAprendizagem),
+    pedagogicalResources: parseJsonArray(oda.recursosPedagogicos),
     technicalRequirements: oda.requisitosTecnicos || undefined,
     metodologiaPdfUrl: oda.urlMetodologiaPdf || undefined,
     status: oda.status || undefined,
+    colecao: oda.colecao || undefined,
+    livro: oda.livro || undefined,
+    envioEscola: oda.envioEscola || undefined,
+    blocoCapitulo: oda.blocoCapitulo || undefined,
+    anoProducao: oda.anoProducao || undefined,
+    macroformato: oda.macroformato || undefined,
+    palavrasChave: parseJsonArray(oda.palavrasChave),
+    bnccCodeSecondary: extractBnccCode(oda.codigoBnccSecundaria) || undefined,
+    bnccDescriptionSecondary:
+      extractBnccDescription(oda.codigoBnccSecundaria, oda.descricaoBnccSecundaria) || undefined,
+    tempoMedioEstimado: oda.tempoMedioEstimado || undefined,
+    usuarioPrincipal: oda.usuarioPrincipal || undefined,
+    ambienteUso: oda.ambienteUso || undefined,
   };
 }
 
@@ -365,194 +401,5 @@ export async function countODAs(tipoConteudo?: 'Audiovisual' | 'OED' | 'Todos'):
 
   const data = await response.json();
   return data.count;
-}
-
-// ==================== AUDIOVISUAL ====================
-
-export interface Audiovisual {
-  id: number;
-  codigo?: string | null;
-  marca?: string | null;
-  segmento?: string | null;
-  anoSerieModulo?: string | null;
-  volume?: string | null;
-  componente?: string | null;
-  capitulo?: string | null;
-  nomeCapitulo?: string | null;
-  categoriaVideo?: string | null;
-  vestibular?: string | null;
-  enunciado?: string | null;
-  link?: string | null;
-  imagem?: string | null;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface AudiovisualResponse {
-  data: Audiovisual[];
-  total: number;
-  limit?: number | null;
-  offset?: number | null;
-}
-
-// Buscar todos os audiovisuais
-export async function fetchAllAudiovisual(params?: {
-  search?: string;
-  marca?: string;
-  segmento?: string;
-  anoSerieModulo?: string;
-  volume?: string;
-  componente?: string;
-  categoriaVideo?: string;
-  vestibular?: string;
-  capitulo?: string;
-  limit?: number;
-  offset?: number;
-}): Promise<Audiovisual[]> {
-  const queryParams = new URLSearchParams();
-  
-  if (params?.search) {
-    queryParams.append('search', params.search);
-  }
-  if (params?.marca) {
-    queryParams.append('marca', params.marca);
-  }
-  if (params?.segmento) {
-    queryParams.append('segmento', params.segmento);
-  }
-  if (params?.anoSerieModulo) {
-    queryParams.append('anoSerieModulo', params.anoSerieModulo);
-  }
-  if (params?.volume) {
-    queryParams.append('volume', params.volume);
-  }
-  if (params?.componente) {
-    queryParams.append('componente', params.componente);
-  }
-  if (params?.categoriaVideo) {
-    queryParams.append('categoriaVideo', params.categoriaVideo);
-  }
-  if (params?.vestibular) {
-    queryParams.append('vestibular', params.vestibular);
-  }
-  if (params?.capitulo) {
-    queryParams.append('capitulo', params.capitulo);
-  }
-  if (params?.limit) {
-    queryParams.append('limit', params.limit.toString());
-  }
-  if (params?.offset) {
-    queryParams.append('offset', params.offset.toString());
-  }
-
-  try {
-    const response = await fetch(`${API_BASE_URL}/audiovisual?${queryParams.toString()}`);
-    
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data: AudiovisualResponse = await response.json();
-    return data.data;
-  } catch (error: any) {
-    if (error?.message?.includes('Failed to fetch') || error?.name === 'TypeError') {
-      const connectionError = new Error(
-        `Não foi possível conectar ao servidor backend em ${API_BASE_URL}. ` +
-        `Certifique-se de que o servidor está rodando na porta 3001.`
-      );
-      connectionError.name = 'ConnectionError';
-      throw connectionError;
-    }
-    throw error;
-  }
-}
-
-// Converter Audiovisual para formato do frontend
-export function audiovisualToFrontend(audiovisual: Audiovisual): any {
-  return {
-    id: audiovisual.id,
-    codigoODA: audiovisual.codigo || undefined,
-    title: audiovisual.nomeCapitulo || audiovisual.codigo || 'Sem título',
-    tag: audiovisual.componente || '',
-    tags: audiovisual.componente ? [audiovisual.componente] : [],
-    tagColor: getTagColor(audiovisual.componente || ''),
-    location: audiovisual.anoSerieModulo || '',
-    image: getVideoThumbnail(audiovisual.link || undefined, audiovisual.imagem || undefined),
-    videoUrl: audiovisual.link || undefined,
-    category: audiovisual.categoriaVideo || undefined,
-    volume: (() => {
-      const vol = audiovisual.volume;
-      if (!vol) return undefined;
-      const trimmed = vol.trim();
-      // Se for apenas um número, adiciona "Volume" antes
-      if (/^\d+$/.test(trimmed)) {
-        return `Volume ${trimmed}`;
-      }
-      // Se já começar com "Volume", retorna como está
-      if (/^volume\s+/i.test(trimmed)) {
-        return trimmed;
-      }
-      return trimmed;
-    })(),
-    segmento: audiovisual.segmento || undefined,
-    marca: audiovisual.marca || undefined,
-    contentType: 'Audiovisual' as const,
-    videoCategory: audiovisual.categoriaVideo || undefined,
-    capitulo: audiovisual.capitulo || undefined,
-    vestibular: audiovisual.vestibular || undefined,
-    enunciado: audiovisual.enunciado || undefined,
-  };
-}
-
-// Função auxiliar para obter cor da tag
-function getTagColor(tag: string): string {
-  const colors: Record<string, string> = {
-    'Língua Portuguesa': 'bg-blue-600',
-    'Matemática': 'bg-yellow-600',
-    'Ciências': 'bg-green-600',
-    'História': 'bg-purple-600',
-    'Geografia': 'bg-amber-600',
-    'Arte': 'bg-pink-600',
-    'Inglês': 'bg-indigo-600',
-    'Educação Física': 'bg-lime-600',
-  };
-  return colors[tag] || 'bg-gray-600';
-}
-
-// Migrar planilha Excel
-export async function migrateExcel(clearExisting: boolean = false): Promise<{
-  success: boolean;
-  imported: number;
-  total: number;
-  errors: string[];
-}> {
-  const response = await fetch(`${API_BASE_URL}/migration/excel`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ clearExisting }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || `HTTP error! status: ${response.status}`);
-  }
-
-  return await response.json();
-}
-
-// Verificar status da migração
-export async function getMigrationStatus(): Promise<{
-  totalODAs: number;
-  databaseExists: boolean;
-}> {
-  const response = await fetch(`${API_BASE_URL}/migration/status`);
-  
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-
-  return await response.json();
 }
 

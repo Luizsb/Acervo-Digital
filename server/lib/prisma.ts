@@ -1,7 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 
 // Criar instância única do PrismaClient para compartilhar entre módulos
-// Isso evita esgotar o connection pool do Supabase
+// Isso evita abrir pools de conexão duplicados.
 const prisma = new PrismaClient({
   log: process.env.NODE_ENV === 'development' ? ['query', 'error', 'warn'] : ['error'],
 });

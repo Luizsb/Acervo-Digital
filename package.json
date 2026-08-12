@@ -3,7 +3,6 @@
       "version": "0.1.0",
       "private": true,
       "dependencies": {
-            "@prisma/client": "^7.0.1",
             "@radix-ui/react-accordion": "^1.2.3",
             "@radix-ui/react-alert-dialog": "^1.1.6",
             "@radix-ui/react-aspect-ratio": "^1.1.2",
@@ -33,10 +32,7 @@
             "class-variance-authority": "^0.7.1",
             "clsx": "*",
             "cmdk": "^1.1.1",
-            "cors": "^2.8.5",
-            "dotenv": "^17.2.3",
             "embla-carousel-react": "^8.6.0",
-            "express": "^5.2.1",
             "input-otp": "^1.4.2",
             "intro.js": "^8.3.2",
             "lucide-react": "^0.487.0",
@@ -49,19 +45,15 @@
             "recharts": "^2.15.2",
             "sonner": "^2.0.3",
             "tailwind-merge": "*",
-            "vaul": "^1.1.2",
-            "xlsx": "^0.18.5"
+            "vaul": "^1.1.2"
       },
       "devDependencies": {
             "@testing-library/dom": "^10.4.1",
             "@testing-library/react": "^16.3.2",
-            "@types/cors": "^2.8.19",
-            "@types/express": "^5.0.6",
             "@types/node": "^20.19.25",
             "@vitejs/plugin-react-swc": "^3.10.2",
             "jsdom": "^28.0.0",
-            "prisma": "^7.0.1",
-            "vite": "6.3.5",
+            "vite": "^6.4.3",
             "vitest": "^4.0.18"
       },
       "scripts": {
@@ -71,9 +63,14 @@
             "server:build": "cd server && npm run build",
             "server:start": "cd server && npm start",
             "prisma:generate": "cd server && npx prisma generate",
-            "prisma:migrate": "cd server && npx prisma migrate dev",
+            "prisma:migrate": "cd server && npx prisma migrate deploy",
             "prisma:studio": "cd server && npx prisma studio",
-            "check:supabase": "cd server && npm run check:supabase",
+            "db:up": "docker compose up -d",
+            "db:down": "docker compose down",
+            "db:reset": "docker compose down -v && docker compose up -d",
+            "seed": "cd server && npm run seed",
+            "import:categorizacao": "cd server && npm run import:categorizacao",
+            "thumbs:capture": "cd server && npm run thumbs:capture",
             "test": "vitest run"
       }
 }

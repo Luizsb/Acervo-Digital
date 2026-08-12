@@ -2,10 +2,9 @@
  * Rotas por hash usadas na navegação da aplicação.
  * Exportado para permitir testes unitários.
  */
-export type PageKey = "home" | "gallery" | "settings" | "favorites" | "login" | "register" | "forgot" | "reset";
+export type PageKey = "gallery" | "settings" | "favorites" | "login" | "register" | "forgot" | "reset";
 
 const HASH_TO_PAGE: Record<string, PageKey> = {
-  home: "home",
   acervo: "gallery",
   conta: "settings",
   favoritos: "favorites",
@@ -16,7 +15,6 @@ const HASH_TO_PAGE: Record<string, PageKey> = {
 };
 
 const PAGE_TO_PATH: Record<PageKey, string> = {
-  home: "/",
   gallery: "/acervo",
   settings: "/conta",
   favorites: "/favoritos",
@@ -31,14 +29,14 @@ const PAGE_TO_PATH: Record<PageKey, string> = {
  * @param hashOverride - Se informado, usa este valor em vez de window.location.hash (útil para testes).
  */
 export function getInitialPageFromHash(hashOverride?: string): PageKey {
-  if (typeof window === "undefined") return "home";
+  if (typeof window === "undefined") return "login";
   let raw = (hashOverride !== undefined ? hashOverride : window.location.hash)
     .replace(/^#?\/?|\/+$/g, "")
     .trim();
   const qIndex = raw.indexOf("?");
   if (qIndex !== -1) raw = raw.slice(0, qIndex).trim();
-  const path = raw === "" ? "home" : raw;
-  return HASH_TO_PAGE[path] ?? "home";
+  const path = raw === "" ? "login" : raw;
+  return HASH_TO_PAGE[path] ?? "login";
 }
 
 /**

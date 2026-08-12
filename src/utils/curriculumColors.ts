@@ -125,29 +125,80 @@ export function getComponentFullName(component: string): string {
 // Mapeamento de cores para componentes curriculares
 // Cores diferentes das marcas (SPE: laranja, SAE: roxo, CQT: rosa)
 
+function stripAccents(value: string): string {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
+}
+
 export function getCurriculumColor(component: string): string {
-  // Usar o nome completo para buscar a cor
   const fullName = getComponentFullName(component);
-  
+  const key = stripAccents(fullName);
+
   const colorMap: Record<string, string> = {
-    'Língua Portuguesa': 'bg-green-100 text-green-700 border-green-200',
-    'Matemática': 'bg-blue-100 text-blue-700 border-blue-200',
-    'Ciências': 'bg-teal-100 text-teal-700 border-teal-200',
-    'História': 'bg-amber-100 text-amber-700 border-amber-200',
-    'Geografia': 'bg-cyan-100 text-cyan-700 border-cyan-200',
-    'Arte': 'bg-violet-100 text-violet-700 border-violet-200',
-    'Inglês': 'bg-indigo-100 text-indigo-700 border-indigo-200',
-    'Espanhol': 'bg-rose-100 text-rose-700 border-rose-200',
-    'Educação Física': 'bg-lime-100 text-lime-700 border-lime-200',
-    'Filosofia': 'bg-purple-100 text-purple-700 border-purple-200',
-    'Sociologia': 'bg-pink-100 text-pink-700 border-pink-200',
-    'Química': 'bg-orange-100 text-orange-700 border-orange-200',
-    'Física': 'bg-red-100 text-red-700 border-red-200',
-    'Biologia': 'bg-emerald-100 text-emerald-700 border-emerald-200',
-    'Literatura': 'bg-rose-100 text-rose-700 border-rose-200',
+    'lingua portuguesa': 'bg-green-100 text-green-700 border-green-200',
+    'matematica': 'bg-blue-100 text-blue-700 border-blue-200',
+    'ciencias': 'bg-teal-100 text-teal-700 border-teal-200',
+    'historia': 'bg-amber-100 text-amber-700 border-amber-200',
+    'geografia': 'bg-cyan-100 text-cyan-700 border-cyan-200',
+    'arte': 'bg-violet-100 text-violet-700 border-violet-200',
+    'artes': 'bg-violet-100 text-violet-700 border-violet-200',
+    'ingles': 'bg-indigo-100 text-indigo-700 border-indigo-200',
+    'espanhol': 'bg-rose-100 text-rose-700 border-rose-200',
+    'educacao fisica': 'bg-lime-100 text-lime-700 border-lime-200',
+    'filosofia': 'bg-purple-100 text-purple-700 border-purple-200',
+    'sociologia': 'bg-pink-100 text-pink-700 border-pink-200',
+    'quimica': 'bg-orange-100 text-orange-700 border-orange-200',
+    'fisica': 'bg-red-100 text-red-700 border-red-200',
+    'biologia': 'bg-teal-100 text-teal-700 border-teal-200',
+    'literatura': 'bg-rose-100 text-rose-700 border-rose-300',
   };
 
-  return colorMap[fullName] || 'bg-gray-100 text-gray-700 border-gray-200';
+  if (colorMap[key]) return colorMap[key];
+
+  const eiCampo = resolveInfantilCampo(key);
+  if (eiCampo) return eiCampo;
+
+  return 'bg-gray-100 text-gray-700 border-gray-200';
+}
+
+function resolveInfantilCampo(key: string): string | null {
+  if (
+    key === 'eo' ||
+    key.includes('o eu, o outro') ||
+    key.includes('eu, o outro e o nos') ||
+    key.includes('o eu o outro')
+  ) {
+    return 'catalog-campo catalog-campo-eo';
+  }
+  if (
+    key === 'cg' ||
+    (key.includes('corpo') && (key.includes('gesto') || key.includes('movimento')))
+  ) {
+    return 'catalog-campo catalog-campo-cg';
+  }
+  if (
+    key === 'ts' ||
+    key.includes('traco') ||
+    (key.includes('som') && key.includes('forma')) ||
+    (key.includes('cores e formas'))
+  ) {
+    return 'catalog-campo catalog-campo-ts';
+  }
+  if (
+    key.includes('escuta') ||
+    (key.includes('fala') && key.includes('pensamento')) ||
+    key.includes('imaginacao')
+  ) {
+    return 'catalog-campo catalog-campo-ef';
+  }
+  if (
+    key === 'et' ||
+    key.includes('transformac') ||
+    key.includes('quantidade') ||
+    (key.includes('espaco') && key.includes('tempo'))
+  ) {
+    return 'catalog-campo catalog-campo-et';
+  }
+  return null;
 }
 
 // Mapeamento de siglas para nomes completos dos segmentos

@@ -13,9 +13,8 @@ import {
   List,
 } from "lucide-react";
 import { BookOpen, Video, Gamepad2 } from "lucide-react";
-import { ODAFromExcel } from "./utils/importODAs";
+import type { ODAFromExcel } from "./types/project";
 import { loadODAsFromDatabase } from "./utils/loadODAs";
-import { loadAudiovisualFromDatabase } from "./utils/loadAudiovisual";
 import { apiFavoritesGet, apiFavoriteAdd, apiFavoriteRemove } from "./utils/api";
 import { Pagination } from "./components/Pagination";
 import { ScrollToTop } from "./components/ScrollToTop";
@@ -89,24 +88,20 @@ export default function App() {
   const { user, login, logout, register, loading: authLoading } = useAuth();
   const [favorites, setFavorites] = useState<number[]>([]);
   const [odasFromExcel, setOdasFromExcel] = useState<ODAFromExcel[]>([]);
-  const [audiovisualFromDB, setAudiovisualFromDB] = useState<ODAFromExcel[]>([]);
   const [loadingODAs, setLoadingODAs] = useState(true);
-  const [loadingAudiovisual, setLoadingAudiovisual] = useState(true);
   const [serverConnectionError, setServerConnectionError] = useState<string | null>(null);
-  const projectsLoading = loadingODAs || loadingAudiovisual;
+  const projectsLoading = loadingODAs;
 
-  // Carregar ODAs do banco de dados ao montar o componente
+  // Carregar recursos da planilha L1 (ODAs + Vídeo como Audiovisual) via API
   useEffect(() => {
     const loadODAs = async () => {
       try {
         setServerConnectionError(null);
         const odas = await loadODAsFromDatabase();
-        // Garantir que ODAs sempre tenham IDs > 1000 para evitar conflitos
         const odasWithAdjustedIds = odas.map((oda, index) => {
           const originalId = oda.id || 0;
-          // Ajustar IDs para faixa segura
           const adjustedId = originalId > 0 && originalId <= 100 
-            ? originalId + 10000  // Mover para faixa segura
+            ? originalId + 10000
             : (originalId > 0 ? originalId : (index + 1) + 10000);
           return {
             ...oda,
@@ -114,7 +109,7 @@ export default function App() {
           };
         });
         setOdasFromExcel(odasWithAdjustedIds);
-        console.log(`✅ ${odasWithAdjustedIds.length} ODAs carregados do banco de dados`);
+        console.log(`✅ ${odasWithAdjustedIds.length} recursos carregados do banco (L1)`);
       } catch (error: any) {
         console.error('Erro ao carregar ODAs do banco de dados:', error);
         if (error?.message?.includes('Failed to fetch') || 
@@ -132,39 +127,8 @@ export default function App() {
     loadODAs();
   }, []);
 
-  // Carregar Audiovisuais do banco de dados
-  useEffect(() => {
-    const loadAudiovisual = async () => {
-      try {
-        setServerConnectionError(null);
-        const audiovisual = await loadAudiovisualFromDatabase();
-        // IDs dos audiovisuais: usar IDs > 50000 para evitar conflitos
-        const audiovisualWithAdjustedIds = audiovisual.map((av, index) => {
-          const originalId = av.id || 0;
-          const adjustedId = originalId > 0 
-            ? originalId + 50000  // Mover para faixa segura
-            : (index + 1) + 50000;
-          return {
-            ...av,
-            id: adjustedId,
-          };
-        });
-        setAudiovisualFromDB(audiovisualWithAdjustedIds);
-        console.log(`✅ ${audiovisualWithAdjustedIds.length} Audiovisuais carregados do banco de dados`);
-      } catch (error: any) {
-        console.error('Erro ao carregar Audiovisuais do banco de dados:', error);
-      } finally {
-        setLoadingAudiovisual(false);
-      }
-    };
-    loadAudiovisual();
-  }, []);
-  
-  // Combinar ODAs e Audiovisuais do banco de dados
-  const projects = [
-    ...odasFromExcel, // ODAs carregados do banco
-    ...audiovisualFromDB, // Audiovisuais carregados do banco
-  ];
+  // Fonte única: tabela odas (Macroformato Vídeo = Audiovisual)
+  const projects = odasFromExcel;
   const [contentTypeFilter, setContentTypeFilter] = useState<
     "Todos" | "Audiovisual" | "OED"
   >("Todos");
@@ -329,18 +293,13 @@ export default function App() {
 
   const handleLogout = () => {
     logout();
-    setCurrentPage("home");
-    setSelectedProject(null);
-  };
-
-  const handleNavigateToRegister = () => {
-    setCurrentPage("register");
+    setCurrentPage("login");
     setSelectedProject(null);
   };
 
   const handleBackToHome = () => {
     setSelectedProject(null);
-    setCurrentPage("home");
+    setCurrentPage(user ? "gallery" : "login");
   };
 
   const handleContentTypeChange = (type: "Todos" | "Audiovisual" | "OED") => {
@@ -348,21 +307,13 @@ export default function App() {
     handleClearFilters();
   };
 
-  // Da página inicial: ao tentar acessar o Acervo, exige login primeiro
+  // Entrada pelo login; usuários com sessão restaurada seguem para o acervo.
   useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data === 'navigateToAcervo') {
-        if (user) {
-          setCurrentPage('gallery');
-        } else {
-          setReturnToAfterLogin('gallery');
-          setCurrentPage('login');
-        }
-      }
-    };
-    window.addEventListener('message', handleMessage);
-    return () => window.removeEventListener('message', handleMessage);
-  }, [user]);
+    if (authLoading) return;
+    if (user && currentPage === "login") {
+      setCurrentPage("gallery");
+    }
+  }, [authLoading, user, currentPage]);
 
   // Se estiver em área que exige login (acervo, conta, favoritos) sem estar logado, redireciona para login
   // (não redireciona se estiver em forgot/reset)
@@ -381,35 +332,11 @@ export default function App() {
     }
   }, [authLoading, user, currentPage, selectedProject]);
 
-  // Enquanto restaura sessão (localStorage), evita flash ou tela em branco (exceto home, login, register, forgot, reset)
-  if (authLoading && !["home", "login", "register", "forgot", "reset"].includes(currentPage)) {
+  // Enquanto restaura sessão (localStorage), evita flash ou tela em branco.
+  if (authLoading && !["login", "register", "forgot", "reset"].includes(currentPage)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <p className="text-primary font-semibold">Carregando...</p>
-      </div>
-    );
-  }
-
-  // Show home page
-  if (currentPage === "home") {
-    return (
-      <div style={{ width: '100%', height: '100vh', border: 'none', overflow: 'hidden', position: 'relative' }}>
-        <iframe
-          src="/home.html"
-          style={{
-            width: '100%',
-            height: '100%',
-            border: 'none',
-            display: 'block',
-            overflow: 'auto',
-            position: 'absolute',
-            top: 0,
-            left: 0
-          }}
-          title="Home - Acervo Digital"
-          scrolling="yes"
-          allow="fullscreen"
-        />
       </div>
     );
   }
@@ -419,14 +346,11 @@ export default function App() {
     return (
       <Suspense fallback={<PageLoader />}>
         <LoginPage
-          onBack={handleBackToHome}
           onLoginSuccess={() => {
             setCurrentPage(returnToAfterLogin);
             if (returnToAfterLogin === "gallery") setSelectedProject(null);
           }}
           login={login}
-          onNavigateToRegister={handleNavigateToRegister}
-          onNavigateToForgot={() => setCurrentPage("forgot")}
         />
       </Suspense>
     );
@@ -506,13 +430,11 @@ export default function App() {
     return (
       <Suspense fallback={<PageLoader />}>
       <LoginPage
-        onBack={handleBackToHome}
         onLoginSuccess={() => {
           setCurrentPage(returnToAfterLogin);
           if (returnToAfterLogin === "gallery") setSelectedProject(null);
         }}
-login={login}
-        onNavigateToForgot={() => setCurrentPage("forgot")}
+        login={login}
       />
     </Suspense>
   );
@@ -553,7 +475,7 @@ login={login}
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="h-screen bg-background flex flex-col overflow-hidden">
       <Navigation
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -605,7 +527,7 @@ login={login}
       )}
 
       {/* Mobile Active Filters Display */}
-      <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-3">
+      <div className="lg:hidden shrink-0 bg-white border-b border-gray-200 px-4 py-3">
         {/* Active Filters Display */}
         {Object.values(selectedFilters).some(
           (arr: any) => (arr as string[]).length > 0,
@@ -653,6 +575,27 @@ login={login}
                     else if (category === "marcas")
                       badgeColor =
                         "bg-indigo-100 text-indigo-700 border-indigo-300";
+                    else if (category === "macroformatos")
+                      badgeColor =
+                        "bg-teal-100 text-teal-700 border-teal-300";
+                    else if (category === "colecoes")
+                      badgeColor =
+                        "bg-sky-100 text-sky-700 border-sky-300";
+                    else if (category === "livros")
+                      badgeColor =
+                        "bg-violet-100 text-violet-700 border-violet-300";
+                    else if (category === "blocos")
+                      badgeColor =
+                        "bg-lime-100 text-lime-800 border-lime-300";
+                    else if (category === "enviosEscola")
+                      badgeColor =
+                        "bg-stone-100 text-stone-700 border-stone-300";
+                    else if (category === "usuariosPrincipais")
+                      badgeColor =
+                        "bg-blue-100 text-blue-700 border-blue-300";
+                    else if (category === "palavrasChave")
+                      badgeColor =
+                        "bg-yellow-100 text-yellow-800 border-yellow-300";
                     else if (category === "tipoObjeto")
                       badgeColor =
                         "bg-fuchsia-100 text-fuchsia-700 border-fuchsia-300";
@@ -687,7 +630,9 @@ login={login}
                               : ""
                           }
                         >
-                          {value}
+                          {category === "volumes" && /^\d+$/.test(value)
+                            ? `Vol. ${value}`
+                            : value}
                         </span>
                         <X className="w-3 h-3 group-hover:rotate-90 transition-transform duration-300" />
                       </button>
@@ -700,9 +645,9 @@ login={login}
         )}
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Filter Sidebar - Desktop Only */}
-        <div className="hidden lg:block">
+      <div className="flex flex-1 overflow-hidden min-h-0">
+        {/* Filter Sidebar - menu lateral persistente em toda a viewport */}
+        <div className="hidden lg:flex self-stretch shrink-0 min-h-0 w-72 xl:w-80 bg-white border-r border-gray-200">
           <FilterSidebar
             filters={filterOptions}
             selectedFilters={selectedFilters}
@@ -742,7 +687,7 @@ login={login}
         </button>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto min-h-0">
           <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
             {/* Hero / Welcome Banner */}
             {showWelcomeBanner && (

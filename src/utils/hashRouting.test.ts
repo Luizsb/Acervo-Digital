@@ -3,10 +3,15 @@ import { getInitialPageFromHash, getHashFromPage, type PageKey } from './hashRou
 
 describe('hashRouting', () => {
   describe('getInitialPageFromHash', () => {
-    it('retorna "home" para hash vazio ou #', () => {
-      expect(getInitialPageFromHash('')).toBe('home');
-      expect(getInitialPageFromHash('#')).toBe('home');
-      expect(getInitialPageFromHash('#/')).toBe('home');
+    it('retorna "login" para hash vazio ou # (entrada do Lançamento 1)', () => {
+      expect(getInitialPageFromHash('')).toBe('login');
+      expect(getInitialPageFromHash('#')).toBe('login');
+      expect(getInitialPageFromHash('#/')).toBe('login');
+    });
+
+    it('redireciona a landing legada para o login', () => {
+      expect(getInitialPageFromHash('#/home')).toBe('login');
+      expect(getInitialPageFromHash('#home')).toBe('login');
     });
 
     it('mapeia hash para página correta', () => {
@@ -24,14 +29,13 @@ describe('hashRouting', () => {
       expect(getInitialPageFromHash('#/redefinir-senha?token=abc123')).toBe('reset');
     });
 
-    it('retorna "home" para hash desconhecido', () => {
-      expect(getInitialPageFromHash('#/pagina-inexistente')).toBe('home');
+    it('retorna "login" para hash desconhecido', () => {
+      expect(getInitialPageFromHash('#/pagina-inexistente')).toBe('login');
     });
   });
 
   describe('getHashFromPage', () => {
     const cases: { page: PageKey; expected: string }[] = [
-      { page: 'home', expected: '#' },
       { page: 'gallery', expected: '#/acervo' },
       { page: 'settings', expected: '#/conta' },
       { page: 'favorites', expected: '#/favoritos' },
@@ -50,7 +54,7 @@ describe('hashRouting', () => {
 
   describe('round-trip', () => {
     it('getHashFromPage + getInitialPageFromHash restaura a página', () => {
-      const pages: PageKey[] = ['home', 'gallery', 'settings', 'favorites', 'login', 'register', 'forgot', 'reset'];
+      const pages: PageKey[] = ['gallery', 'settings', 'favorites', 'login', 'register', 'forgot', 'reset'];
       pages.forEach((page) => {
         const hash = getHashFromPage(page);
         const restored = getInitialPageFromHash(hash);

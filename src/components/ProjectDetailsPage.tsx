@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { X, BookOpen, Clock, Check, ExternalLink, Eye, Sparkles, Play, Book, FileText, ArrowLeft, Heart, Link as LinkIcon, Settings, Download, Layers } from 'lucide-react';
+import { X, BookOpen, Clock, Check, ExternalLink, Eye, Sparkles, Play, Book, FileText, ArrowLeft, Heart, Link as LinkIcon, Settings, Download, Layers, GitBranch } from 'lucide-react';
 import { ProjectCard } from './ProjectCard';
 import { getCurriculumColor, getComponentFullName, getSegmentFullName, getMarcaFullName } from '../utils/curriculumColors';
 import { ScrollToTop } from './ScrollToTop';
 import { VideoThumbnail } from './VideoThumbnail';
 import { getVimeoEmbedUrl } from '../utils/videoThumbnails';
 import type { Project } from '../types/project';
+import { formatDuration } from '../utils/formatters';
+import { MacroformatoBadge } from './MacroformatoBadge';
 
 const DEFAULT_TECHNICAL_REQUIREMENTS = "Navegador web atualizado (Chrome, Firefox, Safari)\nConexão com internet (mínimo 2 Mbps)\nDispositivos compatíveis: computador, tablet ou smartphone\nNão requer instalação de software adicional";
 
@@ -131,15 +133,17 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
                         <div className="absolute bottom-6 left-6 right-6">
                           <div className="flex items-center gap-3">
                             {project.volume && (
-                              <div className="bg-white px-3 py-1.5 rounded-[20px] shadow-md">
-                                <span className="text-sm font-bold text-foreground">{project.volume}</span>
+                            <div title="Volume" className="bg-white px-3 py-1.5 rounded-[20px] shadow-md">
+                                <span className="text-sm font-bold text-foreground">Vol. {project.volume}</span>
                               </div>
                             )}
-                            {project.category && (
+                            {project.macroformato ? (
+                              <MacroformatoBadge value={project.macroformato} className="shadow-md" />
+                            ) : project.category ? (
                               <div className="bg-white px-3 py-1.5 rounded-[20px] shadow-md">
                                 <span className="text-sm font-bold text-primary">{project.category}</span>
                               </div>
-                            )}
+                            ) : null}
                           </div>
                         </div>
                       </>
@@ -182,6 +186,7 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
                       {project.marca}
                     </div>
                   )}
+                  <MacroformatoBadge value={project.macroformato} />
                 </div>
 
                 {/* Stats - Views and Status (Compact) */}
@@ -214,16 +219,30 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
                   <BookOpen className="w-3.5 h-3.5 text-primary" />
                   <span className="text-xs font-semibold">{project.location}</span>
                 </div>
-                {project.duration && project.contentType === 'Audiovisual' && (project.category === 'Vídeo Aula' || project.videoCategory === 'Vídeo Aula') && (
+                {formatDuration(project.duration) && (
                   <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 rounded-[12px] border border-gray-200 shadow-sm">
                     <Clock className="w-3.5 h-3.5 text-secondary" />
-                    <span className="text-xs font-semibold">{project.duration}</span>
+                    <span className="text-xs font-semibold">{formatDuration(project.duration)}</span>
                   </div>
                 )}
                 {project.segmento && (
                   <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-[12px] shadow-sm">
                     <Layers className="w-3.5 h-3.5 text-blue-600" />
                     <span className="text-xs font-semibold text-blue-700">{getSegmentFullName(project.segmento)}</span>
+                  </div>
+                )}
+                {project.codigoODA && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-[12px] shadow-sm">
+                    <span className="text-xs font-mono font-semibold text-gray-700">{project.codigoODA}</span>
+                  </div>
+                )}
+                <MacroformatoBadge value={project.macroformato} />
+                {(project.colecao || project.livro || project.blocoCapitulo) && (
+                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-50 border border-violet-200 rounded-[12px] shadow-sm">
+                    <Book className="w-3.5 h-3.5 text-violet-600" />
+                    <span className="text-xs font-semibold text-violet-700">
+                      {[project.colecao, project.livro, project.blocoCapitulo].filter(Boolean).join(' · ')}
+                    </span>
                   </div>
                 )}
                 {/* Paginação - Oculto por enquanto, será desenvolvido depois */}
@@ -310,6 +329,37 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
                 </div>
               )}
 
+              {project.bnccCodeSecondary && (
+                <div className="bg-gradient-to-br from-slate-50 to-indigo-50 border border-slate-200 p-4 rounded-[20px] shadow-sm">
+                  <div className="flex items-start gap-3">
+                    <div
+                      className="flex flex-shrink-0 items-center justify-center"
+                      style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 12,
+                        backgroundColor: '#64748b',
+                      }}
+                    >
+                      <GitBranch
+                        aria-hidden="true"
+                        style={{ width: 16, height: 16, color: '#fff' }}
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-bold text-slate-900 mb-1.5 text-sm">
+                        BNCC secundária: <span className="font-mono bg-white px-2 py-0.5 rounded-[12px] border border-slate-200 text-xs">{project.bnccCodeSecondary}</span>
+                      </p>
+                      {project.bnccDescriptionSecondary && (
+                        <p className="text-xs text-slate-700 leading-relaxed font-medium mt-2">
+                          {project.bnccDescriptionSecondary}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 pt-3">
                 {project.videoUrl && (
@@ -349,13 +399,25 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
                   <LinkIcon className="w-4 h-4" />
                   <span>{copiedLink ? 'Link Copiado!' : 'Copiar Link'}</span>
                 </button>
-                <button
-                  disabled
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 border-2 border-gray-200 text-gray-400 rounded-[20px] transition-all font-semibold shadow-sm cursor-not-allowed"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>Baixar Orientações Metodológicas (PDF)</span>
-                </button>
+                {project.metodologiaPdfUrl ? (
+                  <a
+                    href={project.metodologiaPdfUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-white border-2 border-gray-300 text-foreground rounded-[20px] transition-all font-semibold shadow-sm hover:bg-gray-50 hover:shadow-md"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Baixar Orientações Metodológicas (PDF)</span>
+                  </a>
+                ) : (
+                  <button
+                    disabled
+                    className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gray-100 border-2 border-gray-200 text-gray-400 rounded-[20px] transition-all font-semibold shadow-sm cursor-not-allowed"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Baixar Orientações Metodológicas (PDF)</span>
+                  </button>
+                )}
               </div>
             </div>
           </div>

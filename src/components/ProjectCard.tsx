@@ -1,8 +1,35 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { BookOpen, Layers, Heart, Clock, Video, Gamepad2, Play } from 'lucide-react';
-import { getCurriculumColor, getComponentFullName, getMarcaFullName } from '../utils/curriculumColors';
-import { VideoThumbnail } from './VideoThumbnail';
+import { BookOpen, Layers, Heart, Clock, Video, Gamepad2, Headphones, Monitor, ListVideo, Presentation, Wrench, Box, Sparkles, MousePointer2 } from 'lucide-react';
+import { getCurriculumColor, getComponentFullName } from '../utils/curriculumColors';
+import { formatDuration } from '../utils/formatters';
+import { resolveMacroformato, type MacroformatoKind } from '../utils/macroformato';
 import type { Project } from '../types/project';
+
+function MacroIcon({ kind, className }: { kind: MacroformatoKind; className?: string }) {
+  const props = { className: className || 'w-3.5 h-3.5' };
+  switch (kind) {
+    case 'video':
+      return <Video {...props} />;
+    case 'audio':
+      return <Headphones {...props} />;
+    case 'interactive':
+      return <MousePointer2 {...props} />;
+    case 'sim':
+      return <Box {...props} />;
+    case 'playlist':
+      return <ListVideo {...props} />;
+    case 'ra':
+      return <Sparkles {...props} />;
+    case 'slide':
+      return <Presentation {...props} />;
+    case 'tool':
+      return <Wrench {...props} />;
+    case 'support':
+      return <Monitor {...props} />;
+    default:
+      return <Gamepad2 {...props} />;
+  }
+}
 
 interface ProjectCardProps {
   project: Project;
@@ -14,6 +41,8 @@ interface ProjectCardProps {
 export function ProjectCard({ project, onClick, isFavorite = false, onToggleFavorite }: ProjectCardProps) {
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
+  const durationLabel = formatDuration(project.duration);
+  const macro = resolveMacroformato(project.macroformato);
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -59,43 +88,34 @@ export function ProjectCard({ project, onClick, isFavorite = false, onToggleFavo
         <div className="relative flex-shrink-0" onClick={onClick}>
           {/* Project Image */}
           <div className="aspect-[16/9] w-full overflow-hidden bg-gray-100 relative">
-            {project.contentType === 'Audiovisual' && project.videoUrl ? (
-              <VideoThumbnail
-                videoUrl={project.videoUrl}
-                fallbackImage={project.image}
-                alt={project.title}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-            ) : (
-              <img
-                src={project.image}
-                alt={project.title}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                onError={(e) => {
-                  // Fallback para imagem padrão se a thumb não existir
-                  const target = e.target as HTMLImageElement;
-                  const defaultImage = 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080';
-                  if (!target.src.includes(defaultImage)) {
-                    target.src = defaultImage;
-                  }
-                }}
-              />
-            )}
-            {/* Botão de play overlay para audiovisuais */}
-            {project.contentType === 'Audiovisual' && project.videoUrl && (
-              <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 flex items-center justify-center transition-all duration-300">
-                <div className="w-12 h-12 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-                  <Play className="w-6 h-6 text-primary ml-0.5" fill="currentColor" />
-                </div>
+            <img
+              src={project.image}
+              alt={project.title}
+              className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+              onError={(e) => {
+                const target = e.target as HTMLImageElement;
+                const defaultImage = 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=1080';
+                if (!target.src.includes(defaultImage)) {
+                  target.src = defaultImage;
+                }
+              }}
+            />
+            {macro && (
+              <div title="Macroformato" className={`absolute bottom-3 left-3 shadow-sm ${macro.className}`}>
+                <MacroIcon kind={macro.kind} className="w-3 h-3" />
+                {macro.label}
               </div>
             )}
           </div>
           
           {/* Volume badge */}
           {project.volume && (
-            <div className="absolute top-3 right-3 bg-white px-2.5 py-1.5 rounded-[20px] shadow-sm flex items-center gap-1.5 border border-gray-200">
+            <div
+              title="Volume"
+              className="absolute top-3 right-3 bg-white px-2.5 py-1.5 rounded-[20px] shadow-sm flex items-center gap-1.5 border border-gray-200"
+            >
               <Layers className="w-3.5 h-3.5 text-primary" />
-              <span className="text-xs font-bold text-gray-700">{project.volume}</span>
+              <span className="text-xs font-bold text-gray-700">Vol. {project.volume}</span>
             </div>
           )}
 
@@ -134,13 +154,17 @@ export function ProjectCard({ project, onClick, isFavorite = false, onToggleFavo
               project.tags.slice(0, 3).map((tag, index) => (
                 <div
                   key={index}
+                  title="Componente curricular"
                   className={`inline-flex items-center px-2.5 py-1 rounded-[20px] text-xs font-semibold border ${getCurriculumColor(tag)}`}
                 >
                   {getComponentFullName(tag)}
                 </div>
               ))
             ) : (
-              <div className={`inline-flex items-center px-2.5 py-1 rounded-[20px] text-xs font-semibold border ${getCurriculumColor(project.tag)}`}>
+              <div
+                title="Componente curricular"
+                className={`inline-flex items-center px-2.5 py-1 rounded-[20px] text-xs font-semibold border ${getCurriculumColor(project.tag)}`}
+              >
                 {getComponentFullName(project.tag)}
               </div>
             )}
@@ -154,22 +178,18 @@ export function ProjectCard({ project, onClick, isFavorite = false, onToggleFavo
                   project.marca === 'CQT' ? 'bg-pink-100 text-pink-700 border-pink-200' :
                   'bg-purple-100 text-purple-700 border-purple-200'
                 }`}
-                title={getMarcaFullName(project.marca)}
+                title="Marca"
               >
                 {project.marca}
               </div>
             )}
 
-            {/* BNCC Code Badge */}
-            {project.bnccCode && (
-              <div className="inline-flex items-center px-2.5 py-1 rounded-[20px] text-xs font-mono font-bold bg-primary/10 text-primary border border-primary/20">
-                {project.bnccCode}
-              </div>
-            )}
-
             {/* SAMR Badge */}
             {project.samr && (
-              <div className="inline-flex items-center px-2.5 py-1 rounded-[20px] text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200">
+              <div
+                title="Escala SAMR"
+                className="inline-flex items-center px-2.5 py-1 rounded-[20px] text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200"
+              >
                 {project.samr}
               </div>
             )}
@@ -178,7 +198,10 @@ export function ProjectCard({ project, onClick, isFavorite = false, onToggleFavo
           {/* Category, Duration and Year */}
           <div className="flex items-center gap-3 pt-2 mt-auto border-t border-gray-100 flex-wrap">
             {/* Year/Location */}
-            <div className="flex items-center gap-1.5">
+            <div
+              title="Ano / série"
+              className="flex items-center gap-1.5"
+            >
               <BookOpen className="w-3.5 h-3.5 text-gray-400" />
               <span className="text-xs font-medium text-gray-600">{project.location}</span>
             </div>
@@ -186,8 +209,13 @@ export function ProjectCard({ project, onClick, isFavorite = false, onToggleFavo
             {project.category && (
               <>
                 <span className="text-gray-300">•</span>
-                <div className="flex items-center gap-1.5">
-                  {project.contentType === 'Audiovisual' ? (
+                <div
+                  title={project.macroformato ? "Macroformato / categoria" : "Categoria"}
+                  className="flex items-center gap-1.5"
+                >
+                  {macro ? (
+                    <MacroIcon kind={macro.kind} className="w-3.5 h-3.5 text-gray-400" />
+                  ) : project.contentType === 'Audiovisual' ? (
                     <Video className="w-3.5 h-3.5 text-gray-400" />
                   ) : project.contentType === 'OED' ? (
                     <Gamepad2 className="w-3.5 h-3.5 text-gray-400" />
@@ -198,12 +226,12 @@ export function ProjectCard({ project, onClick, isFavorite = false, onToggleFavo
                 </div>
               </>
             )}
-            {project.duration && project.contentType === 'Audiovisual' && (project.category === 'Vídeo Aula' || project.videoCategory === 'Vídeo Aula') && (
+            {durationLabel && (
               <>
                 <span className="text-gray-300">•</span>
-                <div className="flex items-center gap-1.5">
+                <div title="Duração" className="flex items-center gap-1.5">
                   <Clock className="w-3.5 h-3.5 text-gray-400" />
-                  <span className="text-xs font-medium text-gray-600">{project.duration}</span>
+                  <span className="text-xs font-medium text-gray-600">{durationLabel}</span>
                 </div>
               </>
             )}

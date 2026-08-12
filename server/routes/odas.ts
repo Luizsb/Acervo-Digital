@@ -21,7 +21,14 @@ router.get('/', async (req, res) => {
         { titulo: { contains: searchTerm, mode: 'insensitive' } },
         { componenteCurricular: { contains: searchTerm, mode: 'insensitive' } },
         { codigoBncc: { contains: searchTerm, mode: 'insensitive' } },
+        { codigoBnccSecundaria: { contains: searchTerm, mode: 'insensitive' } },
+        { codigoOda: { contains: searchTerm, mode: 'insensitive' } },
         { categoria: { contains: searchTerm, mode: 'insensitive' } },
+        { palavrasChave: { contains: searchTerm, mode: 'insensitive' } },
+        { marca: { contains: searchTerm, mode: 'insensitive' } },
+        { blocoCapitulo: { contains: searchTerm, mode: 'insensitive' } },
+        { colecao: { contains: searchTerm, mode: 'insensitive' } },
+        { macroformato: { contains: searchTerm, mode: 'insensitive' } },
       ];
     }
 

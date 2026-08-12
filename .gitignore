@@ -1,8 +1,6 @@
 # Dependencies
 node_modules/
 server/node_modules/
-package-lock.json
-server/package-lock.json
 
 # Build outputs
 dist/
@@ -63,9 +61,10 @@ desktop.ini
 *.zip
 
 # Public assets (manter estrutura mas não commitar imagens grandes)
-# public/thumbs/ - manter apenas estrutura se necessário
+public/thumbs/
 public/converted_images_webp/
+public/**/*.capture.png
 
-# Excel files grandes (opcional - descomente se não quiser commitar)
-# public/*.xlsx
+# Fonte editorial interna usada apenas na importação local
+public/Categorização_*.xlsx
 

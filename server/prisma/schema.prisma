@@ -38,6 +38,18 @@ model ODA {
   requisitosTecnicos    String?  @map("requisitos_tecnicos")
   urlMetodologiaPdf     String?  @map("url_metodologia_pdf")
   status                String?  @map("status")
+  colecao               String?  @map("colecao")
+  livro                 String?  @map("livro")
+  envioEscola           String?  @map("envio_escola")
+  blocoCapitulo         String?  @map("bloco_capitulo")
+  anoProducao           String?  @map("ano_producao")
+  macroformato          String?  @map("macroformato")
+  palavrasChave         String?  @map("palavras_chave")
+  codigoBnccSecundaria  String?  @map("codigo_bncc_secundaria")
+  descricaoBnccSecundaria String? @map("descricao_bncc_secundaria")
+  tempoMedioEstimado    String?  @map("tempo_medio_estimado")
+  usuarioPrincipal      String?  @map("usuario_principal")
+  ambienteUso           String?  @map("ambiente_uso")
   createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
   
@@ -50,6 +62,7 @@ model ODA {
   @@index([codigoBncc])
   @@index([marca])
   @@index([segmento])
+  @@index([macroformato])
   @@map("odas")
 }
 
@@ -70,35 +83,6 @@ model BNCC {
   @@index([componente])
   @@index([ano])
   @@map("bncc")
-}
-
-model Audiovisual {
-  id                Int      @id @default(autoincrement())
-  codigo            String?  @unique @map("codigo")
-  marca             String?  @map("marca")
-  segmento          String?  @map("segmento")
-  anoSerieModulo    String?  @map("ano_serie_modulo")
-  volume            String?  @map("volume")
-  componente        String?  @map("componente")
-  capitulo          String?  @map("capitulo")
-  nomeCapitulo      String?  @map("nome_capitulo")
-  categoriaVideo    String?  @map("categoria_video")
-  vestibular        String?  @map("vestibular")
-  enunciado         String?  @map("enunciado")
-  link              String?  @map("link")
-  imagem            String?  @map("imagem")
-  createdAt         DateTime @default(now()) @map("created_at")
-  updatedAt         DateTime @updatedAt @map("updated_at")
-  
-  @@index([marca])
-  @@index([segmento])
-  @@index([anoSerieModulo])
-  @@index([componente])
-  @@index([volume])
-  @@index([categoriaVideo])
-  @@index([vestibular])
-  @@index([capitulo])
-  @@map("audiovisual")
 }
 
 model User {

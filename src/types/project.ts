@@ -31,4 +31,28 @@ export interface Project {
   metodologiaPdfUrl?: string;
   status?: string;
   codigoODA?: string;
+  colecao?: string;
+  livro?: string;
+  envioEscola?: string;
+  blocoCapitulo?: string;
+  anoProducao?: string;
+  macroformato?: string;
+  palavrasChave?: string[];
+  bnccCodeSecondary?: string;
+  bnccDescriptionSecondary?: string;
+  tempoMedioEstimado?: string;
+  usuarioPrincipal?: string;
+  ambienteUso?: string;
+  vestibular?: string;
+  capitulo?: string;
+  enunciado?: string;
+  nomeCapitulo?: string;
 }
+
+/**
+ * Nome mantido temporariamente para compatibilidade com o fluxo de dados L1.
+ * Os registros agora vêm da API, não de uma planilha carregada pelo navegador.
+ */
+export type ODAFromExcel = Project & {
+  contentType: 'Audiovisual' | 'OED';
+};

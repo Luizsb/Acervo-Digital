@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
-import type { ODAFromExcel } from '../utils/importODAs';
+import type { ODAFromExcel } from '../types/project';
 import { getComponentFullName, getSegmentFullName, sortSegments, getMarcaFullName } from '../utils/curriculumColors';
+import { extractBnccCode, extractBnccDescription } from '../utils/formatters';
 
 export interface SelectedFilters {
   anos: string[];
@@ -15,6 +16,13 @@ export interface SelectedFilters {
   volumes: string[];
   vestibular: string[];
   capitulo: string[];
+  macroformatos: string[];
+  colecoes: string[];
+  livros: string[];
+  blocos: string[];
+  palavrasChave: string[];
+  enviosEscola: string[];
+  usuariosPrincipais: string[];
 }
 
 export const initialSelectedFilters: SelectedFilters = {
@@ -30,12 +38,20 @@ export const initialSelectedFilters: SelectedFilters = {
   volumes: [],
   vestibular: [],
   capitulo: [],
+  macroformatos: [],
+  colecoes: [],
+  livros: [],
+  blocos: [],
+  palavrasChave: [],
+  enviosEscola: [],
+  usuariosPrincipais: [],
 };
 
 export interface FilterOptions {
   anos: string[];
   tags: string[];
   bnccCodes: string[];
+  bnccDescriptions: Record<string, string>;
   segmentos: string[];
   categorias: string[];
   marcas: string[];
@@ -45,6 +61,13 @@ export interface FilterOptions {
   volumes: string[];
   vestibular: string[];
   capitulo: string[];
+  macroformatos: string[];
+  colecoes: string[];
+  livros: string[];
+  blocos: string[];
+  palavrasChave: string[];
+  enviosEscola: string[];
+  usuariosPrincipais: string[];
 }
 
 function normalizeAnoKey(ano: string): string {
@@ -95,15 +118,22 @@ export function useProjectFilters(
       bnccCodes: Array.from(
         new Set(
           contentTypeFilteredProjects
-            .map((p) => p.bnccCode)
-            .filter((code) => {
-              if (!code) return false;
-              const t = String(code).trim();
-              return t !== '' && t !== 'undefined' && t !== 'null';
-            })
-            .map((code) => String(code).trim())
+            .flatMap((p) => [extractBnccCode(p.bnccCode), extractBnccCode(p.bnccCodeSecondary)])
+            .filter((code) => Boolean(code))
         )
       ).sort(),
+      bnccDescriptions: (() => {
+        const map: Record<string, string> = {};
+        contentTypeFilteredProjects.forEach((p) => {
+          const primary = extractBnccCode(p.bnccCode);
+          const primaryDesc = extractBnccDescription(p.bnccCode, p.bnccDescription);
+          if (primary && primaryDesc && !map[primary]) map[primary] = primaryDesc;
+          const secondary = extractBnccCode(p.bnccCodeSecondary);
+          const secondaryDesc = extractBnccDescription(p.bnccCodeSecondary, p.bnccDescriptionSecondary);
+          if (secondary && secondaryDesc && !map[secondary]) map[secondary] = secondaryDesc;
+        });
+        return map;
+      })(),
       segmentos: sortSegments(
         Array.from(
           new Set(
@@ -132,11 +162,57 @@ export function useProjectFilters(
       tipoObjeto: Array.from(
         new Set(
           contentTypeFilteredProjects
-            .filter((p) => p.contentType === 'OED' && 'tipoObjeto' in p)
-            .map((p) => (p as ODAFromExcel).tipoObjeto)
-            .filter(Boolean) as string[]
+            .map((p) => p.tipoObjeto)
+            .filter((t): t is string => Boolean(t))
         )
       ).sort(),
+      macroformatos: Array.from(
+        new Set(
+          contentTypeFilteredProjects
+            .map((p) => p.macroformato)
+            .filter((t): t is string => Boolean(t))
+        )
+      ).sort(),
+      colecoes: Array.from(
+        new Set(
+          contentTypeFilteredProjects
+            .map((p) => p.colecao)
+            .filter((t): t is string => Boolean(t))
+        )
+      ).sort((a, b) => a.localeCompare(b, 'pt-BR')),
+      livros: Array.from(
+        new Set(
+          contentTypeFilteredProjects
+            .map((p) => p.livro)
+            .filter((t): t is string => Boolean(t))
+        )
+      ).sort((a, b) => a.localeCompare(b, 'pt-BR')),
+      blocos: Array.from(
+        new Set(
+          contentTypeFilteredProjects
+            .map((p) => p.blocoCapitulo)
+            .filter((t): t is string => Boolean(t))
+        )
+      ).sort((a, b) => a.localeCompare(b, 'pt-BR')),
+      palavrasChave: Array.from(
+        new Set(
+          contentTypeFilteredProjects.flatMap((p) => p.palavrasChave || []).filter(Boolean)
+        )
+      ).sort((a, b) => a.localeCompare(b, 'pt-BR')),
+      enviosEscola: Array.from(
+        new Set(
+          contentTypeFilteredProjects
+            .map((p) => p.envioEscola)
+            .filter((t): t is string => Boolean(t))
+        )
+      ).sort((a, b) => a.localeCompare(b, 'pt-BR', { numeric: true })),
+      usuariosPrincipais: Array.from(
+        new Set(
+          contentTypeFilteredProjects
+            .map((p) => p.usuarioPrincipal)
+            .filter((t): t is string => Boolean(t))
+        )
+      ).sort((a, b) => a.localeCompare(b, 'pt-BR')),
       videoCategory: Array.from(
         new Set(
           contentTypeFilteredProjects
@@ -186,9 +262,17 @@ export function useProjectFilters(
         project.tag.toLowerCase().includes(q) ||
         (project.location?.toLowerCase() || '').includes(q) ||
         (project.bnccCode?.toLowerCase() || '').includes(q) ||
+        (project.bnccCodeSecondary?.toLowerCase() || '').includes(q) ||
+        (project.codigoODA?.toLowerCase() || '').includes(q) ||
         (project.category?.toLowerCase() || '').includes(q) ||
+        (project.macroformato?.toLowerCase() || '').includes(q) ||
         (project.volume?.toLowerCase() || '').includes(q) ||
         (project.segmento?.toLowerCase() || '').includes(q) ||
+        (project.marca?.toLowerCase() || '').includes(q) ||
+        (project.colecao?.toLowerCase() || '').includes(q) ||
+        (project.blocoCapitulo?.toLowerCase() || '').includes(q) ||
+        (project.usuarioPrincipal?.toLowerCase() || '').includes(q) ||
+        (project.palavrasChave || []).some((k) => k.toLowerCase().includes(q)) ||
         (project.tags || []).some((tag) => tag.toLowerCase().includes(q)) ||
         ((project as ODAFromExcel & { vestibular?: string }).vestibular?.toLowerCase() || '').includes(q) ||
         ((project as ODAFromExcel & { capitulo?: string }).capitulo?.toLowerCase() || '').includes(q) ||
@@ -214,9 +298,10 @@ export function useProjectFilters(
 
       const matchesBNCC =
         selectedFilters.bnccCodes.length === 0 ||
-        (project.bnccCode &&
-          project.bnccCode.trim() !== '' &&
-          selectedFilters.bnccCodes.some((c) => project.bnccCode?.trim() === c.trim()));
+        selectedFilters.bnccCodes.some((c) => {
+          const code = extractBnccCode(c) || c.trim();
+          return extractBnccCode(project.bnccCode) === code || extractBnccCode(project.bnccCodeSecondary) === code;
+        });
 
       const matchesSegmentos =
         selectedFilters.segmentos.length === 0 ||
@@ -240,9 +325,40 @@ export function useProjectFilters(
 
       const matchesTipoObjeto =
         selectedFilters.tipoObjeto.length === 0 ||
-        (project.contentType === 'OED' &&
-          (project as ODAFromExcel).tipoObjeto &&
-          selectedFilters.tipoObjeto.includes((project as ODAFromExcel).tipoObjeto!));
+        Boolean(project.tipoObjeto && selectedFilters.tipoObjeto.includes(project.tipoObjeto));
+
+      const matchesMacroformato =
+        selectedFilters.macroformatos.length === 0 ||
+        Boolean(project.macroformato && selectedFilters.macroformatos.includes(project.macroformato));
+
+      const matchesColecoes =
+        selectedFilters.colecoes.length === 0 ||
+        Boolean(project.colecao && selectedFilters.colecoes.includes(project.colecao));
+
+      const matchesLivros =
+        selectedFilters.livros.length === 0 ||
+        Boolean(project.livro && selectedFilters.livros.includes(project.livro));
+
+      const matchesBlocos =
+        selectedFilters.blocos.length === 0 ||
+        Boolean(project.blocoCapitulo && selectedFilters.blocos.includes(project.blocoCapitulo));
+
+      const matchesPalavrasChave =
+        selectedFilters.palavrasChave.length === 0 ||
+        selectedFilters.palavrasChave.some((kw) =>
+          (project.palavrasChave || []).some((p) => p.toLowerCase() === kw.toLowerCase())
+        );
+
+      const matchesEnviosEscola =
+        selectedFilters.enviosEscola.length === 0 ||
+        Boolean(project.envioEscola && selectedFilters.enviosEscola.includes(project.envioEscola));
+
+      const matchesUsuariosPrincipais =
+        selectedFilters.usuariosPrincipais.length === 0 ||
+        Boolean(
+          project.usuarioPrincipal &&
+          selectedFilters.usuariosPrincipais.includes(project.usuarioPrincipal)
+        );
 
       const matchesVideoCategory =
         selectedFilters.videoCategory.length === 0 ||
@@ -278,6 +394,13 @@ export function useProjectFilters(
         matchesCategorias &&
         matchesMarcas &&
         matchesTipoObjeto &&
+        matchesMacroformato &&
+        matchesColecoes &&
+        matchesLivros &&
+        matchesBlocos &&
+        matchesPalavrasChave &&
+        matchesEnviosEscola &&
+        matchesUsuariosPrincipais &&
         matchesVideoCategory &&
         matchesSAMR &&
         matchesVolumes &&

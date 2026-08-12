@@ -117,8 +117,8 @@ export function ProjectModal({ project, isOpen, onClose }: ProjectModalProps) {
                       <div className="absolute bottom-4 left-4 right-4">
                         <div className="flex items-center gap-2">
                           {project.volume && (
-                            <div className="bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-lg">
-                              <span className="text-sm font-bold text-foreground">{project.volume}</span>
+                            <div title="Volume" className="bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-full shadow-lg">
+                              <span className="text-sm font-bold text-foreground">Vol. {project.volume}</span>
                             </div>
                           )}
                           {project.category && (

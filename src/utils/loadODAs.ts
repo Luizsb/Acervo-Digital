@@ -1,22 +1,21 @@
 import { fetchAllODAs, apiODAToFrontend } from './api';
-import { ODAFromExcel } from './importODAs';
+import type { ODAFromExcel } from '../types/project';
 
 /**
- * Carrega ODAs da API backend, migrando da planilha se necessário
+ * Carrega ODAs da API backend.
  */
 export async function loadODAsFromDatabase(): Promise<ODAFromExcel[]> {
   try {
-    // Carregar ODAs diretamente da API (dados já estão no Supabase)
-    console.log('🔄 loadODAsFromDatabase: Carregando ODAs do Supabase...');
+    console.log('🔄 Carregando ODAs da API...');
     const odas = await fetchAllODAs();
-    console.log(`✅ loadODAsFromDatabase: ${odas.length} ODAs carregados do Supabase`);
+    console.log(`✅ ${odas.length} ODAs carregados da API`);
     
     // Converter para formato do frontend
     const converted = odas.map(apiODAToFrontend);
     console.log(`✅ loadODAsFromDatabase: ${converted.length} ODAs convertidos para frontend`);
     return converted;
   } catch (error: any) {
-    console.error('❌ Erro ao carregar ODAs do Supabase:', error);
+    console.error('❌ Erro ao carregar ODAs da API:', error);
     
     // Verificar se é erro de conexão
     if (error?.message?.includes('Failed to fetch') || error?.message?.includes('ERR_CONNECTION_REFUSED')) {
