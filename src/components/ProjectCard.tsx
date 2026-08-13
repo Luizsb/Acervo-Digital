@@ -3,6 +3,7 @@ import { BookOpen, Layers, Heart, Clock, Video, Gamepad2, Headphones, Monitor, L
 import { getCurriculumColor, getComponentFullName } from '../utils/curriculumColors';
 import { formatDuration } from '../utils/formatters';
 import { resolveMacroformato, type MacroformatoKind } from '../utils/macroformato';
+import { resourceTypeLabel } from '../utils/contentType';
 import type { Project } from '../types/project';
 
 function MacroIcon({ kind, className }: { kind: MacroformatoKind; className?: string }) {
@@ -43,6 +44,7 @@ export function ProjectCard({ project, onClick, isFavorite = false, onToggleFavo
   const cardRef = useRef<HTMLDivElement>(null);
   const durationLabel = formatDuration(project.duration);
   const macro = resolveMacroformato(project.macroformato);
+  const typeLabel = resourceTypeLabel(project);
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -206,11 +208,11 @@ export function ProjectCard({ project, onClick, isFavorite = false, onToggleFavo
               <span className="text-xs font-medium text-gray-600">{project.location}</span>
             </div>
 
-            {project.category && (
+            {typeLabel && (
               <>
                 <span className="text-gray-300">•</span>
                 <div
-                  title={project.macroformato ? "Macroformato / categoria" : "Categoria"}
+                  title="Tipo do recurso"
                   className="flex items-center gap-1.5"
                 >
                   {macro ? (
@@ -222,7 +224,7 @@ export function ProjectCard({ project, onClick, isFavorite = false, onToggleFavo
                   ) : (
                     <BookOpen className="w-3.5 h-3.5 text-gray-400" />
                   )}
-                  <span className="text-xs font-medium text-gray-600">{project.category}</span>
+                  <span className="text-xs font-medium text-gray-600">{typeLabel}</span>
                 </div>
               </>
             )}

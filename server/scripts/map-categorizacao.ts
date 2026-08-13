@@ -257,6 +257,40 @@ export function buildRequisitos(row: CategorizacaoRow): string | null {
   return uniqueLines.length > 0 ? uniqueLines.join('\n') : null;
 }
 
+function normalizeKey(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase();
+}
+
+function textLooksAudiovisual(value: string): boolean {
+  const key = normalizeKey(value);
+  return (
+    key.includes('video') ||
+    key.includes('playlist') ||
+    key.includes('audio') ||
+    key.includes('podcast')
+  );
+}
+
+/** Códigos SAE/SPE de vídeo-aula: ..._VA1, ..._VA2 */
+export function isVideoAulaCodigo(codigo: string): boolean {
+  return /_VA\d+/i.test(codigo);
+}
+
+export function isAudiovisualRecord(
+  macroformato: string | null,
+  tipoPrincipal: string,
+  codigoOda: string
+): boolean {
+  return (
+    textLooksAudiovisual(macroformato || '') ||
+    textLooksAudiovisual(tipoPrincipal) ||
+    isVideoAulaCodigo(codigoOda)
+  );
+}
+
 export function mapCategorizacaoRow(
   row: CategorizacaoRow,
   options: { metodologiaExists: (codigo: string) => boolean }
@@ -289,16 +323,11 @@ export function mapCategorizacaoRow(
 
   const duracaoMidia = cell(row, 'Duração da mídia');
   const tempoMedio = cell(row, 'Tempo médio estimado');
-  const macroformato = cell(row, 'Macroformato') || null;
-  const macroKey = (macroformato || '')
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .toLowerCase();
-  const isAudiovisual =
-    macroKey.includes('video') ||
-    macroKey.includes('playlist') ||
-    macroKey.includes('audio') ||
-    macroKey.includes('podcast');
+  const macroformatoRaw = cell(row, 'Macroformato') || null;
+  const isAudiovisual = isAudiovisualRecord(macroformatoRaw, tipoPrincipal, codigoOda);
+  const macroformato =
+    macroformatoRaw || (isAudiovisual && isVideoAulaCodigo(codigoOda) ? 'Vídeo' : null);
+  const tipoResolvido = tipoCurto || macroformatoRaw || (isAudiovisual ? 'Vídeo' : null);
 
   return {
     codigoOda,
@@ -311,15 +340,15 @@ export function mapCategorizacaoRow(
     linkRepositorio: cell(row, 'Link do recurso') || null,
     codigoBncc: codigoBncc || null,
     descricaoBncc: descricaoBncc || null,
-    categoria: tipoCurto || null,
+    categoria: tipoResolvido,
     duracao: formatExcelDuration(duracaoMidia || tempoMedio),
     volume: cell(row, 'Volume') || null,
     segmento: deriveSegmento(anoSerie),
     marca: cell(row, 'Marca') || null,
     tipoConteudo: isAudiovisual ? 'Audiovisual' : 'OED',
     escalaSamr: cell(row, 'Escala SAMR') || null,
-    tipoObjeto: tipoCurto || null,
-    categoriaVideo: isAudiovisual ? tipoCurto || macroformato || 'Audiovisual' : null,
+    tipoObjeto: tipoResolvido,
+    categoriaVideo: isAudiovisual ? tipoResolvido || macroformato || 'Audiovisual' : null,
     descricao: buildDescricao(row),
     objetivosAprendizagem: buildObjetivos(row),
     recursosPedagogicos: buildRecursos(row),

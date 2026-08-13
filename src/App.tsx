@@ -22,6 +22,7 @@ import { apiFavoritesGet, apiFavoriteAdd, apiFavoriteRemove } from "./utils/api"
 import { Pagination } from "./components/Pagination";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { useProjectFilters } from "./hooks/useProjectFilters";
+import { useGalleryPageSize } from "./hooks/useGalleryPageSize";
 import { getInitialPageFromHash, getHashFromPage, type PageKey } from "./utils/hashRouting";
 import { startOnboardingIfNeeded } from "./utils/onboarding";
 
@@ -231,11 +232,8 @@ export default function App() {
     });
   };
 
-  // Calcular paginação
-  // Grid: 3 linhas x 5 colunas (2xl) = 15 itens por página
-  // List: 20 itens por página
-  const itemsPerPage = viewMode === 'grid' ? 15 : 15;
-  const totalPages = Math.ceil(filteredProjects.length / itemsPerPage);
+  const itemsPerPage = useGalleryPageSize(viewMode);
+  const totalPages = Math.max(1, Math.ceil(filteredProjects.length / itemsPerPage));
   const startIndex = (currentPageNumber - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
   const paginatedProjects = filteredProjects.slice(startIndex, endIndex);
@@ -244,6 +242,12 @@ export default function App() {
   useEffect(() => {
     setCurrentPageNumber(1);
   }, [searchQuery, selectedFilters, contentTypeFilter, viewMode]);
+
+  useEffect(() => {
+    if (currentPageNumber > totalPages) {
+      setCurrentPageNumber(totalPages);
+    }
+  }, [currentPageNumber, totalPages]);
 
   const handleProjectClick = (project) => {
     setSelectedProject(project);

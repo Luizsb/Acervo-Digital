@@ -3,6 +3,7 @@ import { BookOpen, Heart, Clock, Video, Gamepad2, MapPin } from 'lucide-react';
 import { getCurriculumColor, getComponentFullName } from '../utils/curriculumColors';
 import { formatDuration } from '../utils/formatters';
 import { resolveMacroformato } from '../utils/macroformato';
+import { resourceTypeLabel } from '../utils/contentType';
 import type { Project } from '../types/project';
 
 interface ProjectListItemProps {
@@ -17,6 +18,7 @@ export function ProjectListItem({ project, onClick, isFavorite = false, onToggle
   const itemRef = useRef<HTMLDivElement>(null);
   const durationLabel = formatDuration(project.duration);
   const macro = resolveMacroformato(project.macroformato);
+  const typeLabel = resourceTypeLabel(project);
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -142,11 +144,11 @@ export function ProjectListItem({ project, onClick, isFavorite = false, onToggle
             </div>
 
             {/* Category */}
-            {project.category && (
+            {typeLabel && (
               <>
                 <span className="text-gray-300">•</span>
                 <div
-                  title={project.macroformato ? "Macroformato / categoria" : "Categoria"}
+                  title="Tipo do recurso"
                   className="flex items-center gap-1"
                 >
                   {project.contentType === 'Audiovisual' ? (
@@ -156,7 +158,7 @@ export function ProjectListItem({ project, onClick, isFavorite = false, onToggle
                   ) : (
                     <BookOpen className="w-4 h-4 text-gray-400" />
                   )}
-                  <span className="font-medium">{project.category}</span>
+                  <span className="font-medium">{typeLabel}</span>
                 </div>
               </>
             )}

@@ -1,4 +1,5 @@
 import { getVideoThumbnail } from './videoThumbnails';
+import { looksLikeAudiovisual, isVideoAulaCodigo } from './contentType';
 import type { Project } from '../types/project';
 import { extractBnccCode, extractBnccDescription, formatDuration } from './formatters';
 
@@ -245,16 +246,22 @@ export function apiODAToFrontend(oda: ODA): Project {
     videoUrl: oda.linkRepositorio || undefined,
     bnccCode: extractBnccCode(oda.codigoBncc) || undefined,
     bnccDescription: extractBnccDescription(oda.codigoBncc, oda.descricaoBncc || bnccDescription) || undefined,
-    category: oda.categoria || undefined,
+    category: oda.categoria || oda.tipoObjeto || oda.macroformato || (isVideoAulaCodigo(oda.codigoOda) ? 'Vídeo' : undefined),
     duration: formatDuration(oda.duracao || oda.tempoMedioEstimado) || undefined,
     volume: oda.volume || undefined,
     segmento: oda.segmento || undefined,
     pagina: oda.pagina || undefined,
     marca: oda.marca || undefined,
-    contentType: oda.tipoConteudo,
+    contentType: looksLikeAudiovisual({
+      macroformato: oda.macroformato,
+      tipoPrincipal: oda.tipoObjeto || oda.categoria,
+      codigoOda: oda.codigoOda,
+    })
+      ? 'Audiovisual'
+      : oda.tipoConteudo,
     videoCategory: oda.categoriaVideo || undefined,
     samr: oda.escalaSamr || undefined, // Mapear escalaSamr para samr
-    tipoObjeto: oda.tipoObjeto || undefined,
+    tipoObjeto: oda.tipoObjeto || oda.categoria || oda.macroformato || undefined,
     description: oda.descricao || undefined,
     learningObjectives: parseJsonArray(oda.objetivosAprendizagem),
     pedagogicalResources: parseJsonArray(oda.recursosPedagogicos),
@@ -266,7 +273,7 @@ export function apiODAToFrontend(oda: ODA): Project {
     envioEscola: oda.envioEscola || undefined,
     blocoCapitulo: oda.blocoCapitulo || undefined,
     anoProducao: oda.anoProducao || undefined,
-    macroformato: oda.macroformato || undefined,
+    macroformato: oda.macroformato || (isVideoAulaCodigo(oda.codigoOda) ? 'Vídeo' : undefined),
     palavrasChave: parseJsonArray(oda.palavrasChave),
     bnccCodeSecondary: extractBnccCode(oda.codigoBnccSecundaria) || undefined,
     bnccDescriptionSecondary:
