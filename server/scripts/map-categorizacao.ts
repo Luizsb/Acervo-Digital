@@ -148,7 +148,10 @@ export function deriveSegmento(anoSerie: string): string | null {
 function isAffirmative(value: string): boolean {
   if (!value) return false;
   const v = value.trim().toLowerCase();
-  if (['não', 'nao', 'n/a', 'na', 'não se aplica', 'nao se aplica', '-', '0', 'false'].includes(v)) {
+  if (
+    /^n[aã]o\b/.test(v) ||
+    ['n/a', 'na', '-', '0', 'false'].includes(v)
+  ) {
     return false;
   }
   return true;
@@ -201,24 +204,57 @@ export function buildRecursos(row: CategorizacaoRow): string | null {
 
 export function buildRequisitos(row: CategorizacaoRow): string | null {
   const checks: Array<[string[], string]> = [
-    [['Precisa de câmera/microfone/sensor para funcionar?'], 'Precisa de câmera, microfone ou sensor'],
     [['Solicita identificação do aluno?'], 'Solicita identificação do aluno'],
     [['Solicita envio de resposta ou arquivo?'], 'Solicita envio de resposta ou arquivo'],
     [['Captura imagem ou voz do aluno?'], 'Captura imagem ou voz do aluno'],
     [['Usa histórico, perfil ou progresso individual?'], 'Usa histórico, perfil ou progresso individual'],
   ];
   const lines: string[] = [];
+
+  const camera = cell(row, 'Precisa de câmera/microfone/sensor para funcionar?');
+  if (/^n[aã]o\s+requer\b/i.test(camera)) {
+    lines.push('Não requer câmera, microfone ou sensores');
+  } else if (isAffirmative(camera)) {
+    lines.push(/^sim$/i.test(camera) ? 'Requer câmera, microfone ou sensor' : camera);
+  }
+
   for (const [names, label] of checks) {
     const value = cell(row, ...names);
-    if (value && isAffirmative(value) && !['não se aplica', 'nao se aplica'].includes(value.toLowerCase())) {
-      lines.push(`${label}: ${value}`);
+    if (isAffirmative(value)) {
+      lines.push(/^sim$/i.test(value) ? label : `${label}: ${value}`);
     }
   }
+
   const toque = cell(row, 'Usabilidade em tela menor/toque');
-  if (toque) lines.push(`Tela menor/toque: ${toque}`);
+  if (/^alta:/i.test(toque)) {
+    lines.push('Compatível com telas menores e interação por toque');
+  } else if (/^m[eé]dia:/i.test(toque)) {
+    lines.push('Compatibilidade parcial com telas menores e interação por toque');
+  } else if (/^baixa:/i.test(toque)) {
+    lines.push('Tela maior recomendada; controles por toque podem ser difíceis');
+  } else if (/^cr[ií]tica:/i.test(toque)) {
+    lines.push('Tela maior necessária; o uso em telas menores compromete a experiência');
+  } else if (toque && !/^n[aã]o se aplica:/i.test(toque)) {
+    lines.push(`Compatibilidade com telas menores e toque: ${toque}`);
+  }
+
   const orientacao = cell(row, 'Orientação de tela mais adequada');
-  if (orientacao) lines.push(`Orientação de tela: ${orientacao}`);
-  return lines.length > 0 ? lines.join('\n') : null;
+  if (/^paisagem:/i.test(orientacao)) {
+    lines.push('Orientação recomendada: paisagem');
+  } else if (/^retrato:/i.test(orientacao)) {
+    lines.push('Orientação recomendada: retrato');
+  } else if (/^tanto faz:/i.test(orientacao)) {
+    lines.push('Compatível com as orientações retrato e paisagem');
+  } else if (/^tela maior recomendada:/i.test(orientacao)) {
+    if (!lines.some((line) => line.startsWith('Tela maior'))) {
+      lines.push('Tela maior recomendada');
+    }
+  } else if (orientacao && !/^n[aã]o se aplica:/i.test(orientacao)) {
+    lines.push(`Orientação de tela: ${orientacao}`);
+  }
+
+  const uniqueLines = [...new Set(lines)];
+  return uniqueLines.length > 0 ? uniqueLines.join('\n') : null;
 }
 
 export function mapCategorizacaoRow(

@@ -49,7 +49,7 @@ export function LoginPage({ onBack, onLoginSuccess, login }: LoginPageProps) {
         <section className="login-card">
           <div className="login-brand">
             <span className="login-brand-mark" aria-hidden="true">
-              <BookOpen size={20} color="#fff" />
+              <BookOpen size={24} color="#fff" />
             </span>
             <span className="login-brand-text">
               <span className="login-brand-title">Acervo Digital</span>

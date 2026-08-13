@@ -28,20 +28,22 @@ export function Navigation({ searchQuery, onSearchChange, onNavigateToSettings, 
 
   return (
     <nav className="sticky top-0 z-50 shrink-0 bg-primary border-b border-primary-foreground/10">
-      <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="acervo-navigation-container">
         <div className="flex items-center justify-between gap-4 h-16 sm:h-20">
           {/* Logo alinhada ao grid da página (mesmo container do conteúdo) */}
-          <div 
+          <button
+            type="button"
+            aria-label="Ir para o acervo"
             onClick={() => onNavigateToGallery?.()}
-            className="flex items-center gap-2.5 sm:gap-3 group cursor-pointer flex-shrink-0 min-w-0"
+            className="acervo-brand flex items-center group cursor-pointer flex-shrink-0 min-w-0"
           >
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-300 flex-shrink-0">
-              <BookOpen className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+            <div className="acervo-brand-icon bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-300 flex-shrink-0">
+              <BookOpen className="acervo-brand-symbol text-primary" />
             </div>
-            <h1 className="text-white font-black tracking-tight truncate" style={{ fontSize: 'clamp(1.125rem, 2.5vw, 1.5rem)' }}>
+            <span className="acervo-brand-title text-white font-black tracking-tight truncate">
               Acervo Digital
-            </h1>
-          </div>
+            </span>
+          </button>
 
           {/* Right side - Search and Profile (Desktop) */}
           <div className="hidden lg:flex items-center gap-4">

@@ -5,15 +5,18 @@ API Node.js + Express + Prisma. Documentação completa na **raiz do repositóri
 ## Uso rápido (dentro de `server/`)
 
 ```bash
-# Na raiz do repositório: sobe o Postgres
-npm run db:up
-
-npm ci
-# Copie .env.example para .env (DATABASE_URL local já está no exemplo)
-npx prisma generate
-npx prisma migrate deploy
-npm run seed
-npm run import:categorizacao -- --clear
-npm run dev             # http://localhost:3001
-npm run prisma:studio   # http://localhost:5555
+# Na raiz do repositório
+copy server\.env.example server\.env
+npm run setup
+npm run server:dev
 ```
+
+`npm run setup` sobe o Postgres, aplica migrações e executa o seed (BNCC, usuário demo e planilha).
+
+Para sincronizar uma planilha nova sem apagar o banco:
+
+```bash
+npm run import:categorizacao
+```
+
+`--clear` apaga a tabela `odas` e só deve ser usado em reset local.

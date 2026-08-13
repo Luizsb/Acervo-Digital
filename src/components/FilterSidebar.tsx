@@ -6,7 +6,6 @@ import {
   ChevronDown,
   ChevronRight,
   FileText,
-  Filter,
   FolderOpen,
   GraduationCap,
   Layers,
@@ -15,6 +14,7 @@ import {
   Search,
   Send,
   Shapes,
+  SlidersHorizontal,
   Tag,
   UserRound,
   X,
@@ -419,7 +419,7 @@ export function FilterSidebar({
       <div className="shrink-0 border-b border-gray-100 px-5 py-4">
         <div className="flex items-center justify-between gap-2">
           <h3 className="flex items-center gap-2.5 text-lg font-extrabold text-primary">
-            <Filter className="w-5 h-5 stroke-2" />
+            <SlidersHorizontal className="w-5 h-5 stroke-2" />
             Filtros
             {activeCount > 0 && (
               <span className="text-sm font-semibold text-secondary">({activeCount})</span>

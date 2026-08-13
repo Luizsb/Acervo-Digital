@@ -6,9 +6,12 @@ import { FilterSidebar } from "./components/FilterSidebar";
 import { MobileFilterDrawer } from "./components/MobileFilterDrawer";
 import {
   SearchX,
+  Search,
   Sparkles,
   SlidersHorizontal,
   X,
+  ChevronDown,
+  ChevronUp,
   LayoutGrid,
   List,
 } from "lucide-react";
@@ -143,7 +146,7 @@ export default function App() {
   } = useProjectFilters(projects, contentTypeFilter, searchQuery);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [currentPageNumber, setCurrentPageNumber] = useState(1);
-  const [showWelcomeBanner, setShowWelcomeBanner] = useState(true);
+  const [isWelcomeBannerCollapsed, setIsWelcomeBannerCollapsed] = useState(false);
 
   // Onboarding (tour guiado) no primeiro acesso à galeria
   useEffect(() => {
@@ -690,33 +693,72 @@ export default function App() {
         <main className="flex-1 overflow-y-auto min-h-0">
           <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
             {/* Hero / Welcome Banner */}
-            {showWelcomeBanner && (
-              <section id="acervo-hero" className="mb-10">
-                <div className="relative overflow-hidden bg-primary text-white shadow-md px-6 py-8 sm:px-10 sm:py-10" style={{ borderRadius: '12px' }}>
-                  {/* Botão fechar */}
-                  <button
-                    type="button"
-                    aria-label="Fechar mensagem de boas-vindas"
-                    onClick={() => setShowWelcomeBanner(false)}
-                    className="absolute top-3 right-3 inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors"
-                  >
-                    <X className="w-5 h-5" />
-                  </button>
+            <section id="acervo-hero" className="mb-10">
+              <div
+                className={`acervo-welcome-banner relative overflow-hidden rounded-2xl text-white shadow-lg ${
+                  isWelcomeBannerCollapsed ? "acervo-welcome-banner--collapsed" : ""
+                }`}
+              >
+                <button
+                  type="button"
+                  aria-label={isWelcomeBannerCollapsed ? "Expandir apresentação do acervo" : "Recolher apresentação do acervo"}
+                  title={isWelcomeBannerCollapsed ? "Expandir apresentação" : "Recolher apresentação"}
+                  onClick={() => setIsWelcomeBannerCollapsed((collapsed) => !collapsed)}
+                  className="acervo-welcome-close absolute right-3 top-3 z-20 inline-flex items-center justify-center rounded-full text-white transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+                >
+                  {isWelcomeBannerCollapsed ? (
+                    <ChevronDown className="w-5 h-5" />
+                  ) : (
+                    <ChevronUp className="w-5 h-5" />
+                  )}
+                </button>
 
-                  <div className="max-w-2xl">
-                    <h1 className="text-3xl sm:text-4xl lg:text-5xl xl:text-6xl font-black tracking-tight mb-4 text-white">
-                      Bem-vindo ao Acervo Digital
-                    </h1>
-                    <p className="text-base sm:text-lg text-white/90 max-w-xl mb-2">
-                      Explore centenas de Objetos Digitais de Aprendizagem e Videoaulas alinhados à BNCC.
-                    </p>
-                    <p className="text-sm sm:text-base text-white/80 max-w-xl">
-                      Use os filtros inteligentes para encontrar o conteúdo perfeito para sua aula.
-                    </p>
+                {isWelcomeBannerCollapsed ? (
+                  <div className="acervo-welcome-collapsed relative z-10">
+                    <Sparkles className="h-4 w-4 shrink-0 text-secondary" />
+                    <span className="font-bold">Acervo pedagógico</span>
+                    <span className="acervo-welcome-collapsed-description hidden sm:inline">
+                      Encontre o recurso que você procura
+                    </span>
                   </div>
-                </div>
-              </section>
-            )}
+                ) : (
+                  <div className="acervo-welcome-layout relative z-10">
+                    <div className="acervo-welcome-content max-w-3xl">
+                      <div className="acervo-welcome-badge mb-4 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-bold uppercase tracking-[0.12em]">
+                        <Sparkles className="h-4 w-4 text-secondary" />
+                        Acervo pedagógico
+                      </div>
+                      <h1 className="mb-4 max-w-2xl text-3xl font-black leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl">
+                        Encontre o recurso que você procura
+                      </h1>
+                      <p className="acervo-welcome-description max-w-2xl text-sm leading-relaxed sm:text-base lg:text-lg">
+                        Consulte objetos digitais e conteúdos audiovisuais organizados por etapa, componente curricular e BNCC.
+                      </p>
+                    </div>
+
+                    <div className="acervo-welcome-guide hidden rounded-2xl p-4 backdrop-blur-sm lg:block">
+                      <p className="acervo-welcome-guide-label mb-3 text-xs font-bold uppercase tracking-[0.12em]">
+                        Comece por aqui
+                      </p>
+                      <div className="acervo-welcome-guide-list">
+                        <div className="acervo-welcome-guide-row">
+                          <Search className="h-5 w-5 shrink-0 text-secondary" />
+                          <span className="acervo-welcome-guide-item text-sm font-semibold">Busque por tema ou palavra-chave</span>
+                        </div>
+                        <div className="acervo-welcome-guide-row">
+                          <SlidersHorizontal className="h-5 w-5 shrink-0 text-secondary" />
+                          <span className="acervo-welcome-guide-item text-sm font-semibold">Refine por currículo e localização editorial</span>
+                        </div>
+                        <div className="acervo-welcome-guide-row">
+                          <BookOpen className="h-5 w-5 shrink-0 text-secondary" />
+                          <span className="acervo-welcome-guide-item text-sm font-semibold">Consulte os detalhes de cada recurso</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </section>
 
             {/* Content Type Selector */}
             <div id="acervo-content-type" className="mb-10">

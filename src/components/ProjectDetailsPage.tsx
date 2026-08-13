@@ -1,15 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { X, BookOpen, Clock, Check, ExternalLink, Eye, Sparkles, Play, Book, FileText, ArrowLeft, Heart, Link as LinkIcon, Settings, Download, Layers, GitBranch } from 'lucide-react';
 import { ProjectCard } from './ProjectCard';
 import { getCurriculumColor, getComponentFullName, getSegmentFullName, getMarcaFullName } from '../utils/curriculumColors';
 import { ScrollToTop } from './ScrollToTop';
 import { VideoThumbnail } from './VideoThumbnail';
-import { getVimeoEmbedUrl } from '../utils/videoThumbnails';
+import { getVimeoEmbedUrl, resolveVideoEmbedUrl } from '../utils/videoThumbnails';
 import type { Project } from '../types/project';
 import { formatDuration } from '../utils/formatters';
 import { MacroformatoBadge } from './MacroformatoBadge';
 
-const DEFAULT_TECHNICAL_REQUIREMENTS = "Navegador web atualizado (Chrome, Firefox, Safari)\nConexão com internet (mínimo 2 Mbps)\nDispositivos compatíveis: computador, tablet ou smartphone\nNão requer instalação de software adicional";
+type RelatedCriterion = 'year' | 'bncc' | 'samr';
+
+function normalizeRelationValue(value?: string): string {
+  return value?.trim().toLocaleLowerCase('pt-BR') ?? '';
+}
+
+function getBnccCodes(project: Project): string[] {
+  return [project.bnccCode, project.bnccCodeSecondary]
+    .map(normalizeRelationValue)
+    .filter(Boolean);
+}
 
 interface ProjectDetailsPageProps {
   project: Project;
@@ -24,16 +34,78 @@ interface ProjectDetailsPageProps {
 export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavorite, allProjects = [], onProjectClick, favorites = [] }: ProjectDetailsPageProps) {
   const [showVideo, setShowVideo] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
+  const [relatedCriterion, setRelatedCriterion] = useState<RelatedCriterion>('year');
+  const [videoEmbedUrl, setVideoEmbedUrl] = useState<string>();
+  const [isPreparingVideo, setIsPreparingVideo] = useState(false);
 
   // Garantir que sempre rola para o topo quando a página de detalhes é aberta (sem animação)
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [project.id]);
 
+  useEffect(() => {
+    let cancelled = false;
+    setShowVideo(false);
+    setVideoEmbedUrl(undefined);
+
+    if (project.contentType !== 'Audiovisual' || !project.videoUrl) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setIsPreparingVideo(true);
+    resolveVideoEmbedUrl(project.videoUrl)
+      .then((url) => {
+        if (!cancelled) setVideoEmbedUrl(url);
+      })
+      .catch(() => {
+        if (!cancelled) setVideoEmbedUrl(project.videoUrl);
+      })
+      .finally(() => {
+        if (!cancelled) setIsPreparingVideo(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [project.contentType, project.id, project.videoUrl]);
+
   // Mock data for demonstration
   const odaDetails = {
     views: "1.245",
     lastUpdate: "15 de novembro de 2024",
+  };
+  const technicalRequirements = project.technicalRequirements
+    ?.split('\n')
+    .map((requirement) => requirement.trim())
+    .filter(Boolean) ?? [];
+  const relatedProjects = useMemo(() => {
+    const currentBnccCodes = getBnccCodes(project);
+
+    return allProjects
+      .filter((candidate) => {
+        if (candidate.id === project.id) return false;
+
+        if (relatedCriterion === 'year') {
+          const year = normalizeRelationValue(project.location);
+          return Boolean(year) && normalizeRelationValue(candidate.location) === year;
+        }
+
+        if (relatedCriterion === 'bncc') {
+          if (currentBnccCodes.length === 0) return false;
+          return getBnccCodes(candidate).some((code) => currentBnccCodes.includes(code));
+        }
+
+        const samr = normalizeRelationValue(project.samr);
+        return Boolean(samr) && normalizeRelationValue(candidate.samr) === samr;
+      })
+      .slice(0, 5);
+  }, [allProjects, project, relatedCriterion]);
+  const relatedCriterionAvailable: Record<RelatedCriterion, boolean> = {
+    year: Boolean(normalizeRelationValue(project.location)),
+    bncc: getBnccCodes(project).length > 0,
+    samr: Boolean(normalizeRelationValue(project.samr)),
   };
 
   const handleCopyLink = () => {
@@ -44,16 +116,27 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
     setTimeout(() => setCopiedLink(false), 2000);
   };
 
-  const handleOpenInNewWindow = () => {
-    // Abrir o link do ODA em nova janela
-    if (project.videoUrl) {
-      window.open(project.videoUrl, '_blank', 'noopener,noreferrer');
-    }
-  };
-
   const handleToggleFavorite = () => {
     if (onToggleFavorite) {
       onToggleFavorite(project.id);
+    }
+  };
+
+  const handlePlayVideo = async () => {
+    if (videoEmbedUrl) {
+      setShowVideo(true);
+      return;
+    }
+
+    setIsPreparingVideo(true);
+    try {
+      const resolvedUrl = await resolveVideoEmbedUrl(project.videoUrl!);
+      setVideoEmbedUrl(resolvedUrl);
+    } catch {
+      setVideoEmbedUrl(project.videoUrl);
+    } finally {
+      setIsPreparingVideo(false);
+      setShowVideo(true);
     }
   };
 
@@ -86,7 +169,7 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
                   if (isAudiovisual && showVideo) {
                     return (
                       <iframe
-                        src={getVimeoEmbedUrl(project.videoUrl!, { autoplay: true })}
+                        src={getVimeoEmbedUrl(videoEmbedUrl || project.videoUrl!, { autoplay: true })}
                         className="w-full h-full"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
@@ -122,9 +205,10 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
                         {isAudiovisual && (
                           <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                             <button
-                              onClick={() => setShowVideo(true)}
-                              className="w-20 h-20 bg-white rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-lg group"
-                              aria-label="Reproduzir vídeo"
+                              onClick={() => void handlePlayVideo()}
+                              disabled={isPreparingVideo && !videoEmbedUrl}
+                              className="w-20 h-20 bg-white rounded-full flex items-center justify-center hover:scale-110 transition-transform shadow-lg group disabled:cursor-wait disabled:opacity-80"
+                              aria-label={isPreparingVideo ? 'Preparando vídeo' : 'Reproduzir vídeo'}
                             >
                               <Play className="w-10 h-10 text-primary ml-1 group-hover:text-secondary transition-colors" fill="currentColor" />
                             </button>
@@ -137,13 +221,6 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
                                 <span className="text-sm font-bold text-foreground">Vol. {project.volume}</span>
                               </div>
                             )}
-                            {project.macroformato ? (
-                              <MacroformatoBadge value={project.macroformato} className="shadow-md" />
-                            ) : project.category ? (
-                              <div className="bg-white px-3 py-1.5 rounded-[20px] shadow-md">
-                                <span className="text-sm font-bold text-primary">{project.category}</span>
-                              </div>
-                            ) : null}
                           </div>
                         </div>
                       </>
@@ -163,41 +240,54 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
                     project.tags.map((tag, index) => (
                       <div
                         key={index}
-                        className={`inline-flex items-center px-2.5 py-1 rounded-[12px] text-xs font-semibold border shadow-sm ${getCurriculumColor(tag)}`}
+                        className={`detail-meta-badge cursor-pointer text-xs font-semibold border shadow-sm ${getCurriculumColor(tag)}`}
+                        title="Componente curricular"
                       >
                         {getComponentFullName(tag)}
                       </div>
                     ))
                   ) : (
-                    <div className={`inline-flex items-center px-2.5 py-1 rounded-[12px] text-xs font-semibold border shadow-sm ${getCurriculumColor(project.tag)}`}>
+                    <div
+                      className={`detail-meta-badge cursor-pointer text-xs font-semibold border shadow-sm ${getCurriculumColor(project.tag)}`}
+                      title="Componente curricular"
+                    >
                       {getComponentFullName(project.tag)}
                     </div>
                   )}
                   {project.marca && (
                     <div 
-                      className={`inline-flex items-center px-2.5 py-1 rounded-[12px] text-xs font-semibold border shadow-sm cursor-pointer ${
+                      className={`detail-meta-badge text-xs font-semibold border shadow-sm cursor-pointer ${
                         project.marca === 'SPE' ? 'bg-secondary/10 text-secondary border-secondary/20' :
                         project.marca === 'SAE' ? 'bg-purple-100 text-purple-700 border-purple-200' :
                         project.marca === 'CQT' ? 'bg-pink-100 text-pink-700 border-pink-200' :
                         'bg-indigo-100 text-indigo-700 border-indigo-200'
                       }`}
-                      title={getMarcaFullName(project.marca)}
+                      title="Marca"
                     >
                       {project.marca}
                     </div>
                   )}
-                  <MacroformatoBadge value={project.macroformato} />
+                  {project.macroformato ? (
+                    <MacroformatoBadge value={project.macroformato} className="detail-meta-badge cursor-pointer" />
+                  ) : project.category ? (
+                    <div
+                      className="detail-meta-badge cursor-pointer border border-gray-200 bg-gray-50 text-xs font-semibold text-primary shadow-sm"
+                      title="Categoria"
+                    >
+                      {project.category}
+                    </div>
+                  ) : null}
                 </div>
 
                 {/* Stats - Views and Status (Compact) */}
                 <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-50 rounded-[12px] border border-gray-200">
+                  <div className="detail-meta-badge cursor-pointer gap-1.5 bg-gray-50 border border-gray-200" title="Visualizações">
                     <Eye className="w-3.5 h-3.5 text-accent" />
                     <span className="text-xs font-bold text-foreground">{odaDetails.views}</span>
                   </div>
                   
                   {project.status && (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-50 rounded-[12px] border border-gray-200">
+                    <div className="detail-meta-badge cursor-pointer gap-1.5 bg-gray-50 border border-gray-200" title="Status do recurso">
                       <Check className="w-3.5 h-3.5 text-green-600" />
                       <span className="text-xs font-bold text-foreground">{project.status}</span>
                     </div>
@@ -206,7 +296,7 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
               </div>
               
               <h1 
-                style={{ fontSize: '20px' }} 
+                style={{ fontSize: '24px' }}
                 className="text-primary font-extrabold leading-tight"
                 title={project.title}
               >
@@ -215,30 +305,32 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
 
               {/* Info Row - Year, Duration, Book, Page - Reduced size */}
               <div className="flex flex-wrap items-center gap-2">
-                <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 rounded-[12px] border border-gray-200 shadow-sm">
+                <div className="detail-meta-badge cursor-pointer gap-1.5 bg-gray-100 border border-gray-200 shadow-sm" title="Ano/série">
                   <BookOpen className="w-3.5 h-3.5 text-primary" />
                   <span className="text-xs font-semibold">{project.location}</span>
                 </div>
                 {formatDuration(project.duration) && (
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 rounded-[12px] border border-gray-200 shadow-sm">
+                  <div className="detail-meta-badge cursor-pointer gap-1.5 bg-gray-100 border border-gray-200 shadow-sm" title="Duração">
                     <Clock className="w-3.5 h-3.5 text-secondary" />
                     <span className="text-xs font-semibold">{formatDuration(project.duration)}</span>
                   </div>
                 )}
                 {project.segmento && (
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 border border-blue-200 rounded-[12px] shadow-sm">
+                  <div className="detail-meta-badge cursor-pointer gap-1.5 bg-blue-50 border border-blue-200 shadow-sm" title="Segmento">
                     <Layers className="w-3.5 h-3.5 text-blue-600" />
                     <span className="text-xs font-semibold text-blue-700">{getSegmentFullName(project.segmento)}</span>
                   </div>
                 )}
                 {project.codigoODA && (
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-[12px] shadow-sm">
+                  <div className="detail-meta-badge cursor-pointer gap-1.5 bg-gray-50 border border-gray-200 shadow-sm" title="Código do recurso">
                     <span className="text-xs font-mono font-semibold text-gray-700">{project.codigoODA}</span>
                   </div>
                 )}
-                <MacroformatoBadge value={project.macroformato} />
                 {(project.colecao || project.livro || project.blocoCapitulo) && (
-                  <div className="flex items-center gap-1.5 px-3 py-1.5 bg-violet-50 border border-violet-200 rounded-[12px] shadow-sm">
+                  <div
+                    className="detail-meta-badge cursor-pointer gap-1.5 bg-violet-50 border border-violet-200 shadow-sm"
+                    title="Localização editorial"
+                  >
                     <Book className="w-3.5 h-3.5 text-violet-600" />
                     <span className="text-xs font-semibold text-violet-700">
                       {[project.colecao, project.livro, project.blocoCapitulo].filter(Boolean).join(' · ')}
@@ -363,13 +455,19 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 pt-3">
                 {project.videoUrl && (
-                  <button 
-                    onClick={handleOpenInNewWindow}
+                  <a
+                    href={project.videoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="flex-1 bg-primary px-4 py-3 rounded-[20px] text-white hover:bg-[#013668] transition-all flex items-center justify-center gap-2 font-semibold shadow-sm hover:shadow-md"
                   >
                     <ExternalLink className="w-4 h-4" />
-                    <span>Abrir em Outra Janela</span>
-                  </button>
+                    <span>
+                      {project.contentType === 'Audiovisual'
+                        ? 'Abrir vídeo em outra janela'
+                        : 'Abrir em outra janela'}
+                    </span>
+                  </a>
                 )}
                 <button 
                   onClick={handleToggleFavorite}
@@ -494,10 +592,10 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
 
               {/* Technical Requirements */}
               <div className="space-y-3 p-5 bg-gray-50 rounded-[20px] border-2 border-gray-200">
-                <h6 className="font-bold text-base">Requisitos Técnicos</h6>
-                {(project.technicalRequirements || DEFAULT_TECHNICAL_REQUIREMENTS) ? (
+                <h6 className="font-bold text-base">Compatibilidade e requisitos técnicos</h6>
+                {technicalRequirements.length > 0 ? (
                   <div className="space-y-2">
-                    {(project.technicalRequirements || DEFAULT_TECHNICAL_REQUIREMENTS).split('\n').map((requirement, index) => (
+                    {technicalRequirements.map((requirement, index) => (
                       <div key={index} className="flex items-start gap-2.5">
                         <Check className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
                         <span className="text-sm text-muted-foreground leading-relaxed">{requirement}</span>
@@ -520,20 +618,46 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
         {/* Recommended Items Section */}
         {allProjects.length > 0 && onProjectClick && (
           <div className="mt-12">
-            <div className="mb-6">
+            <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+              <div>
               <h4 className="text-foreground font-extrabold mb-1 text-lg">
                 Você pode se interessar também por:
               </h4>
               <p className="text-muted-foreground text-sm">
-                ODAs relacionados do mesmo ano escolar
+                  Escolha como deseja encontrar recursos relacionados.
               </p>
+              </div>
+
+              <div className="related-criteria" role="group" aria-label="Critério dos recursos relacionados">
+                {([
+                  ['year', 'Mesmo ano/série'],
+                  ['bncc', 'Mesma BNCC'],
+                  ['samr', 'Mesma escala SAMR'],
+                ] as const).map(([criterion, label]) => (
+                  <button
+                    key={criterion}
+                    type="button"
+                    aria-pressed={relatedCriterion === criterion}
+                    disabled={!relatedCriterionAvailable[criterion]}
+                    title={
+                      relatedCriterionAvailable[criterion]
+                        ? `Relacionar por: ${label}`
+                        : 'Este recurso não possui essa informação'
+                    }
+                    onClick={() => setRelatedCriterion(criterion)}
+                    className={`related-criteria-button ${
+                      relatedCriterion === criterion ? 'related-criteria-button--active' : ''
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5">
-              {allProjects
-                .filter(p => p.id !== project.id && p.location === project.location)
-                .slice(0, 5)
-                .map((relatedProject) => (
+
+            {relatedProjects.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5">
+                {relatedProjects.map((relatedProject) => (
                   <ProjectCard
                     key={relatedProject.id}
                     project={relatedProject}
@@ -542,7 +666,13 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
                     onToggleFavorite={onToggleFavorite}
                   />
                 ))}
-            </div>
+              </div>
+            ) : (
+              <div className="rounded-[20px] border-2 border-dashed border-gray-300 bg-white p-8 text-center">
+                <p className="font-semibold text-primary">Nenhum recurso relacionado encontrado por este critério.</p>
+                <p className="mt-1 text-sm text-muted-foreground">Selecione outra opção para ver novas recomendações.</p>
+              </div>
+            )}
           </div>
         )}
       </div>

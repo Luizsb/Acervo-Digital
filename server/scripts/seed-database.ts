@@ -1,6 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import BetterSqlite3 from 'better-sqlite3';
+import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
 
@@ -115,11 +116,21 @@ async function seedDemoUser() {
   console.log(`Usuário demo disponível: ${DEMO_EMAIL}`);
 }
 
+async function seedCatalog() {
+  console.log('Importando planilha de categorização...');
+  execSync('npx tsx scripts/import-categorizacao.ts', {
+    cwd: path.join(__dirname, '..'),
+    stdio: 'inherit',
+    env: process.env,
+  });
+}
+
 async function main() {
   try {
     console.log('Iniciando seed local...');
     await seedBncc();
     await seedDemoUser();
+    await seedCatalog();
     console.log('Seed local concluído.');
   } finally {
     await prisma.$disconnect();

@@ -50,6 +50,10 @@ model ODA {
   tempoMedioEstimado    String?  @map("tempo_medio_estimado")
   usuarioPrincipal      String?  @map("usuario_principal")
   ambienteUso           String?  @map("ambiente_uso")
+  ativo                 Boolean  @default(true) @map("ativo")
+  fonteImportacao       String?  @map("fonte_importacao")
+  hashFonte             String?  @map("hash_fonte")
+  sincronizadoEm        DateTime? @map("sincronizado_em")
   createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
   
@@ -63,6 +67,7 @@ model ODA {
   @@index([marca])
   @@index([segmento])
   @@index([macroformato])
+  @@index([ativo])
   @@map("odas")
 }
 

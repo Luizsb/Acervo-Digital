@@ -60,11 +60,9 @@ desktop.ini
 .cache/
 *.zip
 
-# Public assets (manter estrutura mas não commitar imagens grandes)
-public/thumbs/
+# Public assets gerados localmente (não versionar imagens grandes)
+public/thumbs/*
+!public/thumbs/.gitkeep
 public/converted_images_webp/
 public/**/*.capture.png
-
-# Fonte editorial interna usada apenas na importação local
-public/Categorização_*.xlsx
 

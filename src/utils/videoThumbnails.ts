@@ -35,6 +35,63 @@ export function getVimeoEmbedUrl(videoUrl: string, options?: { autoplay?: boolea
   return `${videoUrl}${sep}${VIMEO_CLEAN_PARAMS}${extra}`;
 }
 
+const resolvedEmbedUrlCache = new Map<string, Promise<string>>();
+
+function toDirectVimeoPlayerUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    if (parsed.hostname === 'player.vimeo.com' && /^\/video\/\d+/.test(parsed.pathname)) {
+      return parsed.toString();
+    }
+
+    if (parsed.pathname.endsWith('/player/video_pos.html')) {
+      const videoId = parsed.searchParams.get('id');
+      const hash = parsed.searchParams.get('id2');
+      if (videoId && /^\d+$/.test(videoId)) {
+        const direct = new URL(`https://player.vimeo.com/video/${videoId}`);
+        if (hash && /^[a-zA-Z0-9]+$/.test(hash)) direct.searchParams.set('h', hash);
+        return direct.toString();
+      }
+    }
+  } catch {
+    return url;
+  }
+
+  return url;
+}
+
+/**
+ * Resolve URLs curtas da SAE antes da reprodução. O redirecionamento original
+ * abre uma página intermediária que descarta o parâmetro de autoplay.
+ */
+export function resolveVideoEmbedUrl(videoUrl: string): Promise<string> {
+  const cached = resolvedEmbedUrlCache.get(videoUrl);
+  if (cached) return cached;
+
+  const resolution = (async () => {
+    const directUrl = toDirectVimeoPlayerUrl(videoUrl);
+    if (directUrl !== videoUrl) return directUrl;
+
+    try {
+      const parsed = new URL(videoUrl);
+      if (parsed.hostname !== 'url.sae.digital') return videoUrl;
+
+      const code = parsed.pathname.split('/').filter(Boolean).at(-1);
+      if (!code) return videoUrl;
+
+      const response = await fetch(
+        `https://apis.sae.digital/redirect/r/${encodeURIComponent(code)}`
+      );
+      return toDirectVimeoPlayerUrl(response.url || videoUrl);
+    } catch {
+      return videoUrl;
+    }
+  })();
+
+  resolvedEmbedUrlCache.set(videoUrl, resolution);
+  return resolution;
+}
+
 /** @deprecated Use getVimeoEmbedUrl(url, { autoplay: true }) */
 export function getVimeoUrlWithAutoplay(videoUrl: string): string {
   return getVimeoEmbedUrl(videoUrl, { autoplay: true });

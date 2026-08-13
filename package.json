@@ -69,6 +69,7 @@
             "db:down": "docker compose down",
             "db:reset": "docker compose down -v && docker compose up -d",
             "seed": "cd server && npm run seed",
+            "setup": "npm run db:up && npm run prisma:generate && npm run prisma:migrate && npm run seed",
             "import:categorizacao": "cd server && npm run import:categorizacao",
             "thumbs:capture": "cd server && npm run thumbs:capture",
             "test": "vitest run"

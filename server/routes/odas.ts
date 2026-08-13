@@ -7,9 +7,12 @@ const router = express.Router();
 router.get('/', async (req, res) => {
   try {
     console.log('📊 GET /api/odas - Buscando ODAs...');
-    const { tipoConteudo, search, limit, offset } = req.query;
+    const { tipoConteudo, search, limit, offset, includeInactive } = req.query;
 
     const where: any = {};
+    if (includeInactive !== 'true') {
+      where.ativo = true;
+    }
 
     if (tipoConteudo && tipoConteudo !== 'Todos') {
       where.tipoConteudo = tipoConteudo as string;
@@ -72,14 +75,14 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const oda = await (prisma.oDA.findUnique as any)({
+    const oda = await prisma.oDA.findUnique({
       where: { id },
       include: {
-        bncc: true, // Incluir dados da BNCC relacionada
+        bncc: true,
       },
     });
 
-    if (!oda) {
+    if (!oda || oda.ativo === false) {
       return res.status(404).json({ error: 'ODA not found' });
     }
 
@@ -146,7 +149,7 @@ router.get('/stats/count', async (req, res) => {
   try {
     const { tipoConteudo } = req.query;
 
-    const where: any = {};
+    const where: any = { ativo: true };
     if (tipoConteudo && tipoConteudo !== 'Todos') {
       where.tipoConteudo = tipoConteudo as string;
     }

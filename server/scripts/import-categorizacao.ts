@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import { createHash } from 'crypto';
 import { PrismaClient } from '@prisma/client';
 import { readWorksheetMatrix } from '../lib/excel';
 import { mapCategorizacaoRow, type CategorizacaoRow } from './map-categorizacao';
@@ -8,6 +9,11 @@ const prisma = new PrismaClient();
 const SHEET_NAME = 'Recursos Digitais';
 const HEADER_ROW = 1;
 const DATA_START_ROW = 4;
+const IMPORT_SOURCE = 'planilha-categorizacao';
+
+function sourceHash(value: unknown): string {
+  return createHash('sha256').update(JSON.stringify(value)).digest('hex');
+}
 
 function findWorkbook(): string {
   const candidates = [
@@ -51,8 +57,14 @@ async function main() {
 
   const rows = await loadRows(filePath);
   let imported = 0;
+  let created = 0;
+  let updated = 0;
+  let unchanged = 0;
+  let reactivated = 0;
   let skipped = 0;
   let errors = 0;
+  const seenCodes: string[] = [];
+  const synchronizedAt = new Date();
 
   for (let i = 0; i < rows.length; i++) {
     const mapped = mapCategorizacaoRow(rows[i], {
@@ -64,6 +76,13 @@ async function main() {
     }
 
     try {
+      seenCodes.push(mapped.codigoOda);
+      const hashFonte = sourceHash(mapped);
+      const existing = await prisma.oDA.findUnique({
+        where: { codigoOda: mapped.codigoOda },
+        select: { id: true, ativo: true, hashFonte: true },
+      });
+
       if (mapped.codigoBncc) {
         await prisma.bNCC.upsert({
           where: { codigo: mapped.codigoBncc },
@@ -82,11 +101,46 @@ async function main() {
       }
 
       const { codigoOda, ...data } = mapped;
+
+      if (existing?.ativo && existing.hashFonte === hashFonte) {
+        await prisma.oDA.update({
+          where: { codigoOda },
+          data: { sincronizadoEm: synchronizedAt },
+        });
+        unchanged += 1;
+        imported += 1;
+        continue;
+      }
+
       await prisma.oDA.upsert({
         where: { codigoOda },
-        update: data,
-        create: { codigoOda, ...data },
+        update: {
+          ...data,
+          ativo: true,
+          fonteImportacao: IMPORT_SOURCE,
+          hashFonte,
+          sincronizadoEm: synchronizedAt,
+        },
+        create: {
+          codigoOda,
+          ...data,
+          ativo: true,
+          fonteImportacao: IMPORT_SOURCE,
+          hashFonte,
+          sincronizadoEm: synchronizedAt,
+        },
       });
+
+      if (!existing) {
+        created += 1;
+      } else if (!existing.ativo) {
+        reactivated += 1;
+      } else if (existing.hashFonte === hashFonte) {
+        unchanged += 1;
+      } else {
+        updated += 1;
+      }
+
       imported += 1;
       if (imported % 100 === 0) {
         console.log(`✅ ${imported} ODAs importados...`);
@@ -98,8 +152,22 @@ async function main() {
         try {
           await prisma.oDA.upsert({
             where: { codigoOda: mapped.codigoOda },
-            update: { ...mapped, codigoBncc: null },
-            create: { ...mapped, codigoBncc: null },
+            update: {
+              ...mapped,
+              codigoBncc: null,
+              ativo: true,
+              fonteImportacao: IMPORT_SOURCE,
+              hashFonte: sourceHash(mapped),
+              sincronizadoEm: synchronizedAt,
+            },
+            create: {
+              ...mapped,
+              codigoBncc: null,
+              ativo: true,
+              fonteImportacao: IMPORT_SOURCE,
+              hashFonte: sourceHash(mapped),
+              sincronizadoEm: synchronizedAt,
+            },
           });
           imported += 1;
           errors -= 1;
@@ -110,11 +178,32 @@ async function main() {
     }
   }
 
-  const total = await prisma.oDA.count();
-  const videos = await prisma.oDA.count({ where: { tipoConteudo: 'Audiovisual' } });
-  const oeds = await prisma.oDA.count({ where: { tipoConteudo: 'OED' } });
+  let deactivated = 0;
+  if (errors === 0 && seenCodes.length > 0) {
+    const result = await prisma.oDA.updateMany({
+      where: {
+        fonteImportacao: IMPORT_SOURCE,
+        ativo: true,
+        codigoOda: { notIn: seenCodes },
+      },
+      data: {
+        ativo: false,
+        sincronizadoEm: synchronizedAt,
+      },
+    });
+    deactivated = result.count;
+  }
+
+  const total = await prisma.oDA.count({ where: { ativo: true } });
+  const videos = await prisma.oDA.count({ where: { ativo: true, tipoConteudo: 'Audiovisual' } });
+  const oeds = await prisma.oDA.count({ where: { ativo: true, tipoConteudo: 'OED' } });
   console.log(`\n🎉 Importação L1 concluída`);
-  console.log(`   importados/atualizados: ${imported}`);
+  console.log(`   processados: ${imported}`);
+  console.log(`   novos: ${created}`);
+  console.log(`   alterados: ${updated}`);
+  console.log(`   sem alteração: ${unchanged}`);
+  console.log(`   reativados: ${reactivated}`);
+  console.log(`   desativados por ausência na planilha: ${deactivated}`);
   console.log(`   pulados (sem título/código): ${skipped}`);
   console.log(`   erros: ${errors}`);
   console.log(`   total ODAs no banco: ${total} (Audiovisual/Vídeo: ${videos}, OED: ${oeds})`);

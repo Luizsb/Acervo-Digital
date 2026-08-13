@@ -2,9 +2,9 @@ import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ErrorBoundary } from "./components/ErrorBoundary";
+import "intro.js/minified/introjs.min.css";
 import "./index.css";
 import "./components/catalogBadges.css";
-import "intro.js/minified/introjs.min.css";
 
 createRoot(document.getElementById("root")!).render(
   <ErrorBoundary>
