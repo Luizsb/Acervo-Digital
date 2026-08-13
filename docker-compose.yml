@@ -21,5 +21,51 @@ services:
       timeout: 5s
       retries: 12
 
+  api:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    container_name: acervo-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-acervo}:${POSTGRES_PASSWORD:-acervo}@postgres:5432/${POSTGRES_DB:-acervo}
+      PORT: 3001
+      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+      JWT_SECRET: ${JWT_SECRET:-acervo-dev-local-only-altere-em-producao}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      NODE_ENV: production
+      SKIP_SEED: ${SKIP_SEED:-false}
+    ports:
+      - "127.0.0.1:3001:3001"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3001/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 180s
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3001/api}
+    container_name: acervo-web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3000:80"
+
 volumes:
   acervo_pgdata:

@@ -1,22 +1,22 @@
 # Backend - Acervo Digital
 
-API Node.js + Express + Prisma. Documentação completa na **raiz do repositório**: [README.md](../README.md).
+API Node.js + Express + Prisma. Documentação completa: [README.md](../README.md). Roadmap: [ROADMAP.md](../ROADMAP.md).
 
-## Uso rápido (dentro de `server/`)
+## Docker (recomendado)
+
+Na raiz do repositório:
 
 ```bash
-# Na raiz do repositório
-copy server\.env.example server\.env
+docker compose up --build -d
+```
+
+Sobe Postgres, aplica migrações, importa a planilha e deixa a API em http://localhost:3001.
+
+## API local, só o banco no Docker
+
+```bash
+copy .env.example .env
+cd ..
 npm run setup
 npm run server:dev
 ```
-
-`npm run setup` sobe o Postgres, aplica migrações e executa o seed (BNCC, usuário demo e planilha).
-
-Para sincronizar uma planilha nova sem apagar o banco:
-
-```bash
-npm run import:categorizacao
-```
-
-`--clear` apaga a tabela `odas` e só deve ser usado em reset local.

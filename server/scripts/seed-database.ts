@@ -1,9 +1,9 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import BetterSqlite3 from 'better-sqlite3';
-import { execSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
+import { importCategorizacao } from './import-categorizacao';
 
 const prisma = new PrismaClient();
 const DEMO_EMAIL = 'demo@acervo.local';
@@ -14,6 +14,7 @@ function findBnccDatabase(): string | null {
     path.join(process.cwd(), '..', 'public', 'bncc.db'),
     path.join(process.cwd(), 'public', 'bncc.db'),
     path.join(__dirname, '..', '..', 'public', 'bncc.db'),
+    path.join(__dirname, '..', '..', '..', 'public', 'bncc.db'),
   ];
   return candidates.find((candidate) => fs.existsSync(candidate)) || null;
 }
@@ -118,11 +119,7 @@ async function seedDemoUser() {
 
 async function seedCatalog() {
   console.log('Importando planilha de categorização...');
-  execSync('npx tsx scripts/import-categorizacao.ts', {
-    cwd: path.join(__dirname, '..'),
-    stdio: 'inherit',
-    env: process.env,
-  });
+  await importCategorizacao();
 }
 
 async function main() {

@@ -1,11 +1,9 @@
 import fs from 'fs';
 import path from 'path';
 import { createHash } from 'crypto';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
 import { readWorksheetMatrix } from '../lib/excel';
 import { mapCategorizacaoRow, type CategorizacaoRow } from './map-categorizacao';
-
-const prisma = new PrismaClient();
 const SHEET_NAME = 'Recursos Digitais';
 const HEADER_ROW = 1;
 const DATA_START_ROW = 4;
@@ -20,6 +18,7 @@ function findWorkbook(): string {
     path.join(process.cwd(), '..', 'public', 'Categorização_Recursos Digitais_Terceiros.xlsx'),
     path.join(process.cwd(), 'public', 'Categorização_Recursos Digitais_Terceiros.xlsx'),
     path.join(__dirname, '..', '..', 'public', 'Categorização_Recursos Digitais_Terceiros.xlsx'),
+    path.join(__dirname, '..', '..', '..', 'public', 'Categorização_Recursos Digitais_Terceiros.xlsx'),
   ];
   const found = candidates.find((p) => fs.existsSync(p));
   if (!found) {
@@ -44,8 +43,8 @@ async function loadRows(filePath: string): Promise<CategorizacaoRow[]> {
   });
 }
 
-async function main() {
-  const clear = process.argv.includes('--clear');
+export async function importCategorizacao(options: { clear?: boolean } = {}) {
+  const clear = options.clear ?? process.argv.includes('--clear');
   const filePath = findWorkbook();
   const pdfDir = metodologiaDir();
   console.log(`📂 Planilha: ${filePath}`);
@@ -209,11 +208,13 @@ async function main() {
   console.log(`   total ODAs no banco: ${total} (Audiovisual/Vídeo: ${videos}, OED: ${oeds})`);
 }
 
-main()
-  .catch((err) => {
-    console.error(err);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+if (require.main === module) {
+  importCategorizacao()
+    .catch((err) => {
+      console.error(err);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}

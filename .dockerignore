@@ -1,0 +1,17 @@
+.git
+.cursor
+node_modules
+**/node_modules
+dist
+server/dist
+public/thumbs
+**/*.capture.png
+**/*.log
+npm-debug.log*
+.env
+.env.*
+server/.env
+server/.env.*
+canvases
+*.md
+!README.md
