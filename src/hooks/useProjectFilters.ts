@@ -75,6 +75,11 @@ function normalizeAnoKey(ano: string): string {
   return ano.trim().replace(/[°ºo]/gi, '°').replace(/\s+/g, ' ').toLowerCase();
 }
 
+function withSelected(options: string[], selected: string[]): string[] {
+  const extra = selected.filter((value) => value && !options.includes(value));
+  return extra.length === 0 ? options : [...options, ...extra];
+}
+
 export function useProjectFilters(
   projects: ODAFromExcel[],
   contentTypeFilter: 'Todos' | 'Audiovisual' | 'OED',
@@ -173,20 +178,26 @@ export function useProjectFilters(
             .filter((t): t is string => Boolean(t))
         )
       ).sort(),
-      colecoes: Array.from(
-        new Set(
-          contentTypeFilteredProjects
-            .map((p) => p.colecao)
-            .filter((t): t is string => Boolean(t))
-        )
-      ).sort((a, b) => a.localeCompare(b, 'pt-BR')),
-      livros: Array.from(
-        new Set(
-          contentTypeFilteredProjects
-            .map((p) => p.livro)
-            .filter((t): t is string => Boolean(t))
-        )
-      ).sort((a, b) => a.localeCompare(b, 'pt-BR')),
+      colecoes: withSelected(
+        Array.from(
+          new Set(
+            contentTypeFilteredProjects
+              .map((p) => p.colecao)
+              .filter((t): t is string => Boolean(t))
+          )
+        ).sort((a, b) => a.localeCompare(b, 'pt-BR')),
+        selectedFilters.colecoes
+      ),
+      livros: withSelected(
+        Array.from(
+          new Set(
+            contentTypeFilteredProjects
+              .map((p) => p.livro)
+              .filter((t): t is string => Boolean(t))
+          )
+        ).sort((a, b) => a.localeCompare(b, 'pt-BR')),
+        selectedFilters.livros
+      ),
       blocos: Array.from(
         new Set(
           contentTypeFilteredProjects
@@ -228,13 +239,16 @@ export function useProjectFilters(
             .filter((s): s is string => Boolean(s))
         )
       ).sort(),
-      volumes: Array.from(
-        new Set(
-          contentTypeFilteredProjects
-            .map((p) => p.volume)
-            .filter((v): v is string => Boolean(v))
-        )
-      ).sort(),
+      volumes: withSelected(
+        Array.from(
+          new Set(
+            contentTypeFilteredProjects
+              .map((p) => p.volume)
+              .filter((v): v is string => Boolean(v))
+          )
+        ).sort(),
+        selectedFilters.volumes
+      ),
       vestibular: Array.from(
         new Set(
           contentTypeFilteredProjects
@@ -252,7 +266,7 @@ export function useProjectFilters(
         )
       ).sort(),
     };
-  }, [contentTypeFilteredProjects]);
+  }, [contentTypeFilteredProjects, selectedFilters]);
 
   const filteredProjects = useMemo(() => {
     return contentTypeFilteredProjects.filter((project) => {

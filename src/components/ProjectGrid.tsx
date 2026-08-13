@@ -29,7 +29,7 @@ export function ProjectGrid({ projects, onProjectClick, favorites = [], onToggle
 
   if (viewMode === 'list') {
     return (
-      <div className="flex flex-col gap-2 sm:gap-3">
+      <div className="catalog-list">
         {projects.map((project) => (
           <ProjectListItem
             key={project.id}

@@ -1,27 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronUp } from 'lucide-react';
 
+function getGalleryScroller(): HTMLElement | null {
+  return document.querySelector('.acervo-app-main');
+}
+
 export function ScrollToTop() {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     const toggleVisibility = () => {
-      // Mostrar botão quando o usuário rolar mais de 300px
-      if (window.pageYOffset > 300) {
-        setIsVisible(true);
-      } else {
-        setIsVisible(false);
-      }
+      const scroller = getGalleryScroller();
+      const offset = scroller ? scroller.scrollTop : window.scrollY;
+      setIsVisible(offset > 300);
     };
 
-    window.addEventListener('scroll', toggleVisibility);
+    const scroller = getGalleryScroller();
+    const target: HTMLElement | Window = scroller ?? window;
+    target.addEventListener('scroll', toggleVisibility, { passive: true });
+    toggleVisibility();
 
     return () => {
-      window.removeEventListener('scroll', toggleVisibility);
+      target.removeEventListener('scroll', toggleVisibility);
     };
   }, []);
 
   const scrollToTop = () => {
+    const scroller = getGalleryScroller();
+    if (scroller) {
+      scroller.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
     window.scrollTo({
       top: 0,
       behavior: 'smooth',
@@ -44,4 +54,3 @@ export function ScrollToTop() {
     </button>
   );
 }
-

@@ -115,12 +115,20 @@ export default function App() {
         console.log(`✅ ${odasWithAdjustedIds.length} recursos carregados do banco (L1)`);
       } catch (error: any) {
         console.error('Erro ao carregar ODAs do banco de dados:', error);
-        if (error?.message?.includes('Failed to fetch') || 
-            error?.message?.includes('ConnectionError') ||
-            error?.message?.includes('ERR_CONNECTION_REFUSED') ||
-            error?.name === 'TypeError') {
+        setOdasFromExcel([]);
+        const message = String(error?.message ?? '');
+        if (
+          message.includes('Failed to fetch') ||
+          message.includes('ConnectionError') ||
+          message.includes('ERR_CONNECTION_REFUSED') ||
+          error?.name === 'TypeError'
+        ) {
           setServerConnectionError(
             'Servidor backend não está rodando. Por favor, inicie o servidor em um terminal separado.'
+          );
+        } else {
+          setServerConnectionError(
+            'Não foi possível carregar o catálogo. Se o banco local estiver desatualizado, rode npm run prisma:migrate e recarregue a página.'
           );
         }
       } finally {
@@ -307,7 +315,6 @@ export default function App() {
 
   const handleContentTypeChange = (type: "Todos" | "Audiovisual" | "OED") => {
     setContentTypeFilter(type);
-    handleClearFilters();
   };
 
   // Entrada pelo login; usuários com sessão restaurada seguem para o acervo.
@@ -478,7 +485,8 @@ export default function App() {
   }
 
   return (
-    <div className="h-screen bg-background flex flex-col overflow-hidden">
+    <div className="acervo-app-shell">
+      <div className="acervo-app-header">
       <Navigation
         searchQuery={searchQuery}
         onSearchChange={setSearchQuery}
@@ -491,6 +499,7 @@ export default function App() {
         user={user}
         onLogout={handleLogout}
       />
+      </div>
 
       {/* Server Connection Error Alert */}
       {serverConnectionError && (
@@ -648,9 +657,9 @@ export default function App() {
         )}
       </div>
 
-      <div className="flex flex-1 overflow-hidden min-h-0">
-        {/* Filter Sidebar - menu lateral persistente em toda a viewport */}
-        <div className="hidden lg:flex self-stretch shrink-0 min-h-0 w-72 xl:w-80 bg-white border-r border-gray-200">
+      <div className="acervo-app-body">
+        {/* Filter Sidebar - permanece visível enquanto o grid rola */}
+        <div className="acervo-app-sidebar">
           <FilterSidebar
             filters={filterOptions}
             selectedFilters={selectedFilters}
@@ -690,7 +699,7 @@ export default function App() {
         </button>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto min-h-0">
+        <main className="acervo-app-main">
           <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
             {/* Hero / Welcome Banner */}
             <section id="acervo-hero" className="mb-10">

@@ -45,10 +45,8 @@ export function ProjectListItem({ project, onClick, isFavorite = false, onToggle
       onClick={onClick}
       onContextMenu={handleContextMenu}
     >
-      <div className="flex flex-row items-start gap-3 sm:gap-4 p-2 sm:p-3">
-        
-        {/* Image - Tamanho aumentado para desktop */}
-        <div className="relative flex-shrink-0 w-20 h-20 sm:w-24 sm:h-24 rounded-[12px] overflow-hidden bg-gray-100 thumbnail-list-item">
+      <div className="catalog-list-item-inner">
+        <div className="relative overflow-hidden bg-gray-100 thumbnail-list-item">
           <img
             src={project.image}
             alt={project.title}
@@ -64,12 +62,12 @@ export function ProjectListItem({ project, onClick, isFavorite = false, onToggle
         </div>
 
         {/* Content - Informações principais */}
-        <div className="flex-1 min-w-0 flex flex-col gap-2 sm:gap-4">
+        <div className="catalog-list-item-content">
           
           {/* Title + Favorite */}
           <div className="flex items-start justify-between gap-2">
             <h3 
-              className="font-bold text-gray-900 line-clamp-2 leading-tight group-hover:text-primary transition-colors text-sm sm:text-base md:text-lg flex-1 min-w-0"
+              className="catalog-list-item-title font-bold text-gray-900 line-clamp-2 group-hover:text-primary transition-colors flex-1 min-w-0"
               title={project.title}
             >
               {project.title}
@@ -139,7 +137,7 @@ export function ProjectListItem({ project, onClick, isFavorite = false, onToggle
           <div className="flex flex-wrap items-center gap-3 text-xs text-gray-600">
             {/* Location/Year */}
             <div title="Ano / série" className="flex items-center gap-1">
-              <MapPin className="w-3 h-3 text-gray-400" />
+              <MapPin className="w-4 h-4 text-gray-400" />
               <span className="font-medium">{project.location}</span>
             </div>
 
@@ -152,11 +150,11 @@ export function ProjectListItem({ project, onClick, isFavorite = false, onToggle
                   className="flex items-center gap-1"
                 >
                   {project.contentType === 'Audiovisual' ? (
-                    <Video className="w-3 h-3 text-gray-400" />
+                    <Video className="w-4 h-4 text-gray-400" />
                   ) : project.contentType === 'OED' ? (
-                    <Gamepad2 className="w-3 h-3 text-gray-400" />
+                    <Gamepad2 className="w-4 h-4 text-gray-400" />
                   ) : (
-                    <BookOpen className="w-3 h-3 text-gray-400" />
+                    <BookOpen className="w-4 h-4 text-gray-400" />
                   )}
                   <span className="font-medium">{project.category}</span>
                 </div>
@@ -167,7 +165,7 @@ export function ProjectListItem({ project, onClick, isFavorite = false, onToggle
               <>
                 <span className="text-gray-300">•</span>
                 <div title="Duração" className="flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-gray-400" />
+                  <Clock className="w-4 h-4 text-gray-400" />
                   <span className="font-medium">{durationLabel}</span>
                 </div>
               </>

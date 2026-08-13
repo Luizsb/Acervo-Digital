@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Search, X, BookOpen, User, LogIn } from 'lucide-react';
+import { Search, X, User, LogIn } from 'lucide-react';
 import type { AuthUser } from '../contexts/AuthContext';
 import { ProfileMenu } from './ProfileMenu';
+import { BrandMark } from './BrandMark';
 
 interface NavigationProps {
   searchQuery: string;
@@ -27,7 +28,7 @@ export function Navigation({ searchQuery, onSearchChange, onNavigateToSettings, 
   };
 
   return (
-    <nav className="sticky top-0 z-50 shrink-0 bg-primary border-b border-primary-foreground/10">
+    <nav className="shrink-0 bg-primary border-b border-primary-foreground/10">
       <div className="acervo-navigation-container">
         <div className="flex items-center justify-between gap-4 h-16 sm:h-20">
           {/* Logo alinhada ao grid da página (mesmo container do conteúdo) */}
@@ -37,8 +38,8 @@ export function Navigation({ searchQuery, onSearchChange, onNavigateToSettings, 
             onClick={() => onNavigateToGallery?.()}
             className="acervo-brand flex items-center group cursor-pointer flex-shrink-0 min-w-0"
           >
-            <div className="acervo-brand-icon bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all duration-300 flex-shrink-0">
-              <BookOpen className="acervo-brand-symbol text-primary" />
+            <div className="acervo-brand-icon flex-shrink-0">
+              <BrandMark className="acervo-brand-mark" />
             </div>
             <span className="acervo-brand-title text-white font-black tracking-tight truncate">
               Acervo Digital

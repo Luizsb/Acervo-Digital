@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { BookOpen, Eye, EyeOff, Rocket } from 'lucide-react';
+import { ArrowLeft, Rocket } from 'lucide-react';
+import { BrandMark } from './BrandMark';
 import './LoginPage.css';
 
-/** Credenciais do usuário demo (seed local). Substituir por JumpCloud SSO. */
+/** Acesso de teste via seed local até o SSO JumpCloud estar ligado. */
 const DEMO_EMAIL = 'demo@acervo.local';
 const DEMO_PASSWORD = 'demo1234';
 
@@ -13,13 +14,10 @@ interface LoginPageProps {
 }
 
 export function LoginPage({ onBack, onLoginSuccess, login }: LoginPageProps) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const enterAsDemo = async () => {
+  const enterWithJumpCloud = async () => {
     setError('');
     setLoading(true);
     try {
@@ -49,93 +47,41 @@ export function LoginPage({ onBack, onLoginSuccess, login }: LoginPageProps) {
         <section className="login-card">
           <div className="login-brand">
             <span className="login-brand-mark" aria-hidden="true">
-              <BookOpen size={24} color="#fff" />
+              <BrandMark />
             </span>
             <span className="login-brand-text">
               <span className="login-brand-title">Acervo Digital</span>
-              <span className="login-brand-subtitle">Objetos digitais de aprendizagem</span>
+              <span className="login-brand-subtitle">Catálogo interno de ODAs e audiovisual</span>
             </span>
           </div>
 
           <h1 className="login-title">Entrar</h1>
+          <p className="login-lead">
+            O acesso será via JumpCloud. A integração ainda não está habilitada: por enquanto, é só clicar no botão para entrar.
+          </p>
 
-          <form
-            className="login-form"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void enterAsDemo();
-            }}
+          {error ? (
+            <p className="login-error" role="alert">
+              {error}
+            </p>
+          ) : null}
+
+          <button
+            type="button"
+            className="login-jumpcloud"
+            onClick={() => void enterWithJumpCloud()}
+            disabled={loading}
           >
-            <label className="login-label" htmlFor="login-email">
-              E-mail
-            </label>
-            <input
-              id="login-email"
-              className="login-field"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="someone@example.com"
-              autoComplete="username"
-            />
-
-            <label className="login-label login-label-spaced" htmlFor="login-password">
-              Senha
-            </label>
-            <div className="login-password-wrap">
-              <input
-                id="login-password"
-                className="login-field login-field-password"
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value.slice(0, 14))}
-                placeholder="••••••••"
-                autoComplete="current-password"
-                maxLength={14}
-              />
-              <button
-                type="button"
-                className="login-eye"
-                onClick={() => setShowPassword((visible) => !visible)}
-                aria-label={showPassword ? 'Ocultar senha' : 'Mostrar senha'}
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-
-            <button
-              type="button"
-              className="login-help"
-              onClick={() =>
-                setError('SSO em preparação. Use Entrar com JumpCloud Go para acessar o ambiente de teste.')
-              }
-            >
-              Não consegue acessar sua conta?
-            </button>
-
-            {error ? (
-              <p className="login-error" role="alert">
-                {error}
-              </p>
-            ) : null}
-
-            <div className="login-actions">
-              <button
-                type="button"
-                className="login-jumpcloud"
-                onClick={() => void enterAsDemo()}
-                disabled={loading}
-              >
-                <Rocket size={16} />
-                {loading ? 'Entrando...' : 'Entrar com JumpCloud Go'}
-              </button>
-              <button type="submit" className="login-advance" disabled={loading}>
-                {loading ? 'Entrando...' : 'Avançar'}
-              </button>
-            </div>
-          </form>
+            <Rocket size={16} />
+            {loading ? 'Entrando...' : 'Acessar o acervo'}
+          </button>
         </section>
       </div>
+
+      <p className="login-footer">
+        Desenvolvido pelo time de Interações Digitais
+        <span className="login-footer-version">v1.1</span>
+      </p>
     </div>
   );
 }

@@ -93,18 +93,29 @@ export function FilterSidebar({
   const [expanded, setExpanded] = useState<string | null>(null);
   const [bnccSearchQuery, setBnccSearchQuery] = useState('');
   const [hasMoreBelow, setHasMoreBelow] = useState(false);
+  const [hasMoreAbove, setHasMoreAbove] = useState(false);
+  const [groupOpen, setGroupOpen] = useState<Record<string, boolean>>({
+    Localização: true,
+    Currículo: true,
+    Detalhes: true,
+  });
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const updateScrollIndicator = () => {
     const element = scrollRef.current;
     if (!element) return;
     const remaining = element.scrollHeight - element.scrollTop - element.clientHeight;
-    setHasMoreBelow(remaining > 12);
+    setHasMoreBelow(remaining > 8);
+    setHasMoreAbove(element.scrollTop > 8);
   };
 
   const toggle = (key: string) => {
     setExpanded((prev) => (prev === key ? null : key));
     if (key !== 'bnccCodes') setBnccSearchQuery('');
+  };
+
+  const toggleGroup = (label: string) => {
+    setGroupOpen((prev) => ({ ...prev, [label]: !prev[label] }));
   };
 
   const activeCount = useMemo(
@@ -117,14 +128,21 @@ export function FilterSidebar({
   );
 
   useEffect(() => {
+    const element = scrollRef.current;
+    if (!element) return;
+
     const frame = window.requestAnimationFrame(updateScrollIndicator);
-    const handleResize = () => updateScrollIndicator();
-    window.addEventListener('resize', handleResize);
+    const observer = new ResizeObserver(() => updateScrollIndicator());
+    observer.observe(element);
+    if (element.firstElementChild) observer.observe(element.firstElementChild);
+    window.addEventListener('resize', updateScrollIndicator);
+
     return () => {
       window.cancelAnimationFrame(frame);
-      window.removeEventListener('resize', handleResize);
+      observer.disconnect();
+      window.removeEventListener('resize', updateScrollIndicator);
     };
-  }, [expanded, activeCount]);
+  }, [expanded, activeCount, groupOpen]);
 
   const activeEntries = useMemo(() => {
     const entries: { category: string; value: string; label: string }[] = [];
@@ -454,26 +472,45 @@ export function FilterSidebar({
         )}
       </div>
 
-      <div
-        ref={scrollRef}
-        onScroll={updateScrollIndicator}
-        className="catalog-filter-scroll min-h-0 flex-1 overflow-y-auto"
-      >
+      <div className="catalog-filter-body">
+        {hasMoreAbove && (
+          <div className="catalog-filter-fade catalog-filter-fade-top" aria-hidden="true" />
+        )}
+        <div
+          ref={scrollRef}
+          onScroll={updateScrollIndicator}
+          className="catalog-filter-scroll min-h-0 flex-1 overflow-y-auto"
+        >
+          <div className="catalog-filter-scroll-inner">
         {groups.map((group) => {
           const visible = group.items.filter((item) => item.options.length > 0);
           if (visible.length === 0) return null;
+          const open = groupOpen[group.label] !== false;
+          const selectedInGroup = visible.reduce((acc, item) => acc + item.selected.length, 0);
           return (
             <section key={group.label} className="catalog-filter-group">
-              <h4 className="catalog-filter-group-title">
-                {group.label}
-              </h4>
-              <div className="catalog-filter-group-items">
-                {visible.map((item) => renderItem(item))}
-              </div>
+              <button
+                type="button"
+                className={`catalog-filter-group-title ${open ? 'catalog-filter-group-title-open' : ''}`}
+                onClick={() => toggleGroup(group.label)}
+                aria-expanded={open}
+              >
+                <span>{group.label}</span>
+                {selectedInGroup > 0 && (
+                  <span className="catalog-filter-group-count">{selectedInGroup}</span>
+                )}
+                <ChevronDown className={`catalog-filter-group-chevron ${open ? 'catalog-filter-group-chevron-open' : ''}`} />
+              </button>
+              {open && (
+                <div className="catalog-filter-group-items">
+                  {visible.map((item) => renderItem(item))}
+                </div>
+              )}
             </section>
           );
         })}
         <div className="h-4" />
+          </div>
       </div>
 
       {hasMoreBelow && (
@@ -485,10 +522,13 @@ export function FilterSidebar({
           }
           aria-label="Ver mais filtros abaixo"
         >
-          <span>Mais filtros</span>
-          <ChevronDown className="w-4 h-4" />
+          <span className="catalog-filter-more-chip">
+            Mais filtros
+            <ChevronDown className="w-4 h-4" />
+          </span>
         </button>
       )}
+      </div>
     </aside>
   );
 }

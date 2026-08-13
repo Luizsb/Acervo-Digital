@@ -790,8 +790,16 @@
     min-height: 60vh;
   }
 
+  .min-h-0 {
+    min-height: 0;
+  }
+
   .min-h-screen {
     min-height: 100vh;
+  }
+
+  .h-screen {
+    height: 100vh;
   }
 
   .w-2 {
@@ -2748,25 +2756,95 @@
   }
 }
 
-/* Thumbnail tamanho aumentado para lista em desktop - altura reduzida 20%, largura aumentada */
-@media (width >= 48rem) {
+/* Lista do acervo: thumbs 16:9 e cards mais arejados */
+.catalog-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.catalog-list-item-inner {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 16px;
+  padding: 12px;
+}
+
+.thumbnail-list-item {
+  width: 140px;
+  height: 79px;
+  flex-shrink: 0;
+  border-radius: 14px;
+}
+
+.catalog-list-item-content {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.catalog-list-item-title {
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.catalog-list-item-inner .inline-flex {
+  padding: 4px 10px;
+  font-size: 12px;
+}
+
+.catalog-list-item-inner .text-xs {
+  font-size: 13px;
+}
+
+@media (width >= 40rem) {
+  .catalog-list {
+    gap: 16px;
+  }
+
+  .catalog-list-item-inner {
+    gap: 20px;
+    padding: 16px;
+  }
+
   .thumbnail-list-item {
-    width: 160px;
-    height: 90px;
+    width: 220px;
+    height: 124px;
+  }
+
+  .catalog-list-item-content {
+    gap: 12px;
+  }
+
+  .catalog-list-item-title {
+    font-size: 18px;
   }
 }
 
 @media (width >= 64rem) {
+  .catalog-list-item-inner {
+    gap: 24px;
+    padding: 18px;
+  }
+
   .thumbnail-list-item {
-    width: 180px;
-    height: 102px;
+    width: 280px;
+    height: 158px;
+  }
+
+  .catalog-list-item-title {
+    font-size: 20px;
   }
 }
 
 @media (width >= 80rem) {
   .thumbnail-list-item {
-    width: 200px;
-    height: 115px;
+    width: 320px;
+    height: 180px;
   }
 }
 
@@ -3349,6 +3427,62 @@ html {
   cursor: not-allowed;
 }
 
+/* Shell da galeria: header e filtros ficam visíveis; só o grid rola. */
+.acervo-app-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  height: 100dvh;
+  max-height: 100vh;
+  max-height: 100dvh;
+  overflow: hidden;
+  overscroll-behavior: none;
+  background-color: var(--background);
+}
+
+.acervo-app-header {
+  flex-shrink: 0;
+  z-index: 50;
+}
+
+.acervo-app-body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.acervo-app-sidebar {
+  display: none;
+  flex-shrink: 0;
+  align-self: stretch;
+  width: 18rem;
+  min-height: 0;
+  overflow: hidden;
+  background-color: #fff;
+  border-right: 1px solid #e5e7eb;
+}
+
+.acervo-app-main {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+@media (min-width: 1024px) {
+  .acervo-app-sidebar {
+    display: flex;
+  }
+}
+
+@media (min-width: 1280px) {
+  .acervo-app-sidebar {
+    width: 20rem;
+  }
+}
+
 /* Banner de boas-vindas: cores explícitas para garantir contraste WCAG. */
 .acervo-navigation-container {
   width: 100%;
@@ -3366,11 +3500,15 @@ html {
 .acervo-brand-icon {
   width: 48px;
   height: 48px;
+  overflow: hidden;
+  border-radius: 12px;
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.22);
 }
 
-.acervo-brand-symbol {
-  width: 24px;
-  height: 24px;
+.acervo-brand-mark {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .acervo-brand-title {
@@ -3481,11 +3619,6 @@ html {
   .acervo-brand-icon {
     width: 40px;
     height: 40px;
-  }
-
-  .acervo-brand-symbol {
-    width: 20px;
-    height: 20px;
   }
 
   .acervo-brand-title {
