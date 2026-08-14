@@ -117,8 +117,7 @@ export function Navigation({ searchQuery, onSearchChange, onNavigateToSettings, 
           </div>
 
           {/* Mobile - Search Icon and Profile */}
-          <div className="lg:hidden flex items-center gap-2">
-            {/* Mobile Menu Button */}
+          <div className="lg:hidden relative flex items-center gap-2">
             {!hideSearch && (
               <button
                 onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -128,11 +127,37 @@ export function Navigation({ searchQuery, onSearchChange, onNavigateToSettings, 
               </button>
             )}
             
-            {/* Mobile: Entrar ou Profile */}
             {user ? (
-              <button onClick={() => setIsProfileOpen(!isProfileOpen)} className="p-2.5 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all duration-300">
-                <User className="w-5 h-5 text-gray-700" />
-              </button>
+              <>
+                <button
+                  type="button"
+                  onClick={() => setIsProfileOpen(!isProfileOpen)}
+                  className="p-2.5 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all duration-300"
+                  aria-expanded={isProfileOpen}
+                  aria-label="Abrir menu do perfil"
+                >
+                  <User className="w-5 h-5 text-gray-700" />
+                </button>
+                {isProfileOpen ? (
+                  <>
+                    <div
+                      className="fixed inset-0 z-40 bg-black/20"
+                      onClick={() => setIsProfileOpen(false)}
+                      aria-hidden="true"
+                    />
+                    <div className="acervo-profile-popover">
+                      <ProfileMenu
+                        user={user}
+                        onClose={() => setIsProfileOpen(false)}
+                        onNavigateToSettings={() => onNavigateToSettings?.()}
+                        onNavigateToFavorites={() => onNavigateToFavorites?.()}
+                        onNavigateToReview={() => onNavigateToReview?.()}
+                        onLogout={() => onLogout?.()}
+                      />
+                    </div>
+                  </>
+                ) : null}
+              </>
             ) : (
               <button onClick={onNavigateToLogin} className="flex items-center gap-2 px-3 py-2.5 bg-white text-primary border border-white/60 rounded-xl font-semibold text-sm">
                 <LogIn className="w-5 h-5" />
@@ -171,30 +196,6 @@ export function Navigation({ searchQuery, onSearchChange, onNavigateToSettings, 
             </div>
           </div>
         </div>
-      )}
-
-      {/* Mobile Profile Menu */}
-      {isProfileOpen && (
-        <>
-          {/* Backdrop to close menu */}
-          <div 
-            className="lg:hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-40" 
-            onClick={() => setIsProfileOpen(false)}
-          ></div>
-          
-          <div className="lg:hidden absolute top-full right-4 mt-2 z-50">
-            {user && (
-              <ProfileMenu
-                user={user}
-                onClose={() => setIsProfileOpen(false)}
-                onNavigateToSettings={() => onNavigateToSettings?.()}
-                onNavigateToFavorites={() => onNavigateToFavorites?.()}
-                onNavigateToReview={() => onNavigateToReview?.()}
-                onLogout={() => onLogout?.()}
-              />
-            )}
-          </div>
-        </>
       )}
     </nav>
   );

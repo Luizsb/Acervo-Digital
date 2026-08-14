@@ -45,8 +45,7 @@ export function ScrollToTop() {
   return (
     <button
       onClick={scrollToTop}
-      className="fixed bottom-6 right-6 lg:right-8 z-40 w-12 h-12 rounded-full shadow-xl flex items-center justify-center transition-all duration-300 hover:scale-110 hover:shadow-2xl"
-      style={{ backgroundColor: '#012451' }}
+      className="acervo-fab-scroll"
       aria-label="Voltar ao topo"
       title="Voltar ao topo"
     >

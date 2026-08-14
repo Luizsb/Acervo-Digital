@@ -15,10 +15,14 @@ const authLimiter = rateLimit({
   message: { error: 'Muitas tentativas. Tente novamente em 15 minutos.' },
   standardHeaders: true,
   legacyHeaders: false,
+  validate: { xForwardedForHeader: false },
 });
 
 // POST /api/auth/register
 router.post('/register', authLimiter, async (req, res) => {
+  if (process.env.ENABLE_REGISTRATION !== 'true') {
+    return res.status(403).json({ error: 'Cadastro público está desativado. Use o acesso interno.' });
+  }
   try {
     const { email, password, name } = req.body;
     if (!email || !password) {
@@ -68,12 +72,15 @@ router.post('/login', authLimiter, async (req, res) => {
       return res.status(400).json({ error: 'E-mail e senha são obrigatórios.' });
     }
     const emailTrim = String(email).trim().toLowerCase();
+    const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
     const user = await prisma.user.findUnique({ where: { email: emailTrim } });
     if (!user) {
+      console.warn(`Login recusado: e-mail não encontrado (${emailTrim}) ip=${clientIp}`);
       return res.status(401).json({ error: 'E-mail ou senha incorretos.' });
     }
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
+      console.warn(`Login recusado: senha inválida (${emailTrim}) ip=${clientIp}`);
       return res.status(401).json({ error: 'E-mail ou senha incorretos.' });
     }
     const token = signToken({ userId: user.id, email: user.email, role: user.role });

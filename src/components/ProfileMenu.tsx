@@ -26,7 +26,7 @@ export function ProfileMenu({
 }: ProfileMenuProps) {
   return (
     <div
-      className={`w-72 bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden ${className}`}
+      className={`w-72 max-w-full bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden ${className}`}
     >
       <div className="p-5 border-b border-gray-100">
         <div className="flex items-center gap-4">

@@ -1,17 +1,20 @@
 import express from 'express';
 import prisma from '../lib/prisma';
 import { catalogVisibleWhere, isVisibleInCatalog } from '../lib/catalogVisibility';
+import { authMiddleware, requireAdmin, type AuthRequest } from '../middleware/auth';
 
 const router = express.Router();
 
+router.use(authMiddleware);
+
 // GET /api/odas - Buscar todos os ODAs
-router.get('/', async (req, res) => {
+router.get('/', async (req: AuthRequest, res) => {
   try {
-    console.log('📊 GET /api/odas - Buscando ODAs...');
     const { tipoConteudo, search, limit, offset, includeInactive } = req.query;
+    const allowInactive = includeInactive === 'true' && req.user?.role === 'admin';
 
     const where: any = { ...catalogVisibleWhere() };
-    if (includeInactive !== 'true') {
+    if (!allowInactive) {
       where.ativo = true;
     }
 
@@ -47,14 +50,6 @@ router.get('/', async (req, res) => {
     });
 
     const total = await prisma.oDA.count({ where });
-    
-    console.log(`✅ GET /api/odas - Retornando ${odas.length} ODAs (total: ${total})`);
-    
-    // Log para debug: verificar se escalaSamr está presente
-    if (odas.length > 0) {
-      const firstOda = odas[0] as any;
-      console.log(`📊 Primeiro ODA - escalaSamr: ${firstOda.escalaSamr || 'null/undefined'}`);
-    }
 
     res.json({
       data: odas,
@@ -95,7 +90,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/odas - Criar novo ODA
-router.post('/', async (req, res) => {
+router.post('/', requireAdmin, async (req, res) => {
   try {
     const oda = await prisma.oDA.create({
       data: req.body,
@@ -109,7 +104,7 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /api/odas/:id - Atualizar ODA
-router.put('/:id', async (req, res) => {
+router.put('/:id', requireAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     const oda = await prisma.oDA.update({
@@ -128,7 +123,7 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE /api/odas/:id - Deletar ODA
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', requireAdmin, async (req, res) => {
   try {
     const id = parseInt(req.params.id);
     await prisma.oDA.delete({

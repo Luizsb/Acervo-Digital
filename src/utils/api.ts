@@ -31,6 +31,14 @@ export function clearAuthToken(): void {
   }
 }
 
+function authHeaders(json = false): HeadersInit {
+  const headers: Record<string, string> = {};
+  const token = getAuthToken();
+  if (token) headers.Authorization = `Bearer ${token}`;
+  if (json) headers['Content-Type'] = 'application/json';
+  return headers;
+}
+
 // Auth API
 export interface AuthUserResponse {
   id: number;
@@ -355,9 +363,14 @@ export async function fetchAllODAs(params?: {
   }
 
   try {
-    const response = await fetch(`${API_BASE_URL}/odas?${queryParams.toString()}`);
+    const response = await fetch(`${API_BASE_URL}/odas?${queryParams.toString()}`, {
+      headers: authHeaders(),
+    });
     
     if (!response.ok) {
+      if (response.status === 401) {
+        throw new Error('Não autorizado.');
+      }
       throw new Error(`HTTP error! status: ${response.status}`);
     }
 
@@ -380,7 +393,9 @@ export async function fetchAllODAs(params?: {
 
 // Buscar ODA por ID
 export async function fetchODAById(id: number): Promise<ODA | null> {
-  const response = await fetch(`${API_BASE_URL}/odas/${id}`);
+  const response = await fetch(`${API_BASE_URL}/odas/${id}`, {
+    headers: authHeaders(),
+  });
   
   if (response.status === 404) {
     return null;
@@ -397,9 +412,7 @@ export async function fetchODAById(id: number): Promise<ODA | null> {
 export async function createODA(oda: Partial<ODA>): Promise<ODA> {
   const response = await fetch(`${API_BASE_URL}/odas`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: authHeaders(true),
     body: JSON.stringify(oda),
   });
 
@@ -415,9 +428,7 @@ export async function createODA(oda: Partial<ODA>): Promise<ODA> {
 export async function updateODA(id: number, oda: Partial<ODA>): Promise<ODA> {
   const response = await fetch(`${API_BASE_URL}/odas/${id}`, {
     method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-    },
+    headers: authHeaders(true),
     body: JSON.stringify(oda),
   });
 
@@ -433,6 +444,7 @@ export async function updateODA(id: number, oda: Partial<ODA>): Promise<ODA> {
 export async function deleteODA(id: number): Promise<void> {
   const response = await fetch(`${API_BASE_URL}/odas/${id}`, {
     method: 'DELETE',
+    headers: authHeaders(),
   });
 
   if (!response.ok) {
@@ -448,7 +460,9 @@ export async function countODAs(tipoConteudo?: 'Audiovisual' | 'OED' | 'Todos'):
     queryParams.append('tipoConteudo', tipoConteudo);
   }
 
-  const response = await fetch(`${API_BASE_URL}/odas/stats/count?${queryParams.toString()}`);
+  const response = await fetch(`${API_BASE_URL}/odas/stats/count?${queryParams.toString()}`, {
+    headers: authHeaders(),
+  });
   
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);

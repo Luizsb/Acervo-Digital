@@ -1,7 +1,9 @@
 import express from 'express';
 import prisma from '../lib/prisma';
+import { authMiddleware } from '../middleware/auth';
 
 const router = express.Router();
+router.use(authMiddleware);
 
 function parseNonNegativeInteger(value: unknown): number | undefined {
   if (typeof value !== 'string' || value.trim() === '') return undefined;

@@ -40,9 +40,6 @@ const FavoritesPage = lazy(() =>
 const LoginPage = lazy(() =>
   import("./components/LoginPage").then((m) => ({ default: m.LoginPage }))
 );
-const RegisterPage = lazy(() =>
-  import("./components/RegisterPage").then((m) => ({ default: m.RegisterPage }))
-);
 const ForgotPasswordPage = lazy(() =>
   import("./components/ForgotPasswordPage").then((m) => ({ default: m.ForgotPasswordPage }))
 );
@@ -93,17 +90,26 @@ export default function App() {
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
   const [returnToAfterLogin, setReturnToAfterLogin] = useState<"gallery" | "settings" | "favorites" | "review">("gallery");
-  const { user, login, logout, register, loading: authLoading } = useAuth();
+  const { user, login, logout, loading: authLoading } = useAuth();
   const [favorites, setFavorites] = useState<number[]>([]);
   const [odasFromExcel, setOdasFromExcel] = useState<ODAFromExcel[]>([]);
   const [loadingODAs, setLoadingODAs] = useState(true);
   const [serverConnectionError, setServerConnectionError] = useState<string | null>(null);
   const projectsLoading = loadingODAs;
 
-  // Carregar recursos da planilha L1 (ODAs + Vídeo como Audiovisual) via API
+  // Carregar recursos via API somente com sessão autenticada
   useEffect(() => {
+    if (authLoading) return;
+    if (!user) {
+      setOdasFromExcel([]);
+      setLoadingODAs(false);
+      setServerConnectionError(null);
+      return;
+    }
+
     const loadODAs = async () => {
       try {
+        setLoadingODAs(true);
         setServerConnectionError(null);
         const odas = await loadODAsFromDatabase();
         const odasWithAdjustedIds = odas.map((oda, index) => {
@@ -131,6 +137,8 @@ export default function App() {
           setServerConnectionError(
             'Servidor backend não está rodando. Por favor, inicie o servidor em um terminal separado.'
           );
+        } else if (message.includes('401') || message.includes('Não autorizado')) {
+          setServerConnectionError('Sessão expirada. Saia e entre novamente.');
         } else {
           setServerConnectionError(
             'Não foi possível carregar o catálogo. Se o banco local estiver desatualizado, rode npm run prisma:migrate e recarregue a página.'
@@ -140,8 +148,8 @@ export default function App() {
         setLoadingODAs(false);
       }
     };
-    loadODAs();
-  }, []);
+    void loadODAs();
+  }, [authLoading, user]);
 
   // Fonte única: tabela odas (Macroformato Vídeo = Audiovisual)
   const projects = odasFromExcel;
@@ -380,7 +388,7 @@ export default function App() {
   }
 
   // Show login page
-  if (currentPage === "login") {
+  if (currentPage === "login" || currentPage === "register") {
     return (
       <Suspense fallback={<PageLoader />}>
         <LoginPage
@@ -390,23 +398,6 @@ export default function App() {
             setCurrentPage("gallery");
           }}
           login={login}
-        />
-      </Suspense>
-    );
-  }
-
-  // Show register page
-  if (currentPage === "register") {
-    return (
-      <Suspense fallback={<PageLoader />}>
-        <RegisterPage
-          onBack={handleBackToHome}
-          onRegisterSuccess={() => {
-            setCurrentPage(returnToAfterLogin);
-            if (returnToAfterLogin === "gallery") setSelectedProject(null);
-          }}
-          register={register}
-          onNavigateToLogin={() => setCurrentPage("login")}
         />
       </Suspense>
     );
@@ -725,24 +716,6 @@ export default function App() {
           onClose={() => setIsMobileFilterOpen(false)}
         />
 
-        {/* Floating Filter Button (Mobile Only) */}
-        <button
-          onClick={() => setIsMobileFilterOpen(true)}
-          className="lg:hidden fixed bottom-24 right-6 z-40 w-14 h-14 bg-primary text-white rounded-full shadow-2xl flex items-center justify-center hover:scale-110 transition-all duration-300 hover:shadow-primary/50"
-        >
-          <SlidersHorizontal className="w-6 h-6" />
-          {Object.values(selectedFilters).some(
-            (arr: any) => (arr as string[]).length > 0,
-          ) && (
-            <span className="absolute -top-1 -right-1 w-6 h-6 bg-secondary text-white rounded-full text-xs flex items-center justify-center font-bold shadow-lg">
-              {Object.values(selectedFilters).reduce(
-                (acc: number, arr: any) => acc + (arr as string[]).length,
-                0,
-              )}
-            </span>
-          )}
-        </button>
-
         {/* Main Content */}
         <main className="acervo-app-main">
           <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
@@ -1014,7 +987,25 @@ export default function App() {
         </main>
       </div>
 
-      {/* Scroll to Top Button */}
+      <button
+        type="button"
+        onClick={() => setIsMobileFilterOpen(true)}
+        className="acervo-fab-filter"
+        aria-label="Abrir filtros"
+        title="Filtros"
+      >
+        <SlidersHorizontal className="w-6 h-6" />
+        {Object.values(selectedFilters).some(
+          (arr: any) => (arr as string[]).length > 0,
+        ) ? (
+          <span className="acervo-fab-filter-badge">
+            {Object.values(selectedFilters).reduce(
+              (acc: number, arr: any) => acc + (arr as string[]).length,
+              0,
+            )}
+          </span>
+        ) : null}
+      </button>
       <ScrollToTop />
     </div>
   );
