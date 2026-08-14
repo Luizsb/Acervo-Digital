@@ -2,12 +2,13 @@
  * Rotas por hash usadas na navegação da aplicação.
  * Exportado para permitir testes unitários.
  */
-export type PageKey = "gallery" | "settings" | "favorites" | "login" | "register" | "forgot" | "reset";
+export type PageKey = "gallery" | "settings" | "favorites" | "review" | "login" | "register" | "forgot" | "reset";
 
 const HASH_TO_PAGE: Record<string, PageKey> = {
   acervo: "gallery",
   conta: "settings",
   favoritos: "favorites",
+  revisao: "review",
   login: "login",
   registro: "register",
   "esqueci-senha": "forgot",
@@ -18,6 +19,7 @@ const PAGE_TO_PATH: Record<PageKey, string> = {
   gallery: "/acervo",
   settings: "/conta",
   favorites: "/favoritos",
+  review: "/revisao",
   login: "/login",
   register: "/registro",
   forgot: "/esqueci-senha",

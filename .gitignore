@@ -60,9 +60,10 @@ desktop.ini
 .cache/
 *.zip
 
-# Public assets gerados localmente (não versionar imagens grandes)
-public/thumbs/*
-!public/thumbs/.gitkeep
+# Rascunhos de captura. As capas webp em public/thumbs/ sobem no Git (~60 MB).
 public/converted_images_webp/
 public/**/*.capture.png
+
+# Relatório local de thumbs
+audiovisuais-thumbs-quebradas.csv
 

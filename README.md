@@ -32,7 +32,7 @@ Acervo-Digital/
 │   ├── Dockerfile                # Imagem da API
 │   └── docker-entrypoint.sh      # migrate + seed + start
 ├── public/
-│   ├── thumbs/                   # Capas geradas localmente (não versionadas)
+│   ├── thumbs/                   # Capas webp versionadas (~60 MB)
 │   ├── Categorização_Recursos Digitais_Terceiros.xlsx
 │   └── bncc.db
 ├── docker/
@@ -61,11 +61,11 @@ planilha (.xlsx)
 
 O que fica no banco: título, códigos, BNCC, coleção, livro, bloco, SAMR, requisitos, **caminho da thumb** (`/thumbs/{codigo}.webp`) e **link externo** do ODA/vídeo.
 
-O que **não** fica no banco: o arquivo do ODA, o vídeo e a imagem da capa. As capas ficam em `public/thumbs/`.
+O que **não** fica no banco: o arquivo do ODA e o vídeo. As capas ficam em `public/thumbs/` e sobem no Git (WebP, cerca de 60 MB).
 
 ### Por que as thumbs não vão para o PostgreSQL
 
-São mais de mil imagens. Guardá-las como `BYTEA` deixaria o banco pesado. O banco guarda só o caminho; o arquivo fica no disco. Depois do clone, gere as capas com `npm run thumbs:capture`.
+São mais de mil imagens. Guardá-las como `BYTEA` deixaria o banco pesado. O banco guarda só o caminho (`/thumbs/{codigo}.webp`); o arquivo vai no disco e no repositório.
 
 ### Atualizar o catálogo quando a planilha oficial mudar
 
@@ -106,12 +106,14 @@ docker compose up --build -d
 
 | | |
 |--|--|
-| **E-mail** | `demo@acervo.local` |
-| **Senha** | `demo1234` |
+| **Acervo** | `demo@acervo.local` / `demo1234` (botão Acessar o acervo) |
+| **Admin (provisório)** | `admin@acervo.local` / `admin1234` (botão Acesso admin) |
+
+Os dois entram no **mesmo acervo**. Só o admin vê **Fila de revisão** no menu do perfil (`#/revisao`): status em branco, quebrado, incorreto, restrito e demais pendências, inclusive linhas incompletas da planilha.
 
 A primeira subida demora: a API aplica migrações e importa o catálogo. Se a porta 3000 ou 3001 já estiver em uso (`npm run dev` / `npm run server:dev`), encerre esses processos antes.
 
-Thumbs continuam locais:
+As capas já vêm em `public/thumbs/`. Só rode a captura se faltar imagem:
 
 ```bash
 npm ci
@@ -157,7 +159,7 @@ npm run db:reset
 
 ### Thumbs
 
-As thumbs não sobem no Git. Em uma instalação nova, gere-as após o catálogo existir no banco.
+As capas WebP ficam em `public/thumbs/` e vão no Git. Depois do clone, a galeria já tem imagem. Para gerar o que faltar:
 
 ```bash
 npm run thumbs:capture
@@ -169,6 +171,55 @@ Para recapturar capas com tela de carregamento:
 cd server
 npx tsx scripts/capture-thumbs.ts --validate-existing
 ```
+
+---
+
+## Publicar na EC2
+
+Na instância (Ubuntu 22.04 ou Amazon Linux 2023), Docker Compose sobe **Postgres + API + nginx**. O browser fala só com a porta 80; o nginx encaminha `/api` e `/health` para a API. Postgres e a porta 3001 ficam só em localhost.
+
+**Máquina:** `t3.small` (2 GB) no mínimo; `t3.medium` fica mais folgado. Disco 20 GB basta. Security group: **22** e **80** (depois 443). Não abra 5432 nem 3001.
+
+```bash
+sudo apt-get update
+sudo apt-get install -y git ca-certificates curl
+curl -fsSL https://get.docker.com | sudo sh
+sudo usermod -aG docker $USER
+# faça logout/login para o grupo docker valer
+git clone https://github.com/Luizsb/Acervo-Digital.git
+cd Acervo-Digital
+cp .env.example .env
+```
+
+Em `.env`:
+
+```env
+POSTGRES_PASSWORD=senha-forte-do-banco
+JWT_SECRET=chave-longa-aleatoria
+WEB_BIND=0.0.0.0
+WEB_PORT=80
+CORS_ORIGIN=http://SEU_IP_OU_DOMINIO
+VITE_API_URL=/api
+```
+
+Gere o JWT com `openssl rand -base64 48`. Suba:
+
+```bash
+docker compose up --build -d
+```
+
+A primeira subida importa a planilha para o Postgres (volume `acervo_pgdata`). As thumbs entram na imagem do frontend.
+
+- App: `http://SEU_IP`
+- Saúde da API (via nginx): `http://SEU_IP/health`
+
+Atualizar depois de um `git pull`:
+
+```bash
+docker compose up --build -d
+```
+
+O volume do Postgres permanece. Se o catálogo já estiver no banco, pode usar `SKIP_SEED=true` nas próximas subidas para a API iniciar mais rápido.
 
 ---
 
@@ -186,7 +237,7 @@ npx tsx scripts/capture-thumbs.ts --validate-existing
 | `npm run prisma:migrate` | `migrate deploy` |
 | `npm run prisma:studio` | Prisma Studio |
 | `npm run db:up` / `db:down` / `db:reset` | Só o Postgres |
-| `npm run seed` | BNCC + usuário demo + planilha |
+| `npm run seed` | BNCC + usuários demo/admin + planilha |
 | `npm run import:categorizacao` | Sincroniza a planilha com o banco |
 | `npm run thumbs:capture` | Captura thumbs faltantes |
 | `npm run test` | Vitest |
@@ -199,10 +250,11 @@ npx tsx scripts/capture-thumbs.ts --validate-existing
 |------|-----------|
 | **ODAs** | `GET/POST /api/odas`, `GET/PUT/DELETE /api/odas/:id` |
 | **Auth** | `POST /api/auth/login`, `register`, `GET/PATCH /api/auth/me` |
+| **Admin** | `GET /api/admin/review` (JWT com `role=admin`; fila do que não está Funcionando) |
 | **Favoritos** | `GET/POST /api/users/me/favorites`, `DELETE .../:projectId` |
 | **BNCC** | `GET /api/bncc`, `GET /api/bncc/:codigo` |
 
-`GET /api/odas` retorna só registros `ativo = true`. Para incluir desativados: `?includeInactive=true`.
+`GET /api/odas` retorna só registros `ativo = true` com **Status do link = Funcionando**. Em branco, acesso restrito, quebrado, incorreto, não avaliado e dúvida para revisão ficam no banco para o painel admin e não entram na galeria. Para incluir desativados: `?includeInactive=true`.
 
 ---
 
@@ -215,4 +267,5 @@ npx tsx scripts/capture-thumbs.ts --validate-existing
 - **CSS / classes Tailwind:** o `src/index.css` é compilado e congelado; preferir CSS dedicado.
 - **Vimeo no console:** `ERR_BLOCKED_BY_CLIENT` costuma ser bloqueador de ads.
 - **Galeria vazia:** no Docker, aguarde o seed da API; no modo local, rode `npm run setup`.
-- **Cards sem capa:** `npm run thumbs:capture`.
+- **Cards sem capa:** confira se `public/thumbs/` veio no clone; se faltar arquivo, `npm run thumbs:capture`.
+- **EC2 abre o site mas a API falha:** o frontend deve usar `VITE_API_URL=/api` (rebuild da imagem web). Não use `localhost:3001` no browser remoto.

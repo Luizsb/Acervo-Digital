@@ -293,11 +293,25 @@ export function isAudiovisualRecord(
 
 export function mapCategorizacaoRow(
   row: CategorizacaoRow,
-  options: { metodologiaExists: (codigo: string) => boolean }
+  options: { metodologiaExists: (codigo: string) => boolean; sheetRow?: number }
 ): MappedODA | null {
-  const titulo = cell(row, 'Título do recurso');
-  const codigoOda = cell(row, 'Código do recurso');
-  if (!titulo || !codigoOda) return null;
+  const tituloInformado = cell(row, 'Título do recurso');
+  const codigoInformado = cell(row, 'Código do recurso');
+  const status = cell(row, 'Status do link') || null;
+  const linkRepositorio = cell(row, 'Link do recurso') || null;
+  if (!tituloInformado && !codigoInformado && !status && !linkRepositorio) return null;
+
+  const sheetRow = options.sheetRow ?? 0;
+  const statusKey = (status || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
+  // Linha incompleta com "Funcionando" não entra no acervo nem na fila.
+  if ((!tituloInformado || !codigoInformado) && statusKey === 'funcionando') return null;
+
+  const codigoOda = codigoInformado || `PLANILHA_L${sheetRow}`;
+  const titulo = tituloInformado || codigoInformado || `Linha ${sheetRow} da planilha`;
 
   const componente = cell(row, 'Componente/campo de experiência');
   const anoSerie = cell(row, 'Ano/série');
@@ -337,7 +351,7 @@ export function mapCategorizacaoRow(
     tagColor: TAG_COLORS[componente] || 'bg-gray-600',
     anoSerie: anoSerie || null,
     imagem: `/thumbs/${codigoOda.replace(/\.(webp|jpg|jpeg|png)$/i, '')}.webp`,
-    linkRepositorio: cell(row, 'Link do recurso') || null,
+    linkRepositorio,
     codigoBncc: codigoBncc || null,
     descricaoBncc: descricaoBncc || null,
     categoria: tipoResolvido,
@@ -354,7 +368,7 @@ export function mapCategorizacaoRow(
     recursosPedagogicos: buildRecursos(row),
     requisitosTecnicos: buildRequisitos(row),
     urlMetodologiaPdf: options.metodologiaExists(codigoOda) ? `/metodologia/${codigoOda}.pdf` : null,
-    status: cell(row, 'Status do link') || null,
+    status,
     colecao: cell(row, 'Coleção') || null,
     livro: cell(row, 'Livro') || null,
     envioEscola: cell(row, 'Envio para escola') || null,

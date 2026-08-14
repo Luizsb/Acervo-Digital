@@ -1,4 +1,5 @@
 import { fetchAllODAs, apiODAToFrontend } from './api';
+import { isVisibleInCatalog } from './catalogVisibility';
 import type { ODAFromExcel } from '../types/project';
 
 /**
@@ -11,7 +12,7 @@ export async function loadODAsFromDatabase(): Promise<ODAFromExcel[]> {
     console.log(`✅ ${odas.length} ODAs carregados da API`);
     
     // Converter para formato do frontend
-    const converted = odas.map(apiODAToFrontend);
+    const converted = odas.map(apiODAToFrontend).filter((oda) => isVisibleInCatalog(oda.status));
     console.log(`✅ loadODAsFromDatabase: ${converted.length} ODAs convertidos para frontend`);
     return converted;
   } catch (error: any) {
@@ -33,7 +34,7 @@ export async function loadODAsByContentType(
 ): Promise<ODAFromExcel[]> {
   try {
     const odas = await fetchAllODAs({ tipoConteudo: contentType });
-    return odas.map(apiODAToFrontend);
+    return odas.map(apiODAToFrontend).filter((oda) => isVisibleInCatalog(oda.status));
   } catch (error) {
     console.error('Erro ao carregar ODAs por tipo:', error);
     return [];

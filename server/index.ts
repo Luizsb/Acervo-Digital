@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import express from 'express';
 import prisma from './lib/prisma';
 import authRoutes from './routes/auth';
+import adminRoutes from './routes/admin';
 import bnccRoutes from './routes/bncc';
 import favoritesRoutes from './routes/favorites';
 import odasRoutes from './routes/odas';
@@ -40,6 +41,7 @@ app.get('/health/database', async (_req, res) => {
 });
 
 app.use('/api/odas', odasRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api/bncc', bnccRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users/me/favorites', favoritesRoutes);

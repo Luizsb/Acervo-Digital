@@ -13,6 +13,7 @@ interface FavoritesPageProps {
   onToggleFavorite?: (projectId: number) => void;
   onNavigateToSettings?: () => void;
   onNavigateToFavorites?: () => void;
+  onNavigateToReview?: () => void;
   onLogout?: () => void;
   user?: AuthUser | null;
 }
@@ -25,6 +26,7 @@ export function FavoritesPage({
   onToggleFavorite,
   onNavigateToSettings,
   onNavigateToFavorites,
+  onNavigateToReview,
   onLogout,
   user,
 }: FavoritesPageProps) {
@@ -101,6 +103,7 @@ export function FavoritesPage({
                           setIsProfileOpen(false);
                           onNavigateToFavorites?.();
                         }}
+                        onNavigateToReview={() => onNavigateToReview?.()}
                         onLogout={() => onLogout?.()}
                       />
                     </div>

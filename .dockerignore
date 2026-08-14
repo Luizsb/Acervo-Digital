@@ -4,14 +4,15 @@ node_modules
 **/node_modules
 dist
 server/dist
-public/thumbs
 **/*.capture.png
 **/*.log
 npm-debug.log*
 .env
 .env.*
+!.env.example
 server/.env
 server/.env.*
 canvases
 *.md
 !README.md
+!ROADMAP.md

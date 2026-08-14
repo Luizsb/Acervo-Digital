@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Rocket } from 'lucide-react';
+import { ArrowLeft, ClipboardList, Rocket } from 'lucide-react';
 import { BrandMark } from './BrandMark';
 import './LoginPage.css';
 
 /** Acesso de teste via seed local até o SSO JumpCloud estar ligado. */
 const DEMO_EMAIL = 'demo@acervo.local';
 const DEMO_PASSWORD = 'demo1234';
+const ADMIN_EMAIL = 'admin@acervo.local';
+const ADMIN_PASSWORD = 'admin1234';
 
 interface LoginPageProps {
   onBack?: () => void;
@@ -15,13 +17,15 @@ interface LoginPageProps {
 
 export function LoginPage({ onBack, onLoginSuccess, login }: LoginPageProps) {
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState<'acervo' | 'admin' | null>(null);
 
-  const enterWithJumpCloud = async () => {
+  const enter = async (kind: 'acervo' | 'admin') => {
     setError('');
-    setLoading(true);
+    setLoading(kind);
+    const email = kind === 'admin' ? ADMIN_EMAIL : DEMO_EMAIL;
+    const password = kind === 'admin' ? ADMIN_PASSWORD : DEMO_PASSWORD;
     try {
-      const result = await login(DEMO_EMAIL, DEMO_PASSWORD);
+      const result = await login(email, password);
       if (result.ok) {
         onLoginSuccess();
       } else {
@@ -30,7 +34,7 @@ export function LoginPage({ onBack, onLoginSuccess, login }: LoginPageProps) {
     } catch {
       setError('Ocorreu um erro. Tente novamente.');
     } finally {
-      setLoading(false);
+      setLoading(null);
     }
   };
 
@@ -69,11 +73,21 @@ export function LoginPage({ onBack, onLoginSuccess, login }: LoginPageProps) {
           <button
             type="button"
             className="login-jumpcloud"
-            onClick={() => void enterWithJumpCloud()}
-            disabled={loading}
+            onClick={() => void enter('acervo')}
+            disabled={loading !== null}
           >
             <Rocket size={16} />
-            {loading ? 'Entrando...' : 'Acessar o acervo'}
+            {loading === 'acervo' ? 'Entrando...' : 'Acessar o acervo'}
+          </button>
+
+          <button
+            type="button"
+            className="login-admin"
+            onClick={() => void enter('admin')}
+            disabled={loading !== null}
+          >
+            <ClipboardList size={16} />
+            {loading === 'admin' ? 'Entrando...' : 'Acesso admin (provisório)'}
           </button>
         </section>
       </div>

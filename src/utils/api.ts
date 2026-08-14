@@ -152,6 +152,54 @@ export async function apiFavoriteRemove(projectId: number): Promise<void> {
   }
 }
 
+export type ReviewGroup =
+  | 'em-cadastro'
+  | 'quebrado'
+  | 'incorreto'
+  | 'acesso-restrito'
+  | 'nao-avaliado'
+  | 'duvida'
+  | 'outro';
+
+export interface AdminReviewItem {
+  id: number;
+  titulo: string;
+  codigoOda?: string | null;
+  status?: string | null;
+  tipoConteudo: string;
+  tipoObjeto?: string | null;
+  macroformato?: string | null;
+  linkRepositorio?: string | null;
+  marca?: string | null;
+  anoSerie?: string | null;
+  componenteCurricular?: string | null;
+  reviewGroup: ReviewGroup;
+}
+
+export interface AdminReviewResponse {
+  data: AdminReviewItem[];
+  total: number;
+  totalReview: number;
+  counts: Record<ReviewGroup, number>;
+}
+
+export async function apiAdminReview(params?: {
+  group?: string;
+  search?: string;
+}): Promise<AdminReviewResponse> {
+  const token = getAuthToken();
+  if (!token) throw new Error('Não autorizado.');
+  const queryParams = new URLSearchParams();
+  if (params?.group) queryParams.set('group', params.group);
+  if (params?.search) queryParams.set('search', params.search);
+  const res = await fetch(`${API_BASE_URL}/admin/review?${queryParams.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Erro ao carregar a fila de revisão.');
+  return data;
+}
+
 export interface BNCC {
   id: number;
   codigo: string;

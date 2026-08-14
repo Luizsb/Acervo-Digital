@@ -410,7 +410,7 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
                         }
                         return (
                           <div className="mt-2">
-                            <p className="text-xs text-indigo-700 leading-relaxed font-medium">
+                            <p className="resource-long-text text-xs text-indigo-700 leading-relaxed font-medium">
                               {habilidadeTexto}
                             </p>
                           </div>
@@ -443,7 +443,7 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
                         BNCC secundária: <span className="font-mono bg-white px-2 py-0.5 rounded-[12px] border border-slate-200 text-xs">{project.bnccCodeSecondary}</span>
                       </p>
                       {project.bnccDescriptionSecondary && (
-                        <p className="text-xs text-slate-700 leading-relaxed font-medium mt-2">
+                        <p className="resource-long-text text-xs text-slate-700 leading-relaxed font-medium mt-2">
                           {project.bnccDescriptionSecondary}
                         </p>
                       )}
@@ -527,7 +527,7 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
               <div className="space-y-3">
                 <h5 className="font-bold text-primary text-base">Sobre este ODA</h5>
                 {project.description ? (
-                  <p className="text-muted-foreground leading-relaxed text-sm">
+                  <p className="resource-long-text text-muted-foreground leading-relaxed text-sm">
                     {project.description}
                   </p>
                 ) : (
@@ -550,7 +550,7 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
                     {project.learningObjectives.map((objective, index) => (
                       <li key={index} className="flex items-start gap-2.5">
                         <div className="w-2 h-2 rounded-full bg-secondary flex-shrink-0 mt-1.5"></div>
-                        <span className="text-muted-foreground text-sm leading-relaxed">{objective}</span>
+                        <span className="resource-long-text text-muted-foreground text-sm leading-relaxed">{objective}</span>
                       </li>
                     ))}
                   </ul>
@@ -574,7 +574,7 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
                     {project.pedagogicalResources.map((resource, index) => (
                       <li key={index} className="flex items-start gap-2.5">
                         <div className="w-2 h-2 rounded-full bg-secondary flex-shrink-0 mt-1.5"></div>
-                        <span className="text-muted-foreground text-sm leading-relaxed">{resource}</span>
+                        <span className="resource-long-text text-muted-foreground text-sm leading-relaxed">{resource}</span>
                       </li>
                     ))}
                   </ul>

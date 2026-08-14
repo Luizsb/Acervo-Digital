@@ -1,0 +1,244 @@
+.admin-review {
+  box-sizing: border-box;
+  min-height: 100vh;
+  padding: 24px 20px 48px;
+  background: #f7f5f2;
+  color: #012451;
+  font-family: Nunito, sans-serif;
+}
+
+.admin-review *,
+.admin-review *::before,
+.admin-review *::after {
+  box-sizing: border-box;
+}
+
+.admin-review-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 1200px;
+  margin: 0 auto 24px;
+}
+
+.admin-review-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border: 1px solid rgba(1, 36, 81, 0.2);
+  border-radius: 999px;
+  background: #fff;
+  color: #012451;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-review-user {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.admin-review-hero {
+  display: flex;
+  gap: 16px;
+  max-width: 1200px;
+  margin: 0 auto 24px;
+  padding: 24px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+}
+
+.admin-review-hero-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: #012451;
+  color: #fff;
+  flex-shrink: 0;
+}
+
+.admin-review-hero h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+}
+
+.admin-review-hero p {
+  margin: 8px 0 0;
+  font-size: 14px;
+  line-height: 1.45;
+  color: #64748b;
+}
+
+.admin-review-toolbar {
+  max-width: 1200px;
+  margin: 0 auto 16px;
+}
+
+.admin-review-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+}
+
+.admin-review-search input {
+  width: 100%;
+  border: 0;
+  outline: none;
+  font: inherit;
+  font-size: 14px;
+  background: transparent;
+}
+
+.admin-review-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.admin-review-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  background: #fff;
+  color: #334155;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-review-chip span {
+  min-width: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  font-size: 12px;
+}
+
+.admin-review-chip.is-active {
+  border-color: #012451;
+  background: #012451;
+  color: #fff;
+}
+
+.admin-review-chip.is-active span {
+  background: rgba(255, 255, 255, 0.16);
+  color: #fff;
+}
+
+.admin-review-chip.is-alert:not(.is-active) {
+  border-color: #fecaca;
+  color: #991b1b;
+}
+
+.admin-review-error {
+  max-width: 1200px;
+  margin: 0 auto 16px;
+  padding: 10px 12px;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  background: #fef2f2;
+  color: #991b1b;
+  font-size: 13px;
+}
+
+.admin-review-table-wrap {
+  max-width: 1200px;
+  margin: 0 auto;
+  overflow: auto;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+}
+
+.admin-review-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.admin-review-table th,
+.admin-review-table td {
+  padding: 12px 14px;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.admin-review-table th {
+  font-size: 12px;
+  font-weight: 800;
+  color: #64748b;
+  background: #f8fafc;
+}
+
+.admin-review-table td strong {
+  display: block;
+  font-size: 14px;
+}
+
+.admin-review-meta,
+.admin-review-code {
+  color: #64748b;
+}
+
+.admin-review-code {
+  font-family: ui-monospace, Consolas, monospace;
+  white-space: nowrap;
+}
+
+.admin-review-table a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #012451;
+  font-weight: 700;
+}
+
+.admin-review-status {
+  display: inline-flex;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  background: #f1f5f9;
+  color: #334155;
+  white-space: nowrap;
+}
+
+.admin-review-status.is-quebrado,
+.admin-review-status.is-incorreto {
+  background: #fef2f2;
+  color: #991b1b;
+}
+
+.admin-review-status.is-acesso-restrito,
+.admin-review-status.is-duvida {
+  background: #fff7ed;
+  color: #9a3412;
+}
+
+.admin-review-status.is-em-cadastro,
+.admin-review-status.is-nao-avaliado {
+  background: #eff6ff;
+  color: #1d4ed8;
+}

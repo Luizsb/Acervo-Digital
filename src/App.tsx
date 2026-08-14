@@ -25,6 +25,7 @@ import { useProjectFilters } from "./hooks/useProjectFilters";
 import { useGalleryPageSize } from "./hooks/useGalleryPageSize";
 import { getInitialPageFromHash, getHashFromPage, type PageKey } from "./utils/hashRouting";
 import { startOnboardingIfNeeded } from "./utils/onboarding";
+import { isAdminRole } from "./utils/catalogVisibility";
 
 // Lazy load de páginas pesadas para reduzir bundle inicial
 const ProjectDetailsPage = lazy(() =>
@@ -47,6 +48,9 @@ const ForgotPasswordPage = lazy(() =>
 );
 const ResetPasswordPage = lazy(() =>
   import("./components/ResetPasswordPage").then((m) => ({ default: m.ResetPasswordPage }))
+);
+const AdminReviewPage = lazy(() =>
+  import("./components/AdminReviewPage").then((m) => ({ default: m.AdminReviewPage }))
 );
 
 function PageLoader() {
@@ -88,7 +92,7 @@ export default function App() {
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
-  const [returnToAfterLogin, setReturnToAfterLogin] = useState<"gallery" | "settings" | "favorites">("gallery");
+  const [returnToAfterLogin, setReturnToAfterLogin] = useState<"gallery" | "settings" | "favorites" | "review">("gallery");
   const { user, login, logout, register, loading: authLoading } = useAuth();
   const [favorites, setFavorites] = useState<number[]>([]);
   const [odasFromExcel, setOdasFromExcel] = useState<ODAFromExcel[]>([]);
@@ -300,6 +304,18 @@ export default function App() {
     }
   };
 
+  const handleNavigateToReview = () => {
+    setSelectedProject(null);
+    if (!user) {
+      setReturnToAfterLogin("review");
+      setCurrentPage("login");
+    } else if (!isAdminRole(user.role)) {
+      setCurrentPage("gallery");
+    } else {
+      setCurrentPage("review");
+    }
+  };
+
   const handleNavigateToLogin = () => {
     setReturnToAfterLogin("gallery");
     setCurrentPage("login");
@@ -321,10 +337,18 @@ export default function App() {
     setContentTypeFilter(type);
   };
 
-  // Entrada pelo login; usuários com sessão restaurada seguem para o acervo.
+  // Entrada pelo login; usuários com sessão restaurada seguem para o destino.
   useEffect(() => {
     if (authLoading) return;
     if (user && currentPage === "login") {
+      const next = returnToAfterLogin === "review" ? "gallery" : returnToAfterLogin;
+      setCurrentPage(next);
+    }
+  }, [authLoading, user, currentPage, returnToAfterLogin]);
+
+  useEffect(() => {
+    if (authLoading || !user) return;
+    if (currentPage === "review" && !isAdminRole(user.role)) {
       setCurrentPage("gallery");
     }
   }, [authLoading, user, currentPage]);
@@ -340,7 +364,7 @@ export default function App() {
       setCurrentPage("login");
       return;
     }
-    if (currentPage === "gallery" || currentPage === "settings" || currentPage === "favorites") {
+    if (currentPage === "gallery" || currentPage === "settings" || currentPage === "favorites" || currentPage === "review") {
       setReturnToAfterLogin(currentPage);
       setCurrentPage("login");
     }
@@ -361,8 +385,9 @@ export default function App() {
       <Suspense fallback={<PageLoader />}>
         <LoginPage
           onLoginSuccess={() => {
-            setCurrentPage(returnToAfterLogin);
-            if (returnToAfterLogin === "gallery") setSelectedProject(null);
+            setSelectedProject(null);
+            setReturnToAfterLogin("gallery");
+            setCurrentPage("gallery");
           }}
           login={login}
         />
@@ -411,6 +436,18 @@ export default function App() {
     );
   }
 
+  // Show review queue (admin)
+  if (currentPage === "review") {
+    if (!isAdminRole(user?.role)) {
+      return <PageLoader />;
+    }
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <AdminReviewPage onBack={handleBackToGallery} user={user} />
+      </Suspense>
+    );
+  }
+
   // Show settings page
   if (currentPage === "settings") {
     return (
@@ -432,6 +469,7 @@ export default function App() {
         onToggleFavorite={handleToggleFavorite}
         onNavigateToSettings={handleNavigateToSettings}
         onNavigateToFavorites={() => setCurrentPage("favorites")}
+        onNavigateToReview={handleNavigateToReview}
         onLogout={handleLogout}
         user={user}
       />
@@ -445,8 +483,9 @@ export default function App() {
       <Suspense fallback={<PageLoader />}>
       <LoginPage
         onLoginSuccess={() => {
-          setCurrentPage(returnToAfterLogin);
-          if (returnToAfterLogin === "gallery") setSelectedProject(null);
+          setSelectedProject(null);
+          setReturnToAfterLogin("gallery");
+          setCurrentPage("gallery");
         }}
         login={login}
       />
@@ -465,6 +504,7 @@ export default function App() {
           onSearchChange={setSearchQuery}
           onNavigateToSettings={handleNavigateToSettings}
           onNavigateToFavorites={handleNavigateToFavorites}
+          onNavigateToReview={handleNavigateToReview}
           onNavigateToGallery={handleNavigateToGallery}
           onNavigateToLogin={handleNavigateToLogin}
           contentTypeFilter={contentTypeFilter}
@@ -496,6 +536,7 @@ export default function App() {
         onSearchChange={setSearchQuery}
         onNavigateToSettings={handleNavigateToSettings}
         onNavigateToFavorites={handleNavigateToFavorites}
+        onNavigateToReview={handleNavigateToReview}
         onNavigateToGallery={handleNavigateToGallery}
         onNavigateToLogin={handleNavigateToLogin}
         contentTypeFilter={contentTypeFilter}

@@ -4,6 +4,7 @@ import { createHash } from 'crypto';
 import prisma from '../lib/prisma';
 import { readWorksheetMatrix } from '../lib/excel';
 import { mapCategorizacaoRow, type CategorizacaoRow } from './map-categorizacao';
+import { completeBnccText, completeObjectiveList } from '../lib/completeBnccText';
 const SHEET_NAME = 'Recursos Digitais';
 const HEADER_ROW = 1;
 const DATA_START_ROW = 4;
@@ -68,11 +69,22 @@ export async function importCategorizacao(options: { clear?: boolean } = {}) {
   for (let i = 0; i < rows.length; i++) {
     const mapped = mapCategorizacaoRow(rows[i], {
       metodologiaExists: (codigo) => fs.existsSync(path.join(pdfDir, `${codigo}.pdf`)),
+      sheetRow: i + DATA_START_ROW + 1,
     });
     if (!mapped) {
       skipped += 1;
       continue;
     }
+
+    mapped.descricaoBncc = completeBnccText(mapped.codigoBncc, mapped.descricaoBncc);
+    mapped.descricaoBnccSecundaria = completeBnccText(
+      mapped.codigoBnccSecundaria,
+      mapped.descricaoBnccSecundaria
+    );
+    mapped.objetivosAprendizagem = completeObjectiveList(mapped.objetivosAprendizagem, [
+      mapped.descricaoBncc,
+      mapped.descricaoBnccSecundaria,
+    ]);
 
     try {
       seenCodes.push(mapped.codigoOda);
@@ -203,7 +215,7 @@ export async function importCategorizacao(options: { clear?: boolean } = {}) {
   console.log(`   sem alteração: ${unchanged}`);
   console.log(`   reativados: ${reactivated}`);
   console.log(`   desativados por ausência na planilha: ${deactivated}`);
-  console.log(`   pulados (sem título/código): ${skipped}`);
+  console.log(`   pulados (linha vazia): ${skipped}`);
   console.log(`   erros: ${errors}`);
   console.log(`   total ODAs no banco: ${total} (Audiovisual/Vídeo: ${videos}, OED: ${oeds})`);
 }

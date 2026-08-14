@@ -9,6 +9,7 @@ interface NavigationProps {
   onSearchChange: (query: string) => void;
   onNavigateToSettings?: () => void;
   onNavigateToFavorites?: () => void;
+  onNavigateToReview?: () => void;
   onNavigateToGallery?: () => void;
   onNavigateToLogin?: () => void;
   contentTypeFilter: 'Todos' | 'Audiovisual' | 'OED';
@@ -18,7 +19,7 @@ interface NavigationProps {
   onLogout?: () => void;
 }
 
-export function Navigation({ searchQuery, onSearchChange, onNavigateToSettings, onNavigateToFavorites, onNavigateToGallery, onNavigateToLogin, contentTypeFilter, onContentTypeChange, hideSearch = false, user = null, onLogout }: NavigationProps) {
+export function Navigation({ searchQuery, onSearchChange, onNavigateToSettings, onNavigateToFavorites, onNavigateToReview, onNavigateToGallery, onNavigateToLogin, contentTypeFilter, onContentTypeChange, hideSearch = false, user = null, onLogout }: NavigationProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -96,6 +97,7 @@ export function Navigation({ searchQuery, onSearchChange, onNavigateToSettings, 
                           onClose={() => setIsProfileOpen(false)}
                           onNavigateToSettings={() => onNavigateToSettings?.()}
                           onNavigateToFavorites={() => onNavigateToFavorites?.()}
+                          onNavigateToReview={() => onNavigateToReview?.()}
                           onLogout={() => onLogout?.()}
                         />
                       </div>
@@ -187,6 +189,7 @@ export function Navigation({ searchQuery, onSearchChange, onNavigateToSettings, 
                 onClose={() => setIsProfileOpen(false)}
                 onNavigateToSettings={() => onNavigateToSettings?.()}
                 onNavigateToFavorites={() => onNavigateToFavorites?.()}
+                onNavigateToReview={() => onNavigateToReview?.()}
                 onLogout={() => onLogout?.()}
               />
             )}

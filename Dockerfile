@@ -9,7 +9,7 @@ COPY index.html vite.config.ts ./
 COPY src ./src
 COPY public ./public
 
-ARG VITE_API_URL=http://localhost:3001/api
+ARG VITE_API_URL=/api
 ENV VITE_API_URL=$VITE_API_URL
 
 RUN npm run build

@@ -5,6 +5,7 @@ import { formatDuration } from '../utils/formatters';
 import { resolveMacroformato } from '../utils/macroformato';
 import { resourceTypeLabel } from '../utils/contentType';
 import type { Project } from '../types/project';
+import { ProjectContextMenu } from './ProjectContextMenu';
 
 interface ProjectListItemProps {
   project: Project;
@@ -186,41 +187,12 @@ export function ProjectListItem({ project, onClick, isFavorite = false, onToggle
         </div>
       </div>
 
-      {/* Menu de contexto */}
       {contextMenu && (
-        <div
-          className="fixed z-50 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[180px]"
-          style={{ left: contextMenu.x, top: contextMenu.y }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onClick();
-              setContextMenu(null);
-            }}
-            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-          >
-            Abrir ODA
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              // Abrir em nova guia usando window.open com a URL atual + hash do projeto
-              const newWindow = window.open(window.location.href, '_blank');
-              if (newWindow) {
-                // Executar onClick após um pequeno delay para garantir que a nova janela carregou
-                setTimeout(() => {
-                  onClick();
-                }, 100);
-              }
-              setContextMenu(null);
-            }}
-            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-          >
-            Abrir em nova guia
-          </button>
-        </div>
+        <ProjectContextMenu
+          project={project}
+          position={contextMenu}
+          onClose={() => setContextMenu(null)}
+        />
       )}
     </div>
   );

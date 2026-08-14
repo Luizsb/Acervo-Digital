@@ -3802,3 +3802,13 @@ html {
     transition: none !important;
   }
 }
+
+.resource-long-text {
+  display: block;
+  min-width: 0;
+  max-width: 100%;
+  overflow: visible;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}

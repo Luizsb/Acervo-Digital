@@ -19,6 +19,7 @@ describe('hashRouting', () => {
       expect(getInitialPageFromHash('#acervo')).toBe('gallery');
       expect(getInitialPageFromHash('#/conta')).toBe('settings');
       expect(getInitialPageFromHash('#/favoritos')).toBe('favorites');
+      expect(getInitialPageFromHash('#/revisao')).toBe('review');
       expect(getInitialPageFromHash('#/login')).toBe('login');
       expect(getInitialPageFromHash('#/registro')).toBe('register');
       expect(getInitialPageFromHash('#/esqueci-senha')).toBe('forgot');
@@ -39,6 +40,7 @@ describe('hashRouting', () => {
       { page: 'gallery', expected: '#/acervo' },
       { page: 'settings', expected: '#/conta' },
       { page: 'favorites', expected: '#/favoritos' },
+      { page: 'review', expected: '#/revisao' },
       { page: 'login', expected: '#/login' },
       { page: 'register', expected: '#/registro' },
       { page: 'forgot', expected: '#/esqueci-senha' },
@@ -54,7 +56,7 @@ describe('hashRouting', () => {
 
   describe('round-trip', () => {
     it('getHashFromPage + getInitialPageFromHash restaura a página', () => {
-      const pages: PageKey[] = ['gallery', 'settings', 'favorites', 'login', 'register', 'forgot', 'reset'];
+      const pages: PageKey[] = ['gallery', 'settings', 'favorites', 'review', 'login', 'register', 'forgot', 'reset'];
       pages.forEach((page) => {
         const hash = getHashFromPage(page);
         const restored = getInitialPageFromHash(hash);

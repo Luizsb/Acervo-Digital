@@ -35,6 +35,13 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
   }
 }
 
+export function requireAdmin(req: AuthRequest, res: Response, next: NextFunction) {
+  if (req.user?.role !== 'admin') {
+    return res.status(403).json({ error: 'Acesso restrito ao administrador.' });
+  }
+  next();
+}
+
 export function signToken(payload: JwtPayload): string {
   const expiresIn = process.env.JWT_EXPIRES_IN || '7d';
   return jwt.sign(payload, JWT_SECRET, { expiresIn } as jwt.SignOptions);

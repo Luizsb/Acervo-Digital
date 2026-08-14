@@ -8,6 +8,8 @@ import { importCategorizacao } from './import-categorizacao';
 const prisma = new PrismaClient();
 const DEMO_EMAIL = 'demo@acervo.local';
 const DEMO_PASSWORD = 'demo1234';
+const ADMIN_EMAIL = 'admin@acervo.local';
+const ADMIN_PASSWORD = 'admin1234';
 
 function findBnccDatabase(): string | null {
   const candidates = [
@@ -105,16 +107,33 @@ async function seedDemoUser() {
     update: {
       passwordHash,
       name: 'Usuário Demo',
-      role: 'admin',
+      role: 'user',
     },
     create: {
       email: DEMO_EMAIL,
       passwordHash,
       name: 'Usuário Demo',
-      role: 'admin',
+      role: 'user',
     },
   });
   console.log(`Usuário demo disponível: ${DEMO_EMAIL}`);
+
+  const adminHash = await bcrypt.hash(ADMIN_PASSWORD, 10);
+  await prisma.user.upsert({
+    where: { email: ADMIN_EMAIL },
+    update: {
+      passwordHash: adminHash,
+      name: 'Admin Demo',
+      role: 'admin',
+    },
+    create: {
+      email: ADMIN_EMAIL,
+      passwordHash: adminHash,
+      name: 'Admin Demo',
+      role: 'admin',
+    },
+  });
+  console.log(`Admin demo disponível: ${ADMIN_EMAIL}`);
 }
 
 async function seedCatalog() {
@@ -123,11 +142,16 @@ async function seedCatalog() {
 }
 
 async function main() {
+  const usersOnly = process.argv.includes('--users-only');
   try {
     console.log('Iniciando seed local...');
-    await seedBncc();
+    if (!usersOnly) {
+      await seedBncc();
+    }
     await seedDemoUser();
-    await seedCatalog();
+    if (!usersOnly) {
+      await seedCatalog();
+    }
     console.log('Seed local concluído.');
   } finally {
     await prisma.$disconnect();

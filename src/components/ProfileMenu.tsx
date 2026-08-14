@@ -1,13 +1,15 @@
 import React from 'react';
-import { User, Settings, Heart, LogOut, Sparkles } from 'lucide-react';
+import { User, Settings, Heart, LogOut, Sparkles, ClipboardList } from 'lucide-react';
 import type { AuthUser } from '../contexts/AuthContext';
 import { resetOnboardingProgress, startOnboardingIfNeeded } from '../utils/onboarding';
+import { isAdminRole } from '../utils/catalogVisibility';
 
 interface ProfileMenuProps {
   user: AuthUser;
   onClose: () => void;
   onNavigateToSettings: () => void;
   onNavigateToFavorites: () => void;
+  onNavigateToReview?: () => void;
   onLogout: () => void;
   /** Classe do container do dropdown (ex.: posicionamento absoluto) */
   className?: string;
@@ -18,6 +20,7 @@ export function ProfileMenu({
   onClose,
   onNavigateToSettings,
   onNavigateToFavorites,
+  onNavigateToReview,
   onLogout,
   className = '',
 }: ProfileMenuProps) {
@@ -73,6 +76,24 @@ export function ProfileMenu({
           <Sparkles className="w-5 h-5 text-gray-600 group-hover:text-primary transition-colors" />
           <span className="font-semibold text-gray-700 group-hover:text-primary">Rever tour do acervo</span>
         </button>
+        {isAdminRole(user.role) && onNavigateToReview ? (
+          <div className="mt-1 pt-2 border-t border-gray-100">
+            <p className="px-4 py-1.5 text-xs font-bold text-slate-500">
+              Administração
+            </p>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onNavigateToReview();
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 rounded-xl transition-all duration-200 group"
+            >
+              <ClipboardList className="w-5 h-5 text-slate-500 group-hover:text-primary transition-colors" />
+              <span className="font-semibold text-slate-700 group-hover:text-primary">Fila de revisão</span>
+            </button>
+          </div>
+        ) : null}
         <div className="h-px bg-gray-100 my-2" />
         <button
           type="button"

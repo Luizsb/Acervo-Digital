@@ -1,5 +1,6 @@
 import express from 'express';
 import prisma from '../lib/prisma';
+import { catalogVisibleWhere, isVisibleInCatalog } from '../lib/catalogVisibility';
 
 const router = express.Router();
 
@@ -9,7 +10,7 @@ router.get('/', async (req, res) => {
     console.log('📊 GET /api/odas - Buscando ODAs...');
     const { tipoConteudo, search, limit, offset, includeInactive } = req.query;
 
-    const where: any = {};
+    const where: any = { ...catalogVisibleWhere() };
     if (includeInactive !== 'true') {
       where.ativo = true;
     }
@@ -82,7 +83,7 @@ router.get('/:id', async (req, res) => {
       },
     });
 
-    if (!oda || oda.ativo === false) {
+    if (!oda || oda.ativo === false || !isVisibleInCatalog(oda.status)) {
       return res.status(404).json({ error: 'ODA not found' });
     }
 
@@ -149,7 +150,7 @@ router.get('/stats/count', async (req, res) => {
   try {
     const { tipoConteudo } = req.query;
 
-    const where: any = { ativo: true };
+    const where: any = { ativo: true, ...catalogVisibleWhere() };
     if (tipoConteudo && tipoConteudo !== 'Todos') {
       where.tipoConteudo = tipoConteudo as string;
     }
