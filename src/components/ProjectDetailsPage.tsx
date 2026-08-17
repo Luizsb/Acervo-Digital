@@ -129,6 +129,8 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
     bncc: getBnccCodes(project).length > 0,
     samr: Boolean(normalizeRelationValue(project.samr)),
   };
+  // Vídeo tem proporção fixa; ODA é aplicação web e precisa da maior área possível.
+  const isAudiovisualResource = project.contentType === 'Audiovisual';
 
   const handleCopyCode = async () => {
     if (!project.codigoODA) return;
@@ -733,7 +735,11 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
           onClick={() => setShowResourceModal(false)}
         >
           <div
-            className="flex max-h-[85vh] w-full max-w-[1100px] flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl"
+            className={`flex w-full flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl ${
+              isAudiovisualResource
+                ? 'max-h-[92vh] max-w-[1200px]'
+                : 'h-[92vh] max-w-[1600px]'
+            }`}
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex shrink-0 items-center justify-between gap-3 border-b-2 border-gray-200 px-4 py-3 sm:px-6">
@@ -751,10 +757,16 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
                 <span className="hidden sm:inline">Fechar</span>
               </button>
             </div>
-            <div className="relative h-[62vh] min-h-[280px] shrink-0 bg-black">
+            <div
+              className={`relative bg-black ${
+                isAudiovisualResource
+                  ? 'aspect-video w-full shrink-0'
+                  : 'min-h-0 flex-1'
+              }`}
+            >
               <iframe
                 src={
-                  project.contentType === 'Audiovisual'
+                  isAudiovisualResource
                     ? getVimeoEmbedUrl(videoEmbedUrl || project.videoUrl, { autoplay: true })
                     : project.videoUrl
                 }
