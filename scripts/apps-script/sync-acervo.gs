@@ -16,7 +16,8 @@
  * acionador executa com as permissões da conta que o criou.
  */
 
-var ACERVO_API_BASE = 'http://13.217.4.132/api';
+// Use HTTPS: em HTTP o token de sincronização viajaria em texto claro.
+var ACERVO_API_BASE = 'https://13-217-4-132.sslip.io/api';
 
 /**
  * Os segredos ficam nas Propriedades do Script, não neste arquivo.
