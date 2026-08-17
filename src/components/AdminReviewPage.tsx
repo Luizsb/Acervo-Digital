@@ -296,11 +296,11 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
             <dd>{sheetStatus ? formatDate(sheetStatus.modifiedAt) : '—'}</dd>
           </div>
           <div>
-            <dt>Rotina diária</dt>
+            <dt>Recebimento automático</dt>
             <dd>
               {sheetStatus?.autoSyncEnabled
-                ? 'Ativa (Apps Script com token)'
-                : 'Inativa — defina SPREADSHEET_SYNC_TOKEN'}
+                ? 'Habilitado (token configurado)'
+                : 'Desabilitado — defina SPREADSHEET_SYNC_TOKEN'}
             </dd>
           </div>
         </dl>
