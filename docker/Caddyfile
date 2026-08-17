@@ -1,0 +1,12 @@
+# O Caddy emite e renova o certificado TLS por conta própria, sem cron nem
+# tarefa manual. O hostname vem do .env para trocar por um subdomínio próprio
+# depois sem mexer neste arquivo.
+{$ACERVO_HOSTNAME} {
+	reverse_proxy web:80
+}
+
+# O IP continua atendendo em HTTP: é o endereço usado pela rotina diária do
+# Apps Script e serve de rede de segurança se a emissão do certificado falhar.
+http:// {
+	reverse_proxy web:80
+}

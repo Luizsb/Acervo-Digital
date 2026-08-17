@@ -84,5 +84,27 @@ services:
       # O nginx serve imediatamente as thumbs capturadas pela API.
       - ./public/thumbs:/usr/share/nginx/html/thumbs:ro
 
+  # HTTPS automático na frente do nginx. Sobe só onde o perfil está habilitado
+  # (COMPOSE_PROFILES=https no .env), então o ambiente local segue em HTTP.
+  caddy:
+    image: caddy:2-alpine
+    container_name: acervo-caddy
+    restart: unless-stopped
+    profiles: ["https"]
+    depends_on:
+      - web
+    environment:
+      ACERVO_HOSTNAME: ${ACERVO_HOSTNAME:-}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Sem persistir os certificados, cada deploy pediria um novo à Let's Encrypt.
+      - acervo_caddy_data:/data
+      - acervo_caddy_config:/config
+
 volumes:
   acervo_pgdata:
+  acervo_caddy_data:
+  acervo_caddy_config:

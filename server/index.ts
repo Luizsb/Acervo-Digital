@@ -16,8 +16,22 @@ dotenv.config();
 const app = express();
 const PORT = Number(process.env.PORT) || 3001;
 
-if (process.env.TRUST_PROXY === 'true' || process.env.TRUST_PROXY === '1') {
-  app.set('trust proxy', 1);
+/**
+ * Quantidade de proxies entre o cliente e a API: só o nginx conta 1; com o
+ * Caddy na frente, 2. Um valor menor que o real faz o limitador de requisições
+ * enxergar o IP do proxy no lugar do usuário e bloquear todos de uma vez.
+ * `true` continua aceito e equivale a 1.
+ */
+function parseTrustedProxies(value?: string): number {
+  if (!value || value === 'false') return 0;
+  if (value === 'true') return 1;
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : 0;
+}
+
+const trustedProxies = parseTrustedProxies(process.env.TRUST_PROXY);
+if (trustedProxies > 0) {
+  app.set('trust proxy', trustedProxies);
 }
 
 app.use(

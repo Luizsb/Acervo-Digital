@@ -259,6 +259,31 @@ O volume do Postgres permanece entre atualizações. Se o catálogo já estiver 
 
 ---
 
+## HTTPS na EC2 (Caddy)
+
+Sem HTTPS os recursos não abrem no visualizador em tela ampliada. ODAs usam Service Worker e Cache API, que só existem em **contexto seguro**, e um iframe HTTPS dentro de uma página HTTP não conta como seguro — ele herda a insegurança da página que o contém. O resultado é o carregador do ODA parado em 0%. `localhost` é exceção na regra dos navegadores, por isso o mesmo recurso abre no ambiente local e falha no servidor. O mesmo vale para `navigator.clipboard`, usada no botão de copiar código.
+
+O `caddy` no `docker-compose.yml` resolve isso emitindo e renovando o certificado sozinho, sem cron nem comando manual. Ele atende a internet nas portas 80 e 443 e repassa para o nginx, que passa a escutar só internamente. No `.env` da instância:
+
+```env
+COMPOSE_PROFILES=https
+ACERVO_HOSTNAME=13-217-4-132.sslip.io
+CORS_ORIGIN=https://13-217-4-132.sslip.io
+WEB_BIND=127.0.0.1
+WEB_PORT=3000
+TRUST_PROXY=2
+```
+
+O `ACERVO_HOSTNAME` precisa resolver para o IP da instância. O `sslip.io` faz isso sem cadastro: `13-217-4-132.sslip.io` já devolve `13.217.4.132`. Para um subdomínio próprio, aponte o DNS para o IP e troque só essa linha. Use **IP elástico**, senão o nome deixa de bater depois de um reinício.
+
+`TRUST_PROXY` é a quantidade de proxies na frente da API: `1` com apenas o nginx, `2` com o Caddy também. Se ficar menor que o real, o limitador de login enxerga o IP do proxy no lugar do usuário e um bloqueio atinge todos ao mesmo tempo.
+
+O grupo de segurança precisa liberar a **porta 443**. A porta 80 continua aberta porque o Caddy a usa para provar o domínio ao pedir o certificado, e porque o IP em HTTP segue atendendo a rotina do Apps Script e serve de rede de segurança se a emissão falhar.
+
+Os certificados ficam no volume `acervo_caddy_data`. Não remova esse volume sem necessidade: cada emissão nova consome cota da Let's Encrypt.
+
+---
+
 ## Deploy automático (GitHub Actions)
 
 Todo push em `main` roda o workflow `.github/workflows/ci-e-deploy.yml`: primeiro testes, build do frontend e checagem de tipos da API; se tudo passar, ele entra na EC2 por SSH e executa `scripts/deploy-ec2.sh`. Em pull requests só a etapa de verificação roda. Para repetir um deploy sem novo commit, use **Run workflow** na aba Actions.
