@@ -726,14 +726,14 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
 
       {showResourceModal && project.videoUrl ? (
         <div
-          className="fixed inset-0 z-50 flex flex-col bg-black/80 p-2 sm:p-6"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm sm:p-8"
           role="dialog"
           aria-modal="true"
           aria-label={`Recurso ampliado: ${project.title}`}
           onClick={() => setShowResourceModal(false)}
         >
           <div
-            className="mx-auto flex h-full w-full max-w-[1400px] flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl"
+            className="flex max-h-[85vh] w-full max-w-[1100px] flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex shrink-0 items-center justify-between gap-3 border-b-2 border-gray-200 px-4 py-3 sm:px-6">
@@ -751,7 +751,7 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
                 <span className="hidden sm:inline">Fechar</span>
               </button>
             </div>
-            <div className="relative flex-1 bg-black">
+            <div className="relative h-[62vh] min-h-[280px] shrink-0 bg-black">
               <iframe
                 src={
                   project.contentType === 'Audiovisual'
