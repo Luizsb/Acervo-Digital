@@ -251,6 +251,14 @@ export interface MissingThumbItem {
   hasLink: boolean;
 }
 
+export type SyncChangeKind = 'created' | 'updated' | 'reactivated' | 'deactivated';
+
+export interface SyncChangeItem {
+  codigo: string;
+  titulo: string;
+  kind: SyncChangeKind;
+}
+
 export interface SpreadsheetStatusResponse {
   fileName: string;
   sizeBytes: number;
@@ -275,6 +283,8 @@ export interface SpreadsheetStatusResponse {
     created?: number;
     updated?: number;
     deactivated?: number;
+    reactivated?: number;
+    changes?: SyncChangeItem[];
   } | null;
   autoSyncEnabled?: boolean;
 }

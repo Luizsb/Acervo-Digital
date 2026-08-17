@@ -21,6 +21,7 @@ import {
   type ReviewGroup,
   type SpreadsheetImportSummary,
   type SpreadsheetStatusResponse,
+  type SyncChangeKind,
   type ThumbCaptureJob,
 } from '../utils/api';
 import { REVIEW_GROUP_LABELS, REVIEW_GROUP_ORDER } from '../utils/catalogVisibility';
@@ -32,6 +33,13 @@ interface AdminReviewPageProps {
 }
 
 type FilterKey = 'todos' | ReviewGroup;
+
+const SYNC_CHANGE_LABELS: Record<SyncChangeKind, string> = {
+  created: 'Novo',
+  updated: 'Atualizado',
+  reactivated: 'Reativado',
+  deactivated: 'Desativado',
+};
 
 function formatBytes(bytes: number): string {
   if (bytes < 1024) return `${bytes} B`;
@@ -304,6 +312,42 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
             </dd>
           </div>
         </dl>
+        {sheetStatus?.lastSync?.changes?.length ? (
+          <div className="admin-sheet-changes">
+            <div className="admin-sheet-changes-head">
+              <h3>Novidades da última sincronização</h3>
+              <p>
+                {[
+                  sheetStatus.lastSync.created
+                    ? `${sheetStatus.lastSync.created} novos`
+                    : null,
+                  sheetStatus.lastSync.updated
+                    ? `${sheetStatus.lastSync.updated} atualizados`
+                    : null,
+                  sheetStatus.lastSync.reactivated
+                    ? `${sheetStatus.lastSync.reactivated} reativados`
+                    : null,
+                  sheetStatus.lastSync.deactivated
+                    ? `${sheetStatus.lastSync.deactivated} desativados`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(' · ') || 'Sem alterações no catálogo'}
+              </p>
+            </div>
+            <ul>
+              {sheetStatus.lastSync.changes.map((change) => (
+                <li key={`${change.kind}-${change.codigo}`}>
+                  <span className={`admin-sheet-change-tag is-${change.kind}`}>
+                    {SYNC_CHANGE_LABELS[change.kind]}
+                  </span>
+                  <code>{change.codigo}</code>
+                  <span className="admin-sheet-change-title">{change.titulo}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
         {selectedFileName ? (
           <p className="admin-sheet-file">Arquivo selecionado: {selectedFileName}</p>
         ) : null}

@@ -290,6 +290,8 @@ router.get('/spreadsheet/status', async (_req, res) => {
           created: memorySync.created,
           updated: memorySync.updated,
           deactivated: memorySync.deactivated,
+          reactivated: memorySync.reactivated,
+          changes: memorySync.changes,
         }
       : databaseSyncAt
         ? {

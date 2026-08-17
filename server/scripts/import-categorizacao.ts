@@ -32,6 +32,15 @@ export type ImportSummary = {
     linkRepositorio: string | null;
   }[];
   missingThumbsPublic: number;
+  changes: ChangedItem[];
+};
+
+export type ChangeKind = 'created' | 'updated' | 'reactivated' | 'deactivated';
+
+export type ChangedItem = {
+  codigo: string;
+  titulo: string;
+  kind: ChangeKind;
 };
 
 export type ImportOptions = {
@@ -150,6 +159,7 @@ export async function importCategorizacao(options: ImportOptions = {}): Promise<
   let errors = 0;
   const seenCodes: string[] = [];
   const thumbCandidates: ImportSummary['missingThumbs'] = [];
+  const changes: ChangedItem[] = [];
   const synchronizedAt = new Date();
 
   for (let i = 0; i < rows.length; i++) {
@@ -238,12 +248,15 @@ export async function importCategorizacao(options: ImportOptions = {}): Promise<
 
       if (!existing) {
         created += 1;
+        changes.push({ codigo: codigoOda, titulo: mapped.titulo, kind: 'created' });
       } else if (!existing.ativo) {
         reactivated += 1;
+        changes.push({ codigo: codigoOda, titulo: mapped.titulo, kind: 'reactivated' });
       } else if (existing.hashFonte === hashFonte) {
         unchanged += 1;
       } else {
         updated += 1;
+        changes.push({ codigo: codigoOda, titulo: mapped.titulo, kind: 'updated' });
       }
 
       processed += 1;
@@ -289,18 +302,36 @@ export async function importCategorizacao(options: ImportOptions = {}): Promise<
   options.onProgress?.({ phase: 'finishing', current: rows.length, total: rows.length });
   let deactivated = 0;
   if (errors === 0 && seenCodes.length > 0) {
-    const result = await prisma.oDA.updateMany({
+    const toDeactivate = await prisma.oDA.findMany({
       where: {
         fonteImportacao: IMPORT_SOURCE,
         ativo: true,
         codigoOda: { notIn: seenCodes },
       },
-      data: {
-        ativo: false,
-        sincronizadoEm: synchronizedAt,
-      },
+      select: { codigoOda: true, titulo: true },
     });
-    deactivated = result.count;
+    if (toDeactivate.length > 0) {
+      await prisma.oDA.updateMany({
+        where: {
+          fonteImportacao: IMPORT_SOURCE,
+          ativo: true,
+          codigoOda: { notIn: seenCodes },
+        },
+        data: {
+          ativo: false,
+          sincronizadoEm: synchronizedAt,
+        },
+      });
+      deactivated = toDeactivate.length;
+      for (const item of toDeactivate) {
+        if (!item.codigoOda) continue;
+        changes.push({
+          codigo: item.codigoOda,
+          titulo: item.titulo || item.codigoOda,
+          kind: 'deactivated',
+        });
+      }
+    }
   }
 
   const totalActive = await prisma.oDA.count({ where: { ativo: true } });
@@ -328,6 +359,7 @@ export async function importCategorizacao(options: ImportOptions = {}): Promise<
     totalOed,
     missingThumbs,
     missingThumbsPublic,
+    changes,
   };
 
   if (log) printSummary(summary);

@@ -24,7 +24,9 @@ export type LastSyncInfo = {
   created: number;
   updated: number;
   deactivated: number;
+  reactivated: number;
   totalActive: number;
+  changes: Awaited<ReturnType<typeof importCategorizacao>>['changes'];
 };
 
 const spreadsheetJobs = new Map<string, SpreadsheetJob>();
@@ -118,7 +120,10 @@ export function beginSpreadsheetImport(
         created: summary.created,
         updated: summary.updated,
         deactivated: summary.deactivated,
+        reactivated: summary.reactivated,
         totalActive: summary.totalActive,
+        // Limita para não crescer sem controle em uma sincronização grande.
+        changes: summary.changes.slice(0, 100),
       };
       hooks?.onSuccess?.(summary);
       job.status = 'completed';
