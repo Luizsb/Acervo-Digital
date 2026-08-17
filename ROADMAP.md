@@ -22,19 +22,17 @@ Documentação versionada do produto. Canvases locais do Cursor são rascunhos d
 - HTTPS (443) e domínio na EC2
 - Política de atualização periódica da planilha oficial no repositório
 
-## Em estudo
+## Em observação
 
 ### Visualizador do recurso em tela ampliada
 
-Ideia trazida pela coordenação: em vez de compartilhar o link, a pessoa explora o
-recurso dentro do Acervo (modal grande, para vídeos e ODAs) e, se gostar, guarda o
-código do recurso. O botão "Copiar Link" já está desativado (`SHARE_LINK_ENABLED`
-em `src/components/ProjectDetailsPage.tsx`).
+A pedido da coordenação, a experiência é explorar o recurso dentro do Acervo em vez de
+compartilhar o link: "Copiar Link" virou "Copiar código" e "Abrir em outra janela" virou
+um modal em tela ampliada, para audiovisual e ODA (`src/components/ProjectDetailsPage.tsx`).
 
-Pontos a resolver antes de implementar:
+Pontos a acompanhar:
 
-- Esconder o link é fricção, não proteção: o endereço continua acessível pelo HTML da página e pelo botão "Abrir em outra janela"
-- Vimeo e YouTube aceitam `iframe` (já usado no tipo Audiovisual), mas ODAs de terceiros podem recusar por `X-Frame-Options` / `CSP: frame-ancestors`
-- Medir quantos links publicados aceitam `iframe` para decidir se o modal é a experiência principal ou um complemento
-- Definir o fallback quando o recurso não puder ser embutido (provavelmente manter "Abrir em outra janela")
-- Avaliar trocar o botão desativado por "Copiar código" do recurso
+- Esconder o link é fricção, não proteção: o endereço do `iframe` continua visível no HTML da página
+- Vimeo e YouTube aceitam `iframe`, mas ODAs de terceiros podem recusar por `X-Frame-Options` / `CSP: frame-ancestors` — nesses casos o modal abre em branco
+- Não há fallback de abertura externa: se o bloqueio se mostrar frequente, decidir entre reintroduzir a abertura externa ou sinalizar o recurso na revisão do admin
+- Medir quantos links publicados aceitam `iframe` para dimensionar esse risco

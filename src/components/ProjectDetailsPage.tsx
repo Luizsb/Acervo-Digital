@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, BookOpen, Clock, Check, ExternalLink, Eye, Sparkles, Play, Book, FileText, ArrowLeft, Heart, Link as LinkIcon, Settings, Download, Layers, GitBranch } from 'lucide-react';
+import { X, BookOpen, Clock, Check, Eye, Sparkles, Play, Book, FileText, ArrowLeft, Heart, Copy, Maximize2, Settings, Download, Layers, GitBranch } from 'lucide-react';
 import { ProjectCard } from './ProjectCard';
 import { getCurriculumColor, getComponentFullName, getSegmentFullName, getMarcaFullName } from '../utils/curriculumColors';
 import { ScrollToTop } from './ScrollToTop';
@@ -7,13 +7,9 @@ import { VideoThumbnail } from './VideoThumbnail';
 import { getVimeoEmbedUrl, resolveVideoEmbedUrl } from '../utils/videoThumbnails';
 import type { Project } from '../types/project';
 import { formatDuration } from '../utils/formatters';
-import { getHashForResource } from '../utils/hashRouting';
 import { MacroformatoBadge } from './MacroformatoBadge';
 
 type RelatedCriterion = 'year' | 'bncc' | 'samr';
-
-// Compartilhamento de link suspenso a pedido da coordenação; o botão fica visível e inativo.
-const SHARE_LINK_ENABLED: boolean = false;
 
 function normalizeRelationValue(value?: string): string {
   return value?.trim().toLocaleLowerCase('pt-BR') ?? '';
@@ -37,7 +33,8 @@ interface ProjectDetailsPageProps {
 
 export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavorite, allProjects = [], onProjectClick, favorites = [] }: ProjectDetailsPageProps) {
   const [showVideo, setShowVideo] = useState(false);
-  const [copiedLink, setCopiedLink] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [showResourceModal, setShowResourceModal] = useState(false);
   const [relatedCriterion, setRelatedCriterion] = useState<RelatedCriterion>('year');
   const [videoEmbedUrl, setVideoEmbedUrl] = useState<string>();
   const [isPreparingVideo, setIsPreparingVideo] = useState(false);
@@ -46,6 +43,27 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [project.id]);
+
+  useEffect(() => {
+    setShowResourceModal(false);
+  }, [project.id]);
+
+  useEffect(() => {
+    if (!showResourceModal) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setShowResourceModal(false);
+    };
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [showResourceModal]);
 
   useEffect(() => {
     let cancelled = false;
@@ -112,21 +130,40 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
     samr: Boolean(normalizeRelationValue(project.samr)),
   };
 
-  const handleCopyLink = () => {
-    // Link real do ODA; sem ele, cai na URL compartilhável do recurso no acervo.
-    const acervoUrl = project.codigoODA
-      ? `${window.location.origin}${window.location.pathname}${getHashForResource(project.codigoODA)}`
-      : window.location.href;
-    const url = project.videoUrl || acervoUrl;
-    navigator.clipboard.writeText(url);
-    setCopiedLink(true);
-    setTimeout(() => setCopiedLink(false), 2000);
+  const handleCopyCode = async () => {
+    if (!project.codigoODA) return;
+    try {
+      await navigator.clipboard.writeText(project.codigoODA);
+      setCopiedCode(true);
+      setTimeout(() => setCopiedCode(false), 2000);
+    } catch {
+      setCopiedCode(false);
+    }
   };
 
   const handleToggleFavorite = () => {
     if (onToggleFavorite) {
       onToggleFavorite(project.id);
     }
+  };
+
+  /** Resolve o embed antes de abrir, para o modal já nascer com o conteúdo certo. */
+  const handleOpenResourceModal = async () => {
+    if (!project.videoUrl) return;
+
+    if (project.contentType === 'Audiovisual' && !videoEmbedUrl) {
+      setIsPreparingVideo(true);
+      try {
+        const resolvedUrl = await resolveVideoEmbedUrl(project.videoUrl);
+        setVideoEmbedUrl(resolvedUrl);
+      } catch {
+        setVideoEmbedUrl(project.videoUrl);
+      } finally {
+        setIsPreparingVideo(false);
+      }
+    }
+
+    setShowResourceModal(true);
   };
 
   const handlePlayVideo = async () => {
@@ -462,19 +499,17 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 pt-3">
                 {project.videoUrl && (
-                  <a
-                    href={project.videoUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
+                  <button
+                    onClick={() => void handleOpenResourceModal()}
                     className="flex-1 bg-primary px-4 py-3 rounded-[20px] text-white hover:bg-[#013668] transition-all flex items-center justify-center gap-2 font-semibold shadow-sm hover:shadow-md"
                   >
-                    <ExternalLink className="w-4 h-4" />
+                    <Maximize2 className="w-4 h-4" />
                     <span>
                       {project.contentType === 'Audiovisual'
-                        ? 'Abrir vídeo em outra janela'
-                        : 'Abrir em outra janela'}
+                        ? 'Assistir em tela ampliada'
+                        : 'Explorar recurso em tela ampliada'}
                     </span>
-                  </a>
+                  </button>
                 )}
                 <button 
                   onClick={handleToggleFavorite}
@@ -493,21 +528,21 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
               {/* Share Buttons */}
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
-                  onClick={SHARE_LINK_ENABLED ? handleCopyLink : undefined}
+                  onClick={handleCopyCode}
                   className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-[20px] transition-all font-semibold shadow-sm ${
-                    SHARE_LINK_ENABLED && project.videoUrl
+                    project.codigoODA
                       ? 'bg-white hover:bg-gray-50 border-gray-300 text-foreground hover:shadow-md'
                       : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
                   }`}
-                  disabled={!SHARE_LINK_ENABLED || !project.videoUrl}
+                  disabled={!project.codigoODA}
                   title={
-                    SHARE_LINK_ENABLED
-                      ? undefined
-                      : 'Compartilhamento de link temporariamente desativado'
+                    project.codigoODA
+                      ? 'Copia o código do recurso para você localizá-lo depois'
+                      : 'Este recurso não tem código cadastrado'
                   }
                 >
-                  <LinkIcon className="w-4 h-4" />
-                  <span>{copiedLink ? 'Link Copiado!' : 'Copiar Link'}</span>
+                  <Copy className="w-4 h-4" />
+                  <span>{copiedCode ? 'Código copiado!' : 'Copiar código'}</span>
                 </button>
                 {project.metodologiaPdfUrl ? (
                   <a
@@ -688,6 +723,56 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
           </div>
         )}
       </div>
+
+      {showResourceModal && project.videoUrl ? (
+        <div
+          className="fixed inset-0 z-50 flex flex-col bg-black/80 p-2 sm:p-6"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Recurso ampliado: ${project.title}`}
+          onClick={() => setShowResourceModal(false)}
+        >
+          <div
+            className="mx-auto flex h-full w-full max-w-[1400px] flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex shrink-0 items-center justify-between gap-3 border-b-2 border-gray-200 px-4 py-3 sm:px-6">
+              <div className="min-w-0">
+                <h2 className="truncate font-extrabold text-primary">{project.title}</h2>
+                {project.codigoODA ? (
+                  <p className="truncate text-sm text-muted-foreground">{project.codigoODA}</p>
+                ) : null}
+              </div>
+              <button
+                onClick={() => setShowResourceModal(false)}
+                className="flex shrink-0 items-center gap-2 rounded-[20px] border-2 border-gray-300 bg-white px-3 py-2 font-semibold text-foreground transition-all hover:bg-gray-50"
+              >
+                <X className="h-4 w-4" />
+                <span className="hidden sm:inline">Fechar</span>
+              </button>
+            </div>
+            <div className="relative flex-1 bg-black">
+              <iframe
+                src={
+                  project.contentType === 'Audiovisual'
+                    ? getVimeoEmbedUrl(videoEmbedUrl || project.videoUrl, { autoplay: true })
+                    : project.videoUrl
+                }
+                title={project.title}
+                className="h-full w-full"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+                allowFullScreen
+              />
+            </div>
+            <div className="shrink-0 border-t-2 border-gray-200 px-4 py-3 text-center sm:px-6">
+              <p className="text-sm text-muted-foreground">
+                Explore o recurso aqui. Para localizá-lo depois, copie o código
+                {project.codigoODA ? ` ${project.codigoODA}` : ''}.
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* Scroll to Top Button */}
       <ScrollToTop />
