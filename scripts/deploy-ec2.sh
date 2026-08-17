@@ -15,6 +15,13 @@ git log -1 --pretty='Commit atual: %h %s'
 echo "==> Reconstruindo os containers"
 docker compose up -d --build
 
+# O Caddyfile é montado no container, então editá-lo não recria o serviço nem
+# aplica a mudança. O reload valida a configuração e troca sem derrubar conexões.
+if docker compose ps --services --status running 2>/dev/null | grep -qx caddy; then
+  echo "==> Recarregando a configuração do Caddy"
+  docker compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile
+fi
+
 echo "==> Aguardando a API responder"
 for _ in $(seq 1 30); do
   if curl -fsS http://127.0.0.1/health >/dev/null 2>&1; then
