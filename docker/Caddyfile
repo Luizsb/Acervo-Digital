@@ -1,12 +1,23 @@
-# O Caddy emite e renova o certificado TLS por conta própria, sem cron nem
-# tarefa manual. O hostname vem do .env para trocar por um subdomínio próprio
-# depois sem mexer neste arquivo.
+# Endereço principal. A Let's Encrypt só emite certificado para endereço IP no
+# perfil "shortlived", com validade de 6 dias; o Caddy renova sozinho bem antes
+# de expirar, sem cron nem tarefa manual.
+https://13.217.4.132 {
+	tls {
+		issuer acme {
+			profile shortlived
+			# O desafio TLS-ALPN não é confiável para IP; o HTTP-01 resolve pela
+			# porta 80, que precisa continuar aberta por causa disso.
+			disable_tlsalpn_challenge
+		}
+	}
+	reverse_proxy web:80
+}
+
+# Nome alternativo com certificado comum de 90 dias. Serve de rede de segurança:
+# se a renovação curta do IP falhar, este endereço continua no ar.
 {$ACERVO_HOSTNAME} {
 	reverse_proxy web:80
 }
 
-# O IP continua atendendo em HTTP: é o endereço usado pela rotina diária do
-# Apps Script e serve de rede de segurança se a emissão do certificado falhar.
-http:// {
-	reverse_proxy web:80
-}
+# O Caddy cria sozinho o redirecionamento de HTTP para HTTPS dos dois endereços
+# acima, com status 308, que preserva o método e o corpo das requisições.

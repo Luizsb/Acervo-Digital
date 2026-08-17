@@ -268,13 +268,15 @@ O `caddy` no `docker-compose.yml` resolve isso emitindo e renovando o certificad
 ```env
 COMPOSE_PROFILES=https
 ACERVO_HOSTNAME=13-217-4-132.sslip.io
-CORS_ORIGIN=https://13-217-4-132.sslip.io
+CORS_ORIGIN=https://13.217.4.132
 WEB_BIND=127.0.0.1
 WEB_PORT=3000
 TRUST_PROXY=2
 ```
 
-O `ACERVO_HOSTNAME` precisa resolver para o IP da instância. O `sslip.io` faz isso sem cadastro: `13-217-4-132.sslip.io` já devolve `13.217.4.132`. Para um subdomínio próprio, aponte o DNS para o IP e troque só essa linha. Use **IP elástico**, senão o nome deixa de bater depois de um reinício.
+O endereço principal é o próprio IP, `https://13.217.4.132`, definido no `docker/Caddyfile`. A Let's Encrypt só emite certificado para endereço IP no perfil **`shortlived`**, com validade de 6 dias, e exige `disable_tlsalpn_challenge` para validar por HTTP-01 na porta 80. O Caddy renova bem antes de expirar; a contrapartida é que a janela de tolerância é curta, então **não bloqueie a porta 80**, senão a renovação falha e o site sai do ar.
+
+O `ACERVO_HOSTNAME` é o endereço reserva, com certificado comum de 90 dias, que continua no ar se a renovação curta do IP falhar. Ele precisa resolver para o IP da instância: `sslip.io` faz isso sem cadastro. Para um subdomínio próprio, aponte o DNS para o IP e troque essa linha. Use **IP elástico**, senão nem o nome nem o certificado do IP continuam válidos depois de um reinício.
 
 `TRUST_PROXY` é a quantidade de proxies na frente da API: `1` com apenas o nginx, `2` com o Caddy também. Se ficar menor que o real, o limitador de login enxerga o IP do proxy no lugar do usuário e um bloqueio atinge todos ao mesmo tempo.
 
