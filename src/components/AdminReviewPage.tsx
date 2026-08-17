@@ -6,6 +6,7 @@ import {
   ExternalLink,
   FileImage,
   FileSpreadsheet,
+  PlayCircle,
   RefreshCw,
   Search,
   Upload,
@@ -14,6 +15,7 @@ import type { AuthUser } from '../contexts/AuthContext';
 import {
   apiAdminImportFromGoogle,
   apiAdminImportSpreadsheet,
+  apiAdminImportViaAppsScript,
   apiAdminReview,
   apiAdminSpreadsheetJob,
   apiAdminSpreadsheetStatus,
@@ -212,6 +214,23 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
     }
   };
 
+  const handleImportViaAppsScript = async () => {
+    setSelectedFileName(sheetStatus?.appsScript?.label || 'Apps Script');
+    setImporting(true);
+    setImportError('');
+    setImportSummary(null);
+    setImportProgress(0);
+    setImportPhase('Acionando o script da planilha...');
+    try {
+      const started = await apiAdminImportViaAppsScript();
+      await pollSpreadsheetJob(started.jobId);
+    } catch (err: any) {
+      setImportError(err?.message || 'Falha ao acionar o Apps Script.');
+    } finally {
+      setImporting(false);
+    }
+  };
+
   const handleThumbCapture = async () => {
     setThumbError('');
     setThumbJob({
@@ -290,20 +309,33 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
               hidden
               onChange={(event) => void handleImport(event.target.files?.[0] || null)}
             />
-            <button
-              type="button"
-              className="admin-sheet-upload is-google"
-              disabled={importing || sheetStatus?.googleSheets?.configured === false}
-              onClick={() => void handleImportFromGoogle()}
-              title={
-                sheetStatus?.googleSheets?.hasServiceAccount
-                  ? 'Baixa a planilha com a conta de serviço configurada'
-                  : 'Baixa a planilha do Google (link público de leitura ou conta de serviço)'
-              }
-            >
-              <CloudDownload size={16} />
-              {importing ? 'Sincronizando...' : 'Atualizar do Google'}
-            </button>
+            {sheetStatus?.appsScript?.configured ? (
+              <button
+                type="button"
+                className="admin-sheet-upload is-google"
+                disabled={importing}
+                onClick={() => void handleImportViaAppsScript()}
+                title="Aciona o script da própria planilha: funciona mesmo com a planilha privada"
+              >
+                <PlayCircle size={16} />
+                {importing ? 'Sincronizando...' : 'Sincronizar agora'}
+              </button>
+            ) : (
+              <button
+                type="button"
+                className="admin-sheet-upload is-google"
+                disabled={importing || sheetStatus?.googleSheets?.configured === false}
+                onClick={() => void handleImportFromGoogle()}
+                title={
+                  sheetStatus?.googleSheets?.hasServiceAccount
+                    ? 'Baixa a planilha com a conta de serviço configurada'
+                    : 'Baixa a planilha do Google (exige link público de leitura ou conta de serviço)'
+                }
+              >
+                <CloudDownload size={16} />
+                {importing ? 'Sincronizando...' : 'Atualizar do Google'}
+              </button>
+            )}
             <button
               type="button"
               className="admin-sheet-upload is-ghost"

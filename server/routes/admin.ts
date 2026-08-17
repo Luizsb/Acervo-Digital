@@ -20,6 +20,7 @@ import {
   downloadGoogleSheetToWorkbook,
   getGoogleSheetsSource,
 } from '../lib/googleSheets';
+import { getAppsScriptSource, triggerAppsScriptSync } from '../lib/appsScriptSync';
 import {
   beginSpreadsheetImport,
   getActiveSpreadsheetJobId,
@@ -247,6 +248,40 @@ router.post('/spreadsheet/from-google', async (_req, res) => {
   }
 });
 
+router.post('/spreadsheet/from-apps-script', async (_req, res) => {
+  try {
+    if (getActiveSpreadsheetJobId()) {
+      return res.status(409).json({
+        error: 'Já existe uma sincronização em andamento. Aguarde a conclusão.',
+        jobId: getActiveSpreadsheetJobId(),
+      });
+    }
+
+    if (!getAppsScriptSource().configured) {
+      return res.status(400).json({
+        error: 'Configure APPS_SCRIPT_SYNC_URL no .env da API (URL do App da Web do script).',
+      });
+    }
+
+    const triggered = await triggerAppsScriptSync();
+    const jobId = triggered.jobId || getActiveSpreadsheetJobId();
+    if (!jobId) {
+      return res.status(502).json({
+        error: 'O Apps Script foi acionado, mas não retornou o identificador da sincronização.',
+      });
+    }
+
+    res.status(202).json({
+      ok: true,
+      jobId,
+      message: 'Apps Script acionado. Planilha recebida e sincronização iniciada.',
+    });
+  } catch (error: any) {
+    console.error('Admin Apps Script sync error:', error);
+    res.status(502).json({ error: error.message || 'Erro ao acionar o Apps Script.' });
+  }
+});
+
 router.get('/spreadsheet/jobs/:jobId', (req, res) => {
   const job = getSpreadsheetJob(req.params.jobId);
   if (!job) return res.status(404).json({ error: 'Sincronização não encontrada ou expirada.' });
@@ -313,6 +348,7 @@ router.get('/spreadsheet/status', async (_req, res) => {
       ).length,
       missingThumbs: missingThumbs.slice(0, 200),
       googleSheets: getGoogleSheetsSource(),
+      appsScript: getAppsScriptSource(),
       lastSync,
       autoSyncEnabled: Boolean((process.env.SPREADSHEET_SYNC_TOKEN || '').trim()),
     });

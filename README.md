@@ -69,26 +69,28 @@ São mais de mil imagens. Guardá-las como `BYTEA` deixaria o banco pesado. O ba
 
 ### Atualizar o catálogo quando a planilha oficial mudar
 
-**Opção A — Google Sheets (recomendado):** no painel admin, use **Atualizar do Google**.
-A API baixa o `.xlsx` da planilha do Drive e importa no Postgres — sem download manual e sem rebuild.
+**Opção A — Apps Script (recomendado):** funciona com a planilha privada, porque o script
+roda com a conta do dono da planilha. Serve para a rotina diária e para o botão
+**Sincronizar agora** do painel admin.
 
-1. Defina no `.env` da EC2: `GOOGLE_SHEETS_ID=1fAQaH8oG1UH8GMfN2xlqWULKVJ2EYvf3JGxYD2o00yk`
-2. Compartilhamento (escolha um):
-   - **Mais simples:** planilha com “Qualquer pessoa com o link — Leitor”
-   - **Corporativo:** conta de serviço Google + compartilhe a planilha com o e-mail dela (Leitor) e configure `GOOGLE_SERVICE_ACCOUNT_*` no `.env`
-3. Reinicie só a API (`docker compose up -d`) se mudou o `.env`, abra Administração e clique em **Atualizar do Google**.
-
-**Opção B — Apps Script (rotina diária):** a própria planilha dispara a sync uma vez por dia.
-
-1. No `.env` da API: `SPREADSHEET_SYNC_TOKEN=` (gere com `openssl rand -hex 32`)
-2. Abra a planilha → Extensões → Apps Script → cole `scripts/apps-script/sync-acervo.gs`
-3. Ajuste `ACERVO_API_BASE` e `SYNC_TOKEN`, autorize e crie um **acionador diário** em `syncAcervoDaily`
-4. Endpoints: `POST /api/sync/spreadsheet` (responde `202` com `jobId`) e `GET /api/sync/jobs/:jobId` — ambos com header `X-Acervo-Sync-Token`
-5. Capas: por padrão a sync diária já captura as capas elegíveis (até `AUTO_CAPTURE_THUMBS_LIMIT`, 50 por execução). Use `AUTO_CAPTURE_THUMBS_AFTER_SYNC=false` para deixar a captura só sob demanda no painel
+1. No `.env` da API: `SPREADSHEET_SYNC_TOKEN=` (`openssl rand -hex 32`) e `APPS_SCRIPT_SYNC_SECRET=` (`openssl rand -hex 16`)
+2. Planilha → Extensões → Apps Script → cole `scripts/apps-script/sync-acervo.gs`
+3. Ajuste `ACERVO_API_BASE`, `SYNC_TOKEN` e `WEB_APP_SECRET`, autorize rodando `testSyncNow`
+4. Acionadores → novo acionador diário em `syncAcervoDaily`
+5. Implantar → Nova implantação → **App da Web** (executar como: eu; acesso: qualquer pessoa) → copie a URL `/exec` para `APPS_SCRIPT_SYNC_URL` no `.env` e rode `docker compose up -d api`
+6. Endpoints usados: `POST /api/sync/spreadsheet` (responde `202` com `jobId`) e `GET /api/sync/jobs/:jobId`, com header `X-Acervo-Sync-Token`
+7. Capas: por padrão a sync já captura as elegíveis (até `AUTO_CAPTURE_THUMBS_LIMIT`, 50 por execução). Use `AUTO_CAPTURE_THUMBS_AFTER_SYNC=false` para deixar só sob demanda
 
 A planilha tem ~5 MB, então o Nginx do container web libera `client_max_body_size 30m`. Se aparecer `413 Request Entity Too Large`, o container web está com a config antiga: rode `docker compose up --build -d web`.
 
-Opcional: implantar o script como **App da Web** só para teste manual (`doGet`). A rotina diária usa o acionador de tempo, não precisa de URL pública.
+**Opção B — Google Sheets direto:** o botão **Atualizar do Google** aparece quando
+`APPS_SCRIPT_SYNC_URL` não está configurado. Exige planilha acessível pela API.
+
+1. `.env`: `GOOGLE_SHEETS_ID=1fAQaH8oG1UH8GMfN2xlqWULKVJ2EYvf3JGxYD2o00yk`
+2. Compartilhamento (escolha um):
+   - planilha com “Qualquer pessoa com o link — Leitor”
+   - conta de serviço Google + planilha compartilhada com o e-mail dela (Leitor) e `GOOGLE_SERVICE_ACCOUNT_*` no `.env`
+3. `docker compose up -d api` se mudou o `.env`, abra Administração e clique em **Atualizar do Google**.
 
 **Opção C — arquivo local:** substitua `public/Categorização_Recursos Digitais_Terceiros.xlsx` e rode `npm run import:categorizacao`, use **Substituir arquivo** no admin, ou `docker compose up --build -d`.
 

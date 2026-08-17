@@ -12,6 +12,9 @@ import { MacroformatoBadge } from './MacroformatoBadge';
 
 type RelatedCriterion = 'year' | 'bncc' | 'samr';
 
+// Compartilhamento de link suspenso a pedido da coordenação; o botão fica visível e inativo.
+const SHARE_LINK_ENABLED: boolean = false;
+
 function normalizeRelationValue(value?: string): string {
   return value?.trim().toLocaleLowerCase('pt-BR') ?? '';
 }
@@ -490,13 +493,18 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
               {/* Share Buttons */}
               <div className="flex flex-col sm:flex-row gap-3">
                 <button
-                  onClick={handleCopyLink}
+                  onClick={SHARE_LINK_ENABLED ? handleCopyLink : undefined}
                   className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 border-2 rounded-[20px] transition-all font-semibold shadow-sm ${
-                    project.videoUrl
+                    SHARE_LINK_ENABLED && project.videoUrl
                       ? 'bg-white hover:bg-gray-50 border-gray-300 text-foreground hover:shadow-md'
                       : 'bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed'
                   }`}
-                  disabled={!project.videoUrl}
+                  disabled={!SHARE_LINK_ENABLED || !project.videoUrl}
+                  title={
+                    SHARE_LINK_ENABLED
+                      ? undefined
+                      : 'Compartilhamento de link temporariamente desativado'
+                  }
                 >
                   <LinkIcon className="w-4 h-4" />
                   <span>{copiedLink ? 'Link Copiado!' : 'Copiar Link'}</span>

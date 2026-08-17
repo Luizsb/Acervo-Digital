@@ -267,6 +267,10 @@ export interface SpreadsheetStatusResponse {
     hasServiceAccount: boolean;
     sourceLabel: string;
   };
+  appsScript?: {
+    configured: boolean;
+    label: string;
+  };
   lastSync?: {
     at: string;
     source: 'upload' | 'google' | 'apps-script' | 'seed' | null;
@@ -314,6 +318,18 @@ export async function apiAdminImportFromGoogle(): Promise<AsyncJobStartResponse>
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Erro ao sincronizar do Google Sheets.');
+  return data;
+}
+
+export async function apiAdminImportViaAppsScript(): Promise<AsyncJobStartResponse> {
+  const token = getAuthToken();
+  if (!token) throw new Error('Não autorizado.');
+  const res = await fetch(`${API_BASE_URL}/admin/spreadsheet/from-apps-script`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Erro ao acionar o Apps Script.');
   return data;
 }
 

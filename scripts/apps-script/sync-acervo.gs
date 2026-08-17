@@ -4,21 +4,28 @@
  * Como usar:
  * 1. Abra a planilha no Google Sheets → Extensões → Apps Script
  * 2. Cole este arquivo (Code.gs)
- * 3. Ajuste ACERVO_API_BASE e SYNC_TOKEN (mesmo valor de SPREADSHEET_SYNC_TOKEN no .env)
+ * 3. Ajuste ACERVO_API_BASE, SYNC_TOKEN (= SPREADSHEET_SYNC_TOKEN do .env) e
+ *    WEB_APP_SECRET (= APPS_SCRIPT_SYNC_SECRET do .env)
  * 4. Autorize o script (primeira execução de testSyncNow)
  * 5. Acionadores (ícone de relógio) → Adicionar acionador:
  *      - Função: syncAcervoDaily
  *      - Fonte do evento: Baseado em tempo
  *      - Tipo: Temporizador diário (ex.: entre 6h e 7h)
- *
- * Opcional — App da Web: Implantar → Nova implantação → Tipo "App da Web"
- * serve para disparar um teste via navegador (doGet). A rotina diária NÃO depende disso.
+ * 6. Implantar → Nova implantação → "App da Web":
+ *      - Executar como: eu (dono da planilha)
+ *      - Quem pode acessar: qualquer pessoa
+ *    Copie a URL /exec para APPS_SCRIPT_SYNC_URL no .env da API. É ela que o botão
+ *    "Sincronizar agora" do painel admin usa — funciona mesmo com planilha privada.
  */
 
 var ACERVO_API_BASE = 'http://13.217.4.132/api';
 var SYNC_TOKEN = 'COLE_AQUI_O_MESMO_SPREADSHEET_SYNC_TOKEN_DO_ENV';
+// Segredo do App da Web (mesmo valor de APPS_SCRIPT_SYNC_SECRET no .env da API).
+// Deixe vazio para não exigir token na URL do App da Web.
+var WEB_APP_SECRET = 'COLE_AQUI_O_MESMO_APPS_SCRIPT_SYNC_SECRET_DO_ENV';
 
-function syncAcervoDaily() {
+/** Exporta a planilha e envia para a API. Retorna o jobId sem esperar a importação. */
+function startAcervoSync_() {
   var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   var xlsx = exportSpreadsheetAsXlsx_(spreadsheet.getId());
 
@@ -41,7 +48,11 @@ function syncAcervoDaily() {
     throw new Error('Falha ao enviar a planilha ao Acervo: HTTP ' + code + ' ' + body);
   }
 
-  var started = JSON.parse(body);
+  return JSON.parse(body);
+}
+
+function syncAcervoDaily() {
+  var started = startAcervoSync_();
   return waitForJob_(started.jobId);
 }
 
@@ -97,20 +108,33 @@ function testSyncNow() {
 }
 
 /**
- * Opcional: se implantar como App da Web, GET na URL dispara a sync
- * (útil para teste; proteja o token — não compartilhe a URL publicamente).
+ * App da Web: é o que o botão "Sincronizar agora" do painel admin chama.
+ * Com `?mode=start` (usado pela API) devolve o jobId na hora; sem isso,
+ * espera a importação terminar para facilitar um teste manual no navegador.
  */
-function doGet() {
+function doGet(event) {
   try {
-    var result = syncAcervoDaily();
-    return ContentService.createTextOutput(
-      JSON.stringify({ ok: true, result: result }, null, 2)
-    ).setMimeType(ContentService.MimeType.JSON);
+    var params = (event && event.parameter) || {};
+    if (WEB_APP_SECRET && params.token !== WEB_APP_SECRET) {
+      return jsonOutput_({ ok: false, error: 'Token do App da Web inválido.' });
+    }
+
+    var started = startAcervoSync_();
+    if (params.mode === 'start') {
+      return jsonOutput_({ ok: true, jobId: started.jobId });
+    }
+
+    var job = waitForJob_(started.jobId);
+    return jsonOutput_({ ok: true, jobId: started.jobId, job: job });
   } catch (error) {
-    return ContentService.createTextOutput(
-      JSON.stringify({ ok: false, error: String(error) }, null, 2)
-    ).setMimeType(ContentService.MimeType.JSON);
+    return jsonOutput_({ ok: false, error: String(error) });
   }
+}
+
+function jsonOutput_(payload) {
+  return ContentService.createTextOutput(JSON.stringify(payload, null, 2)).setMimeType(
+    ContentService.MimeType.JSON
+  );
 }
 
 function exportSpreadsheetAsXlsx_(spreadsheetId) {
