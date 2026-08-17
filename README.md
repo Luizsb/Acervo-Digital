@@ -78,7 +78,16 @@ A API baixa o `.xlsx` da planilha do Drive e importa no Postgres — sem downloa
    - **Corporativo:** conta de serviço Google + compartilhe a planilha com o e-mail dela (Leitor) e configure `GOOGLE_SERVICE_ACCOUNT_*` no `.env`
 3. Reinicie só a API (`docker compose up -d`) se mudou o `.env`, abra Administração e clique em **Atualizar do Google**.
 
-**Opção B — arquivo local:** substitua `public/Categorização_Recursos Digitais_Terceiros.xlsx` e rode `npm run import:categorizacao`, use **Substituir arquivo** no admin, ou `docker compose up --build -d`.
+**Opção B — Apps Script (rotina diária):** a própria planilha dispara a sync uma vez por dia.
+
+1. No `.env` da API: `SPREADSHEET_SYNC_TOKEN=` (gere com `openssl rand -hex 32`)
+2. Abra a planilha → Extensões → Apps Script → cole `scripts/apps-script/sync-acervo.gs`
+3. Ajuste `ACERVO_API_BASE` e `SYNC_TOKEN`, autorize e crie um **acionador diário** em `syncAcervoDaily`
+4. Endpoint: `POST /api/sync/spreadsheet` com header `X-Acervo-Sync-Token`
+
+Opcional: implantar o script como **App da Web** só para teste manual (`doGet`). A rotina diária usa o acionador de tempo, não precisa de URL pública.
+
+**Opção C — arquivo local:** substitua `public/Categorização_Recursos Digitais_Terceiros.xlsx` e rode `npm run import:categorizacao`, use **Substituir arquivo** no admin, ou `docker compose up --build -d`.
 
 O feedback (tela admin ou terminal) mostra novos, atualizados, desativados e recursos sem thumb.
 

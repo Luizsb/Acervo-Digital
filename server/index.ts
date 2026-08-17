@@ -9,6 +9,7 @@ import adminRoutes from './routes/admin';
 import bnccRoutes from './routes/bncc';
 import favoritesRoutes from './routes/favorites';
 import odasRoutes from './routes/odas';
+import syncRoutes from './routes/sync';
 
 dotenv.config();
 
@@ -65,6 +66,7 @@ app.use('/api', apiLimiter);
 
 app.use('/api/odas', odasRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/sync', syncRoutes);
 app.use('/api/bncc', bnccRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/users/me/favorites', favoritesRoutes);

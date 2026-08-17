@@ -14,27 +14,19 @@ import {
   REVIEW_GROUP_ORDER,
   type ReviewGroup,
 } from '../lib/catalogVisibility';
-import { findWorkbook, importCategorizacao } from '../scripts/import-categorizacao';
+import { findWorkbook } from '../scripts/import-categorizacao';
 import { captureMissingThumbs } from '../scripts/capture-thumbs';
 import {
   downloadGoogleSheetToWorkbook,
   getGoogleSheetsSource,
 } from '../lib/googleSheets';
+import {
+  beginSpreadsheetImport,
+  getActiveSpreadsheetJobId,
+  getSpreadsheetJob,
+} from '../lib/spreadsheetSync';
 
 const router = express.Router();
-type SpreadsheetJob = {
-  id: string;
-  status: 'processing' | 'completed' | 'failed';
-  phase: 'reading' | 'importing' | 'finishing' | 'completed';
-  current: number;
-  total: number;
-  percent: number;
-  fileName: string;
-  summary?: Record<string, unknown>;
-  error?: string;
-};
-const spreadsheetJobs = new Map<string, SpreadsheetJob>();
-let activeSpreadsheetJobId: string | null = null;
 type ThumbJob = {
   id: string;
   status: 'processing' | 'completed' | 'failed';
@@ -51,81 +43,6 @@ type ThumbJob = {
 };
 const thumbJobs = new Map<string, ThumbJob>();
 let activeThumbJobId: string | null = null;
-
-function publicImportSummary(summary: Awaited<ReturnType<typeof importCategorizacao>>) {
-  return {
-    processed: summary.processed,
-    created: summary.created,
-    updated: summary.updated,
-    unchanged: summary.unchanged,
-    reactivated: summary.reactivated,
-    deactivated: summary.deactivated,
-    skipped: summary.skipped,
-    errors: summary.errors,
-    totalActive: summary.totalActive,
-    totalAudiovisual: summary.totalAudiovisual,
-    totalOed: summary.totalOed,
-    missingThumbsTotal: summary.missingThumbs.length,
-    missingThumbsPublic: summary.missingThumbsPublic,
-    missingThumbs: summary.missingThumbs
-      .filter((item) => isVisibleInCatalog(item.status, item.linkRepositorio))
-      .slice(0, 50),
-  };
-}
-
-function beginSpreadsheetImport(
-  fileName: string,
-  targetPath: string,
-  hooks?: {
-    onSuccess?: () => void;
-    onFailure?: () => void;
-  }
-): SpreadsheetJob {
-  const jobId = randomUUID();
-  const job: SpreadsheetJob = {
-    id: jobId,
-    status: 'processing',
-    phase: 'reading',
-    current: 0,
-    total: 1,
-    percent: 1,
-    fileName,
-  };
-  spreadsheetJobs.set(jobId, job);
-  activeSpreadsheetJobId = jobId;
-
-  void importCategorizacao({
-    filePath: targetPath,
-    log: true,
-    onProgress: ({ phase, current, total }) => {
-      job.phase = phase;
-      job.current = current;
-      job.total = total;
-      const raw = total > 0 ? Math.round((current / total) * 100) : 0;
-      job.percent =
-        phase === 'reading' ? 2 : phase === 'finishing' ? 99 : Math.max(3, Math.min(98, raw));
-    },
-  })
-    .then((summary) => {
-      hooks?.onSuccess?.();
-      job.status = 'completed';
-      job.phase = 'completed';
-      job.percent = 100;
-      job.summary = publicImportSummary(summary);
-    })
-    .catch((error: unknown) => {
-      hooks?.onFailure?.();
-      job.status = 'failed';
-      job.error = error instanceof Error ? error.message : 'Erro ao sincronizar a planilha.';
-      console.error('Admin spreadsheet import error:', error);
-    })
-    .finally(() => {
-      activeSpreadsheetJobId = null;
-      setTimeout(() => spreadsheetJobs.delete(jobId), 30 * 60 * 1000);
-    });
-
-  return job;
-}
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 20 * 1024 * 1024, files: 1 },
@@ -228,10 +145,10 @@ router.post(
   },
   async (req: AuthRequest, res) => {
     try {
-      if (activeSpreadsheetJobId) {
+      if (getActiveSpreadsheetJobId()) {
         return res.status(409).json({
           error: 'Já existe uma sincronização em andamento. Aguarde a conclusão.',
-          jobId: activeSpreadsheetJobId,
+          jobId: getActiveSpreadsheetJobId(),
         });
       }
       const file = req.file;
@@ -269,10 +186,10 @@ router.post(
 
 router.post('/spreadsheet/from-google', async (_req, res) => {
   try {
-    if (activeSpreadsheetJobId) {
+    if (getActiveSpreadsheetJobId()) {
       return res.status(409).json({
         error: 'Já existe uma sincronização em andamento. Aguarde a conclusão.',
-        jobId: activeSpreadsheetJobId,
+        jobId: getActiveSpreadsheetJobId(),
       });
     }
 
@@ -326,7 +243,7 @@ router.post('/spreadsheet/from-google', async (_req, res) => {
 });
 
 router.get('/spreadsheet/jobs/:jobId', (req, res) => {
-  const job = spreadsheetJobs.get(req.params.jobId);
+  const job = getSpreadsheetJob(req.params.jobId);
   if (!job) return res.status(404).json({ error: 'Sincronização não encontrada ou expirada.' });
   res.json(job);
 });
