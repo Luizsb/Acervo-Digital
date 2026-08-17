@@ -20,8 +20,6 @@ import {
   downloadGoogleSheetToWorkbook,
   getGoogleSheetsSource,
 } from '../lib/googleSheets';
-import { getAppsScriptSource, triggerAppsScriptSync } from '../lib/appsScriptSync';
-import { getSyncRequest, requestSync } from '../lib/syncRequests';
 import {
   beginSpreadsheetImport,
   getActiveSpreadsheetJobId,
@@ -249,66 +247,6 @@ router.post('/spreadsheet/from-google', async (_req, res) => {
   }
 });
 
-router.post('/spreadsheet/from-apps-script', async (req: AuthRequest, res) => {
-  if (getActiveSpreadsheetJobId()) {
-    return res.status(409).json({
-      error: 'Já existe uma sincronização em andamento. Aguarde a conclusão.',
-      jobId: getActiveSpreadsheetJobId(),
-    });
-  }
-
-  const syncTokenConfigured = Boolean((process.env.SPREADSHEET_SYNC_TOKEN || '').trim());
-  if (!getAppsScriptSource().configured && !syncTokenConfigured) {
-    return res.status(400).json({
-      error:
-        'Configure SPREADSHEET_SYNC_TOKEN (e opcionalmente APPS_SCRIPT_SYNC_URL) no .env da API.',
-    });
-  }
-
-  // Caminho direto: só funciona se o App da Web aceitar chamadas sem login.
-  if (getAppsScriptSource().configured) {
-    try {
-      const triggered = await triggerAppsScriptSync();
-      const jobId = triggered.jobId || getActiveSpreadsheetJobId();
-      if (jobId) {
-        return res.status(202).json({
-          ok: true,
-          mode: 'direct',
-          jobId,
-          message: 'Apps Script acionado. Sincronização iniciada.',
-        });
-      }
-    } catch (error: any) {
-      console.warn(
-        'Apps Script direto indisponível, enfileirando pedido:',
-        error?.message || error
-      );
-    }
-  }
-
-  if (!syncTokenConfigured) {
-    return res.status(502).json({
-      error:
-        'Não foi possível acionar o Apps Script e a fila está indisponível: defina SPREADSHEET_SYNC_TOKEN no .env da API.',
-    });
-  }
-
-  // Contas Workspace bloqueiam App da Web público: aqui o script busca o pedido.
-  const request = requestSync(req.user?.email || null);
-  res.status(202).json({
-    ok: true,
-    mode: 'queued',
-    requestId: request.id,
-    requestedAt: request.requestedAt,
-    message:
-      'Pedido registrado. O script da planilha envia a planilha na próxima verificação (até 5 minutos).',
-  });
-});
-
-router.get('/spreadsheet/sync-request', (_req, res) => {
-  res.json({ request: getSyncRequest() });
-});
-
 router.get('/spreadsheet/jobs/:jobId', (req, res) => {
   const job = getSpreadsheetJob(req.params.jobId);
   if (!job) return res.status(404).json({ error: 'Sincronização não encontrada ou expirada.' });
@@ -375,8 +313,6 @@ router.get('/spreadsheet/status', async (_req, res) => {
       ).length,
       missingThumbs: missingThumbs.slice(0, 200),
       googleSheets: getGoogleSheetsSource(),
-      appsScript: getAppsScriptSource(),
-      syncRequest: getSyncRequest(),
       lastSync,
       autoSyncEnabled: Boolean((process.env.SPREADSHEET_SYNC_TOKEN || '').trim()),
     });

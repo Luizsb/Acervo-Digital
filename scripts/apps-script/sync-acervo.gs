@@ -6,16 +6,14 @@
  * 2. Cole este arquivo (Code.gs)
  * 3. Em Configurações do projeto → Propriedades do script, cadastre:
  *      - SYNC_TOKEN: mesmo valor de SPREADSHEET_SYNC_TOKEN da EC2
- *      - WEB_APP_SECRET: só se você for implantar o App da Web (opcional)
  * 4. Autorize o script (primeira execução de testSyncNow)
  * 5. Acionadores (ícone de relógio) → Adicionar acionador:
- *      - syncAcervoDaily: baseado em tempo, temporizador diário (ex.: 6h às 7h)
- *      - checkAcervoSyncRequests: baseado em tempo, por minuto, a cada 5 minutos
- *        (é o que faz o botão "Sincronizar agora" do painel admin funcionar)
+ *      - Função: syncAcervoDaily
+ *      - Fonte do evento: Baseado em tempo
+ *      - Tipo: Temporizador diário (recomendado) ou semanal
  *
- * O App da Web é opcional e só funciona se o Workspace permitir acesso "qualquer
- * pessoa". Em domínios corporativos que bloqueiam isso, os acionadores acima já
- * cobrem tanto a rotina diária quanto a sincronização sob demanda.
+ * Não é necessário implantar como App da Web. A planilha continua privada e o
+ * acionador executa com as permissões da conta que o criou.
  */
 
 var ACERVO_API_BASE = 'http://13.217.4.132/api';
@@ -36,23 +34,18 @@ function getAcervoConfig_() {
 
   return {
     syncToken: syncToken,
-    // Usado apenas pelo App da Web opcional.
-    webAppSecret: properties.getProperty('WEB_APP_SECRET') || '',
   };
 }
 
 /** Exporta a planilha e envia para a API. Retorna o jobId sem esperar a importação. */
-function startAcervoSync_(requestId) {
+function startAcervoSync_() {
   var config = getAcervoConfig_();
   var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   var xlsx = exportSpreadsheetAsXlsx_(spreadsheet.getId());
 
-  var payload = { spreadsheet: xlsx };
-  if (requestId) payload.requestId = requestId;
-
   var response = UrlFetchApp.fetch(ACERVO_API_BASE + '/sync/spreadsheet', {
     method: 'post',
-    payload: payload,
+    payload: { spreadsheet: xlsx },
     headers: {
       'X-Acervo-Sync-Token': config.syncToken,
     },
@@ -70,34 +63,9 @@ function startAcervoSync_(requestId) {
   return JSON.parse(body);
 }
 
-/** Acionador diário: envia a planilha sem depender de pedido do painel. */
+/** Acionador agendado: exporta e sincroniza a planilha. */
 function syncAcervoDaily() {
   var started = startAcervoSync_();
-  return waitForJob_(started.jobId);
-}
-
-/**
- * Acionador curto (a cada 5 minutos): atende o botão "Sincronizar agora" do painel.
- * Como o Workspace não permite App da Web público, é a planilha que pergunta à API
- * se algum admin pediu uma sincronização.
- */
-function checkAcervoSyncRequests() {
-  var config = getAcervoConfig_();
-  var response = UrlFetchApp.fetch(ACERVO_API_BASE + '/sync/pending', {
-    headers: { 'X-Acervo-Sync-Token': config.syncToken },
-    muteHttpExceptions: true,
-  });
-
-  if (response.getResponseCode() !== 200) {
-    Logger.log('Não foi possível consultar pedidos: HTTP ' + response.getResponseCode());
-    return null;
-  }
-
-  var pending = JSON.parse(response.getContentText());
-  if (!pending.pending) return null;
-
-  Logger.log('Pedido de sincronização recebido do painel (' + pending.requestId + ').');
-  var started = startAcervoSync_(pending.requestId);
   return waitForJob_(started.jobId);
 }
 
@@ -151,37 +119,6 @@ function waitForJob_(jobId) {
 function testSyncNow() {
   var result = syncAcervoDaily();
   Logger.log(result);
-}
-
-/**
- * App da Web: é o que o botão "Sincronizar agora" do painel admin chama.
- * Com `?mode=start` (usado pela API) devolve o jobId na hora; sem isso,
- * espera a importação terminar para facilitar um teste manual no navegador.
- */
-function doGet(event) {
-  try {
-    var config = getAcervoConfig_();
-    var params = (event && event.parameter) || {};
-    if (!config.webAppSecret || params.token !== config.webAppSecret) {
-      return jsonOutput_({ ok: false, error: 'Token do App da Web inválido.' });
-    }
-
-    var started = startAcervoSync_();
-    if (params.mode === 'start') {
-      return jsonOutput_({ ok: true, jobId: started.jobId });
-    }
-
-    var job = waitForJob_(started.jobId);
-    return jsonOutput_({ ok: true, jobId: started.jobId, job: job });
-  } catch (error) {
-    return jsonOutput_({ ok: false, error: String(error) });
-  }
-}
-
-function jsonOutput_(payload) {
-  return ContentService.createTextOutput(JSON.stringify(payload, null, 2)).setMimeType(
-    ContentService.MimeType.JSON
-  );
 }
 
 function exportSpreadsheetAsXlsx_(spreadsheetId) {

@@ -69,38 +69,24 @@ São mais de mil imagens. Guardá-las como `BYTEA` deixaria o banco pesado. O ba
 
 ### Atualizar o catálogo quando a planilha oficial mudar
 
-**Opção A — Apps Script (recomendado):** funciona com a planilha privada, porque o script
-roda com a conta do dono da planilha. Serve para a rotina diária e para o botão
-**Sincronizar agora** do painel admin.
+**Opção A — Apps Script agendado (recomendado):** funciona com a planilha privada,
+porque o script roda com a conta que criou o acionador.
 
-1. No `.env` da API: `SPREADSHEET_SYNC_TOKEN=` (`openssl rand -hex 32`) e `APPS_SCRIPT_SYNC_SECRET=` (`openssl rand -hex 16`)
+1. No `.env` da API: `SPREADSHEET_SYNC_TOKEN=` (`openssl rand -hex 32`)
 2. Planilha → Extensões → Apps Script → cole `scripts/apps-script/sync-acervo.gs`
-3. O endereço da API já está preenchido no script. Em **Configurações do projeto → Propriedades do script**, cadastre `SYNC_TOKEN` e `WEB_APP_SECRET` com os mesmos valores do `.env`; depois autorize rodando `testSyncNow`
-4. Acionadores → dois acionadores baseados em tempo:
-   - `syncAcervoDaily`: temporizador diário (ex.: 6h às 7h)
-   - `checkAcervoSyncRequests`: a cada 5 minutos — é o que atende o botão **Sincronizar agora** do painel
-5. Endpoints usados: `POST /api/sync/spreadsheet` (responde `202` com `jobId`), `GET /api/sync/pending` e `GET /api/sync/jobs/:jobId`, com header `X-Acervo-Sync-Token`
-6. Capas: por padrão a sync já captura as elegíveis (até `AUTO_CAPTURE_THUMBS_LIMIT`, 50 por execução). Use `AUTO_CAPTURE_THUMBS_AFTER_SYNC=false` para deixar só sob demanda
+3. O endereço da API já está preenchido. Em **Configurações do projeto → Propriedades do script**, cadastre apenas `SYNC_TOKEN` com o mesmo valor do `.env`; depois autorize rodando `testSyncNow`
+4. Acionadores → novo acionador para `syncAcervoDaily`, baseado em tempo, temporizador diário (recomendado) ou semanal
+5. Endpoints usados: `POST /api/sync/spreadsheet` (responde `202` com `jobId`) e `GET /api/sync/jobs/:jobId`, com header `X-Acervo-Sync-Token`
+6. Capas: por padrão a sincronização captura as elegíveis (até `AUTO_CAPTURE_THUMBS_LIMIT`, 50 por execução). Use `AUTO_CAPTURE_THUMBS_AFTER_SYNC=false` para deixar só sob demanda
 
-O botão do painel não chama o Google diretamente: ele registra um pedido que a planilha
-busca no acionador de 5 minutos. Esse desenho evita a exigência de App da Web público,
-que contas Workspace normalmente bloqueiam (só oferecem “Somente eu” ou “Qualquer pessoa
-em <domínio>”). O App da Web e o `APPS_SCRIPT_SYNC_URL` seguem suportados como atalho
-opcional para quem pode liberar acesso anônimo; se a chamada direta falhar, a API cai
-automaticamente na fila.
+Não é necessário implantar o Apps Script como App da Web. No painel admin ficam o
+upload manual de `.xlsx` e a data/origem da última sincronização concluída.
 
 A planilha tem ~5 MB, então o Nginx do container web libera `client_max_body_size 30m`. Se aparecer `413 Request Entity Too Large`, o container web está com a config antiga: rode `docker compose up --build -d web`.
 
-**Opção B — Google Sheets direto:** o botão **Atualizar do Google** aparece quando
-`APPS_SCRIPT_SYNC_URL` não está configurado. Exige planilha acessível pela API.
-
-1. `.env`: `GOOGLE_SHEETS_ID=1fAQaH8oG1UH8GMfN2xlqWULKVJ2EYvf3JGxYD2o00yk`
-2. Compartilhamento (escolha um):
-   - planilha com “Qualquer pessoa com o link — Leitor”
-   - conta de serviço Google + planilha compartilhada com o e-mail dela (Leitor) e `GOOGLE_SERVICE_ACCOUNT_*` no `.env`
-3. `docker compose up -d api` se mudou o `.env`, abra Administração e clique em **Atualizar do Google**.
-
-**Opção C — arquivo local:** substitua `public/Categorização_Recursos Digitais_Terceiros.xlsx` e rode `npm run import:categorizacao`, use **Substituir arquivo** no admin, ou `docker compose up --build -d`.
+**Opção B — arquivo manual:** use **Enviar arquivo** no admin, substitua
+`public/Categorização_Recursos Digitais_Terceiros.xlsx` e rode
+`npm run import:categorizacao`, ou execute `docker compose up --build -d`.
 
 O feedback (tela admin ou terminal) mostra novos, atualizados, desativados e recursos sem thumb.
 

@@ -2,25 +2,20 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
   ClipboardList,
-  CloudDownload,
   ExternalLink,
   FileImage,
   FileSpreadsheet,
-  PlayCircle,
   RefreshCw,
   Search,
   Upload,
 } from 'lucide-react';
 import type { AuthUser } from '../contexts/AuthContext';
 import {
-  apiAdminImportFromGoogle,
   apiAdminImportSpreadsheet,
-  apiAdminImportViaAppsScript,
   apiAdminReview,
   apiAdminSpreadsheetJob,
   apiAdminSpreadsheetStatus,
   apiAdminStartThumbCapture,
-  apiAdminSyncRequest,
   apiAdminThumbJob,
   type AdminReviewItem,
   type ReviewGroup,
@@ -198,61 +193,6 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
     }
   };
 
-  const handleImportFromGoogle = async () => {
-    setSelectedFileName(sheetStatus?.googleSheets?.sourceLabel || 'Google Sheets');
-    setImporting(true);
-    setImportError('');
-    setImportSummary(null);
-    setImportProgress(0);
-    setImportPhase('Baixando a planilha do Google Sheets...');
-    try {
-      const started = await apiAdminImportFromGoogle();
-      await pollSpreadsheetJob(started.jobId);
-    } catch (err: any) {
-      setImportError(err?.message || 'Falha ao sincronizar do Google Sheets.');
-    } finally {
-      setImporting(false);
-    }
-  };
-
-  /** Espera o script da planilha atender o pedido e devolver o id do job. */
-  const waitForQueuedJob = async (): Promise<string> => {
-    const deadline = Date.now() + 12 * 60 * 1000;
-    while (Date.now() < deadline) {
-      await new Promise((resolve) => window.setTimeout(resolve, 5000));
-      const { request } = await apiAdminSyncRequest();
-      if (request?.jobId) return request.jobId;
-      if (request?.status === 'failed') {
-        throw new Error(request.error || 'O script da planilha não atendeu o pedido.');
-      }
-    }
-    throw new Error(
-      'O script da planilha não respondeu. Confirme o acionador "checkAcervoSyncRequests" no Apps Script.'
-    );
-  };
-
-  const handleImportViaAppsScript = async () => {
-    setSelectedFileName('Planilha do Google (via script)');
-    setImporting(true);
-    setImportError('');
-    setImportSummary(null);
-    setImportProgress(0);
-    setImportPhase('Acionando o script da planilha...');
-    try {
-      const started = await apiAdminImportViaAppsScript();
-      let jobId = started.jobId;
-      if (!jobId) {
-        setImportPhase('Pedido registrado. Aguardando o script da planilha (até 5 min)...');
-        jobId = await waitForQueuedJob();
-      }
-      await pollSpreadsheetJob(jobId);
-    } catch (err: any) {
-      setImportError(err?.message || 'Falha ao acionar o Apps Script.');
-    } finally {
-      setImporting(false);
-    }
-  };
-
   const handleThumbCapture = async () => {
     setThumbError('');
     setThumbJob({
@@ -331,33 +271,6 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
               hidden
               onChange={(event) => void handleImport(event.target.files?.[0] || null)}
             />
-            {sheetStatus?.appsScript?.configured || sheetStatus?.autoSyncEnabled ? (
-              <button
-                type="button"
-                className="admin-sheet-upload is-google"
-                disabled={importing}
-                onClick={() => void handleImportViaAppsScript()}
-                title="Pede a sincronização ao script da própria planilha: funciona mesmo com a planilha privada"
-              >
-                <PlayCircle size={16} />
-                {importing ? 'Sincronizando...' : 'Sincronizar agora'}
-              </button>
-            ) : (
-              <button
-                type="button"
-                className="admin-sheet-upload is-google"
-                disabled={importing || sheetStatus?.googleSheets?.configured === false}
-                onClick={() => void handleImportFromGoogle()}
-                title={
-                  sheetStatus?.googleSheets?.hasServiceAccount
-                    ? 'Baixa a planilha com a conta de serviço configurada'
-                    : 'Baixa a planilha do Google (exige link público de leitura ou conta de serviço)'
-                }
-              >
-                <CloudDownload size={16} />
-                {importing ? 'Sincronizando...' : 'Atualizar do Google'}
-              </button>
-            )}
             <button
               type="button"
               className="admin-sheet-upload is-ghost"
