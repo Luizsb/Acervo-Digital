@@ -23,7 +23,10 @@ import {
 import {
   beginSpreadsheetImport,
   getActiveSpreadsheetJobId,
+  getLastSync,
+  getLastSyncFromDatabase,
   getSpreadsheetJob,
+  SYNC_SOURCE_LABELS,
 } from '../lib/spreadsheetSync';
 
 const router = express.Router();
@@ -162,6 +165,7 @@ router.post(
       fs.writeFileSync(targetPath, file.buffer);
 
       const job = beginSpreadsheetImport(file.originalname, targetPath, {
+        source: 'upload',
         onSuccess: () => {
           if (fs.existsSync(backupPath)) fs.unlinkSync(backupPath);
         },
@@ -216,6 +220,7 @@ router.post('/spreadsheet/from-google', async (_req, res) => {
     }
 
     const job = beginSpreadsheetImport(`Google Sheets (${downloaded.sheetId})`, targetPath, {
+      source: 'google',
       onSuccess: () => {
         if (fs.existsSync(backupPath)) fs.unlinkSync(backupPath);
       },
@@ -274,6 +279,27 @@ router.get('/spreadsheet/status', async (_req, res) => {
     // Publicados primeiro: são os que aparecem sem capa na galeria.
     missingThumbs.sort((a, b) => Number(b.isPublic) - Number(a.isPublic));
 
+    const memorySync = getLastSync();
+    const databaseSyncAt = await getLastSyncFromDatabase();
+    const lastSync = memorySync
+      ? {
+          at: memorySync.at,
+          source: memorySync.source,
+          sourceLabel: SYNC_SOURCE_LABELS[memorySync.source],
+          fileName: memorySync.fileName,
+          created: memorySync.created,
+          updated: memorySync.updated,
+          deactivated: memorySync.deactivated,
+        }
+      : databaseSyncAt
+        ? {
+            at: databaseSyncAt,
+            source: null,
+            sourceLabel: 'registro no banco',
+            fileName: path.basename(filePath),
+          }
+        : null;
+
     res.json({
       fileName: path.basename(filePath),
       sizeBytes: stats.size,
@@ -287,6 +313,8 @@ router.get('/spreadsheet/status', async (_req, res) => {
       ).length,
       missingThumbs: missingThumbs.slice(0, 200),
       googleSheets: getGoogleSheetsSource(),
+      lastSync,
+      autoSyncEnabled: Boolean((process.env.SPREADSHEET_SYNC_TOKEN || '').trim()),
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message || 'Erro ao ler status da planilha.' });

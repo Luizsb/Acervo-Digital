@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto';
+import prisma from './prisma';
 import { isVisibleInCatalog } from './catalogVisibility';
 import { importCategorizacao } from '../scripts/import-categorizacao';
 
@@ -14,12 +15,37 @@ export type SpreadsheetJob = {
   error?: string;
 };
 
+export type SyncSource = 'upload' | 'google' | 'apps-script' | 'seed';
+
+export type LastSyncInfo = {
+  at: string;
+  source: SyncSource;
+  fileName: string;
+  created: number;
+  updated: number;
+  deactivated: number;
+  totalActive: number;
+};
+
 const spreadsheetJobs = new Map<string, SpreadsheetJob>();
 let activeSpreadsheetJobId: string | null = null;
+let lastSync: LastSyncInfo | null = null;
 
 export function getActiveSpreadsheetJobId(): string | null {
   return activeSpreadsheetJobId;
 }
+
+/** Última sincronização concluída nesta instância da API. */
+export function getLastSync(): LastSyncInfo | null {
+  return lastSync;
+}
+
+export const SYNC_SOURCE_LABELS: Record<SyncSource, string> = {
+  upload: 'upload no painel',
+  google: 'Google Sheets (painel)',
+  'apps-script': 'rotina do Apps Script',
+  seed: 'seed na subida da API',
+};
 
 export function getSpreadsheetJob(jobId: string): SpreadsheetJob | undefined {
   return spreadsheetJobs.get(jobId);
@@ -50,7 +76,8 @@ export function beginSpreadsheetImport(
   fileName: string,
   targetPath: string,
   hooks?: {
-    onSuccess?: () => void;
+    source?: SyncSource;
+    onSuccess?: (summary: Awaited<ReturnType<typeof importCategorizacao>>) => void;
     onFailure?: () => void;
   }
 ): SpreadsheetJob {
@@ -84,7 +111,16 @@ export function beginSpreadsheetImport(
     },
   })
     .then((summary) => {
-      hooks?.onSuccess?.();
+      lastSync = {
+        at: new Date().toISOString(),
+        source: hooks?.source ?? 'upload',
+        fileName,
+        created: summary.created,
+        updated: summary.updated,
+        deactivated: summary.deactivated,
+        totalActive: summary.totalActive,
+      };
+      hooks?.onSuccess?.(summary);
       job.status = 'completed';
       job.phase = 'completed';
       job.percent = 100;
@@ -104,18 +140,12 @@ export function beginSpreadsheetImport(
   return job;
 }
 
-/** Importa e espera o fim (útil para Apps Script / webhooks). */
-export async function runSpreadsheetImportAndWait(
-  fileName: string,
-  targetPath: string
-): Promise<SpreadsheetJob> {
-  const job = beginSpreadsheetImport(fileName, targetPath);
-  const deadline = Date.now() + 10 * 60 * 1000;
-  while (Date.now() < deadline) {
-    const current = spreadsheetJobs.get(job.id);
-    if (!current) throw new Error('Job de sincronização perdido.');
-    if (current.status === 'completed' || current.status === 'failed') return current;
-    await new Promise((r) => setTimeout(r, 500));
-  }
-  throw new Error('Tempo esgotado aguardando a sincronização da planilha.');
+/** Data da última sincronização registrada no banco (sobrevive a restart da API). */
+export async function getLastSyncFromDatabase(): Promise<string | null> {
+  const newest = await prisma.oDA.findFirst({
+    where: { sincronizadoEm: { not: null } },
+    orderBy: { sincronizadoEm: 'desc' },
+    select: { sincronizadoEm: true },
+  });
+  return newest?.sincronizadoEm ? newest.sincronizadoEm.toISOString() : null;
 }

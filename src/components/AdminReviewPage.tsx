@@ -277,11 +277,8 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
               <h2>Planilha do catálogo</h2>
               <p>
                 {sheetStatus
-                  ? `${sheetStatus.fileName} · ${formatBytes(sheetStatus.sizeBytes)} · atualizada em ${formatDate(sheetStatus.modifiedAt)} · ${sheetStatus.totalActive} ativos no banco`
+                  ? `${sheetStatus.fileName} · ${formatBytes(sheetStatus.sizeBytes)} · ${sheetStatus.totalActive} ativos no banco`
                   : 'Carregando status da planilha...'}
-                {sheetStatus?.googleSheets?.configured
-                  ? ` · origem Google: ${sheetStatus.googleSheets.hasServiceAccount ? 'conta de serviço' : 'exportação (link ou ID)'}`
-                  : ''}
               </p>
             </div>
           </div>
@@ -293,15 +290,6 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
               hidden
               onChange={(event) => void handleImport(event.target.files?.[0] || null)}
             />
-            <button
-              type="button"
-              className="admin-sheet-check"
-              disabled={checkingThumbs || importing}
-              onClick={() => void handleThumbCheck()}
-            >
-              <RefreshCw size={16} className={checkingThumbs ? 'is-spinning' : ''} />
-              {checkingThumbs ? 'Verificando...' : 'Verificar capas'}
-            </button>
             <button
               type="button"
               className="admin-sheet-upload is-google"
@@ -318,20 +306,39 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
             </button>
             <button
               type="button"
-              className="admin-sheet-upload"
+              className="admin-sheet-upload is-ghost"
               disabled={importing}
               onClick={() => fileInputRef.current?.click()}
             >
               <Upload size={16} />
-              {importing ? 'Sincronizando...' : 'Substituir arquivo'}
+              {importing ? 'Sincronizando...' : 'Enviar arquivo'}
             </button>
           </div>
         </div>
+        <dl className="admin-sheet-meta">
+          <div>
+            <dt>Última sincronização</dt>
+            <dd>
+              {sheetStatus?.lastSync
+                ? `${formatDate(sheetStatus.lastSync.at)} · ${sheetStatus.lastSync.sourceLabel}`
+                : 'Nenhuma sincronização registrada nesta instância'}
+            </dd>
+          </div>
+          <div>
+            <dt>Arquivo em disco</dt>
+            <dd>{sheetStatus ? formatDate(sheetStatus.modifiedAt) : '—'}</dd>
+          </div>
+          <div>
+            <dt>Rotina diária</dt>
+            <dd>
+              {sheetStatus?.autoSyncEnabled
+                ? 'Ativa (Apps Script com token)'
+                : 'Inativa — defina SPREADSHEET_SYNC_TOKEN'}
+            </dd>
+          </div>
+        </dl>
         {selectedFileName ? (
           <p className="admin-sheet-file">Arquivo selecionado: {selectedFileName}</p>
-        ) : null}
-        {thumbCheckMessage ? (
-          <p className="admin-sheet-check-result">{thumbCheckMessage}</p>
         ) : null}
         {importing ? (
           <div className="admin-progress" aria-live="polite">
@@ -383,6 +390,76 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
             </div>
           </div>
         ) : null}
+      </section>
+
+      <section className="admin-sheet-card">
+        <div className="admin-sheet-head">
+          <div className="admin-sheet-title">
+            <FileImage size={18} />
+            <div>
+              <h2>Capas dos recursos</h2>
+              <p>
+                {sheetStatus
+                  ? `${missingThumbsTotal} sem capa · ${capturableThumbs} elegíveis para captura automática`
+                  : 'Carregando auditoria de capas...'}
+              </p>
+            </div>
+          </div>
+          <div className="admin-sheet-actions">
+            <button
+              type="button"
+              className="admin-sheet-capture is-primary"
+              disabled={thumbJob?.status === 'processing' || capturableThumbs === 0 || importing}
+              onClick={() => void handleThumbCapture()}
+            >
+              <FileImage size={16} />
+              {thumbJob?.status === 'processing'
+                ? 'Capturando...'
+                : `Capturar elegíveis (${capturableThumbs})`}
+            </button>
+            <button
+              type="button"
+              className="admin-sheet-check"
+              disabled={checkingThumbs || importing}
+              onClick={() => void handleThumbCheck()}
+            >
+              <RefreshCw size={16} className={checkingThumbs ? 'is-spinning' : ''} />
+              {checkingThumbs ? 'Verificando...' : 'Verificar capas'}
+            </button>
+          </div>
+        </div>
+        {thumbCheckMessage ? (
+          <p className="admin-sheet-check-result">{thumbCheckMessage}</p>
+        ) : null}
+        {thumbJob ? (
+          <div className="admin-progress" aria-live="polite">
+            <div className="admin-progress-label">
+              <span>
+                {thumbJob.status === 'completed'
+                  ? `${thumbJob.captured} capturadas · ${thumbJob.failed} falhas · ${thumbJob.withoutLink} sem link`
+                  : `${thumbJob.current} de ${thumbJob.total || '...'} · ${thumbJob.captured} capturadas`}
+              </span>
+              <strong>{thumbJob.percent}%</strong>
+            </div>
+            <div className="admin-progress-track">
+              <span style={{ width: `${thumbJob.percent}%` }} />
+            </div>
+          </div>
+        ) : null}
+        {thumbJob?.failures.length ? (
+          <div className="admin-thumb-failures">
+            <strong>Não foi possível capturar:</strong>
+            <ul>
+              {thumbJob.failures.map((failure) => (
+                <li key={failure.codigo}>
+                  <code>{failure.codigo}</code>
+                  <span>{failure.error}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+        {thumbError ? <p className="admin-review-error">{thumbError}</p> : null}
         {missingThumbs.length ? (
           <div className="admin-sheet-missing">
             <div className="admin-sheet-missing-head">
@@ -401,49 +478,7 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
                     : ''}
                 </p>
               </div>
-              <div className="admin-sheet-missing-actions">
-                <button
-                  type="button"
-                  className="admin-sheet-capture is-primary"
-                  disabled={thumbJob?.status === 'processing' || capturableThumbs === 0}
-                  onClick={() => void handleThumbCapture()}
-                >
-                  <FileImage size={16} />
-                  {thumbJob?.status === 'processing'
-                    ? 'Capturando...'
-                    : `Capturar elegíveis (${capturableThumbs})`}
-                </button>
-              </div>
             </div>
-            {thumbJob ? (
-              <div className="admin-progress" aria-live="polite">
-                <div className="admin-progress-label">
-                  <span>
-                    {thumbJob.status === 'completed'
-                      ? `${thumbJob.captured} capturadas · ${thumbJob.failed} falhas · ${thumbJob.withoutLink} sem link`
-                      : `${thumbJob.current} de ${thumbJob.total || '...'} · ${thumbJob.captured} capturadas`}
-                  </span>
-                  <strong>{thumbJob.percent}%</strong>
-                </div>
-                <div className="admin-progress-track">
-                  <span style={{ width: `${thumbJob.percent}%` }} />
-                </div>
-              </div>
-            ) : null}
-            {thumbJob?.failures.length ? (
-              <div className="admin-thumb-failures">
-                <strong>Não foi possível capturar:</strong>
-                <ul>
-                  {thumbJob.failures.map((failure) => (
-                    <li key={failure.codigo}>
-                      <code>{failure.codigo}</code>
-                      <span>{failure.error}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-            {thumbError ? <p className="admin-review-error">{thumbError}</p> : null}
             <ul>
               {missingThumbs.map((item) => (
                 <li key={item.codigo || item.titulo}>

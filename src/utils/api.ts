@@ -267,6 +267,16 @@ export interface SpreadsheetStatusResponse {
     hasServiceAccount: boolean;
     sourceLabel: string;
   };
+  lastSync?: {
+    at: string;
+    source: 'upload' | 'google' | 'apps-script' | 'seed' | null;
+    sourceLabel: string;
+    fileName: string;
+    created?: number;
+    updated?: number;
+    deactivated?: number;
+  } | null;
+  autoSyncEnabled?: boolean;
 }
 
 export async function apiAdminSpreadsheetStatus(): Promise<SpreadsheetStatusResponse> {

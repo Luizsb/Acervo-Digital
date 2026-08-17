@@ -35,13 +35,59 @@ function syncAcervoDaily() {
 
   var code = response.getResponseCode();
   var body = response.getContentText();
-  Logger.log('HTTP ' + code + ' → ' + body);
+  Logger.log('Envio: HTTP ' + code + ' → ' + body);
 
   if (code < 200 || code >= 300) {
-    throw new Error('Falha ao sincronizar com o Acervo: HTTP ' + code + ' ' + body);
+    throw new Error('Falha ao enviar a planilha ao Acervo: HTTP ' + code + ' ' + body);
   }
 
-  return JSON.parse(body);
+  var started = JSON.parse(body);
+  return waitForJob_(started.jobId);
+}
+
+/**
+ * A API responde 202 e importa em background: aqui acompanhamos o job
+ * para registrar o resultado no log de execuções do Apps Script.
+ */
+function waitForJob_(jobId) {
+  if (!jobId) return null;
+
+  for (var attempt = 0; attempt < 40; attempt++) {
+    Utilities.sleep(5000);
+    var response = UrlFetchApp.fetch(
+      ACERVO_API_BASE + '/sync/jobs/' + encodeURIComponent(jobId),
+      {
+        headers: { 'X-Acervo-Sync-Token': SYNC_TOKEN },
+        muteHttpExceptions: true,
+      }
+    );
+    if (response.getResponseCode() !== 200) {
+      Logger.log('Status indisponível: HTTP ' + response.getResponseCode());
+      continue;
+    }
+
+    var job = JSON.parse(response.getContentText());
+    if (job.status === 'completed') {
+      Logger.log(
+        'Sincronizado: ' +
+          job.summary.created +
+          ' novos, ' +
+          job.summary.updated +
+          ' atualizados, ' +
+          job.summary.deactivated +
+          ' desativados, ' +
+          job.summary.totalActive +
+          ' ativos.'
+      );
+      return job;
+    }
+    if (job.status === 'failed') {
+      throw new Error('Importação falhou no Acervo: ' + job.error);
+    }
+  }
+
+  Logger.log('Importação segue em andamento no Acervo (acompanhe no painel admin).');
+  return null;
 }
 
 /** Teste manual no editor do Apps Script. */

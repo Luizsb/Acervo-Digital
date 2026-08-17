@@ -2,19 +2,23 @@ import fs from 'fs';
 import express from 'express';
 import multer from 'multer';
 import { findWorkbook } from '../scripts/import-categorizacao';
+import { captureMissingThumbs } from '../scripts/capture-thumbs';
 import {
+  beginSpreadsheetImport,
   getActiveSpreadsheetJobId,
-  runSpreadsheetImportAndWait,
+  getLastSync,
+  getSpreadsheetJob,
 } from '../lib/spreadsheetSync';
 
 const router = express.Router();
 
 const upload = multer({
   storage: multer.memoryStorage(),
-  limits: { fileSize: 20 * 1024 * 1024, files: 1 },
+  limits: { fileSize: 30 * 1024 * 1024, files: 1 },
   fileFilter: (_req, file, cb) => {
     const name = (file.originalname || '').toLowerCase();
-    if (name.endsWith('.xlsx') || file.mimetype.includes('spreadsheet') || file.mimetype.includes('excel')) {
+    const mime = file.mimetype || '';
+    if (name.endsWith('.xlsx') || mime.includes('spreadsheet') || mime.includes('excel')) {
       cb(null, true);
       return;
     }
@@ -30,8 +34,7 @@ function extractToken(req: express.Request): string {
   const header = req.header('x-acervo-sync-token') || req.header('authorization') || '';
   if (header.toLowerCase().startsWith('bearer ')) return header.slice(7).trim();
   if (header) return header.trim();
-  const query = typeof req.query.token === 'string' ? req.query.token : '';
-  return query.trim();
+  return typeof req.query.token === 'string' ? req.query.token.trim() : '';
 }
 
 function requireSyncToken(
@@ -43,19 +46,29 @@ function requireSyncToken(
   if (!expected) {
     return res.status(503).json({
       error:
-        'Sincronização por Apps Script desabilitada. Defina SPREADSHEET_SYNC_TOKEN no .env da API.',
+        'Sincronização automática desabilitada. Defina SPREADSHEET_SYNC_TOKEN no .env da API.',
     });
   }
-  const provided = extractToken(req);
-  if (!provided || provided !== expected) {
+  if (extractToken(req) !== expected) {
     return res.status(401).json({ error: 'Token de sincronização inválido.' });
   }
   next();
 }
 
+function shouldCaptureThumbsAfterSync(): boolean {
+  const value = (process.env.AUTO_CAPTURE_THUMBS_AFTER_SYNC || '').trim().toLowerCase();
+  return value === 'true' || value === '1';
+}
+
+function thumbCaptureLimit(): number {
+  const parsed = Number(process.env.AUTO_CAPTURE_THUMBS_LIMIT || '50');
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 50;
+}
+
 /**
- * Webhook para Google Apps Script (ou qualquer rotina).
+ * Webhook da rotina diária (Google Apps Script ou cron).
  * POST multipart campo "spreadsheet" (.xlsx) + header X-Acervo-Sync-Token.
+ * Responde 202 na hora: a importação segue em background e o job pode ser consultado.
  */
 router.post(
   '/spreadsheet',
@@ -69,7 +82,7 @@ router.post(
       next();
     });
   },
-  async (req, res) => {
+  (req, res) => {
     try {
       if (getActiveSpreadsheetJobId()) {
         return res.status(409).json({
@@ -90,29 +103,33 @@ router.post(
       if (fs.existsSync(targetPath)) fs.copyFileSync(targetPath, backupPath);
       fs.writeFileSync(targetPath, file.buffer);
 
-      const job = await runSpreadsheetImportAndWait(
-        file.originalname || 'apps-script.xlsx',
-        targetPath
-      );
+      const job = beginSpreadsheetImport(file.originalname || 'apps-script.xlsx', targetPath, {
+        source: 'apps-script',
+        onSuccess: () => {
+          if (fs.existsSync(backupPath)) fs.unlinkSync(backupPath);
+          if (!shouldCaptureThumbsAfterSync()) return;
+          // Rotina opcional: gera as capas que faltam logo após a sincronização.
+          void captureMissingThumbs({ onlyPublic: true, limit: thumbCaptureLimit() })
+            .then((result) =>
+              console.log(
+                `🖼️  Captura pós-sync: ${result.captured} novas, ${result.failed} falhas, ${result.withoutLink} sem link.`
+              )
+            )
+            .catch((error) => console.error('Captura pós-sync falhou:', error));
+        },
+        onFailure: () => {
+          if (fs.existsSync(backupPath)) {
+            fs.copyFileSync(backupPath, targetPath);
+            fs.unlinkSync(backupPath);
+          }
+        },
+      });
 
-      if (job.status === 'completed') {
-        if (fs.existsSync(backupPath)) fs.unlinkSync(backupPath);
-        return res.json({
-          ok: true,
-          message: 'Planilha sincronizada com o Acervo.',
-          jobId: job.id,
-          summary: job.summary,
-        });
-      }
-
-      if (fs.existsSync(backupPath)) {
-        fs.copyFileSync(backupPath, targetPath);
-        fs.unlinkSync(backupPath);
-      }
-      return res.status(500).json({
-        ok: false,
-        error: job.error || 'Falha na sincronização.',
+      res.status(202).json({
+        ok: true,
         jobId: job.id,
+        message: 'Planilha recebida. Sincronização iniciada.',
+        autoCaptureThumbs: shouldCaptureThumbsAfterSync(),
       });
     } catch (error: unknown) {
       console.error('Sync spreadsheet webhook error:', error);
@@ -123,11 +140,19 @@ router.post(
   }
 );
 
+router.get('/jobs/:jobId', requireSyncToken, (req, res) => {
+  const job = getSpreadsheetJob(req.params.jobId);
+  if (!job) return res.status(404).json({ error: 'Sincronização não encontrada ou expirada.' });
+  res.json(job);
+});
+
 router.get('/health', requireSyncToken, (_req, res) => {
   res.json({
     ok: true,
     syncEnabled: true,
     busy: Boolean(getActiveSpreadsheetJobId()),
+    lastSync: getLastSync(),
+    autoCaptureThumbs: shouldCaptureThumbsAfterSync(),
     timestamp: new Date().toISOString(),
   });
 });
