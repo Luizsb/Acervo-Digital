@@ -84,7 +84,7 @@ A API baixa o `.xlsx` da planilha do Drive e importa no Postgres — sem downloa
 2. Abra a planilha → Extensões → Apps Script → cole `scripts/apps-script/sync-acervo.gs`
 3. Ajuste `ACERVO_API_BASE` e `SYNC_TOKEN`, autorize e crie um **acionador diário** em `syncAcervoDaily`
 4. Endpoints: `POST /api/sync/spreadsheet` (responde `202` com `jobId`) e `GET /api/sync/jobs/:jobId` — ambos com header `X-Acervo-Sync-Token`
-5. Opcional: `AUTO_CAPTURE_THUMBS_AFTER_SYNC=true` (e `AUTO_CAPTURE_THUMBS_LIMIT`) para capturar as capas elegíveis logo depois da sync diária
+5. Capas: por padrão a sync diária já captura as capas elegíveis (até `AUTO_CAPTURE_THUMBS_LIMIT`, 50 por execução). Use `AUTO_CAPTURE_THUMBS_AFTER_SYNC=false` para deixar a captura só sob demanda no painel
 
 A planilha tem ~5 MB, então o Nginx do container web libera `client_max_body_size 30m`. Se aparecer `413 Request Entity Too Large`, o container web está com a config antiga: rode `docker compose up --build -d web`.
 
