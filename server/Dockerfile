@@ -9,6 +9,8 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 COPY server/package.json server/package-lock.json ./
+# O postinstall roda `prisma generate`, então o schema precisa existir antes do npm ci.
+COPY server/prisma ./prisma
 RUN npm ci
 
 COPY server/ ./
