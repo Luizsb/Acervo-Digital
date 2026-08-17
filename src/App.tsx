@@ -23,7 +23,13 @@ import { Pagination } from "./components/Pagination";
 import { ScrollToTop } from "./components/ScrollToTop";
 import { useProjectFilters } from "./hooks/useProjectFilters";
 import { useGalleryPageSize } from "./hooks/useGalleryPageSize";
-import { getInitialPageFromHash, getHashFromPage, type PageKey } from "./utils/hashRouting";
+import {
+  getInitialPageFromHash,
+  getHashFromPage,
+  getHashForResource,
+  getResourceCodeFromHash,
+  type PageKey,
+} from "./utils/hashRouting";
 import { startOnboardingIfNeeded } from "./utils/onboarding";
 import { isAdminRole } from "./utils/catalogVisibility";
 
@@ -75,6 +81,11 @@ export default function App() {
   const [selectedProject, setSelectedProject] = useState<ODAFromExcel | null>(null);
   const [currentPage, setCurrentPageState] = useState<PageKey>(getInitialPageFromHash);
 
+  // Código do recurso pedido pela URL (#/recurso/<codigo>) aguardando o catálogo carregar.
+  const [pendingResourceCode, setPendingResourceCode] = useState<string | null>(
+    getResourceCodeFromHash
+  );
+
   const setCurrentPage = (page: PageKey) => {
     setCurrentPageState(page);
     const hash = getHashFromPage(page);
@@ -83,11 +94,24 @@ export default function App() {
     }
   };
 
-  // Ao carregar/atualizar a página, restaurar currentPage a partir do hash (ex.: F5 no acervo)
+  // Ao carregar/atualizar a página, restaurar a rota a partir do hash (ex.: F5 ou link compartilhado)
   useEffect(() => {
-    const onHashChange = () => setCurrentPageState(getInitialPageFromHash());
-    window.addEventListener("hashchange", onHashChange);
-    return () => window.removeEventListener("hashchange", onHashChange);
+    const onLocationChange = () => {
+      setCurrentPageState(getInitialPageFromHash());
+      const code = getResourceCodeFromHash();
+      if (code) {
+        setPendingResourceCode(code);
+      } else {
+        setPendingResourceCode(null);
+        setSelectedProject(null);
+      }
+    };
+    window.addEventListener("hashchange", onLocationChange);
+    window.addEventListener("popstate", onLocationChange);
+    return () => {
+      window.removeEventListener("hashchange", onLocationChange);
+      window.removeEventListener("popstate", onLocationChange);
+    };
   }, []);
   const [returnToAfterLogin, setReturnToAfterLogin] = useState<"gallery" | "settings" | "favorites" | "review">("gallery");
   const { user, login, logout, loading: authLoading } = useAuth();
@@ -176,6 +200,32 @@ export default function App() {
     startOnboardingIfNeeded();
   }, [currentPage, projectsLoading]);
 
+  // Link compartilhado (#/recurso/<codigo>): abre o recurso assim que o catálogo chega.
+  useEffect(() => {
+    if (!pendingResourceCode) return;
+    if (projects.length === 0) return;
+
+    const wanted = pendingResourceCode.trim().toUpperCase();
+    const found = projects.find(
+      (project) => (project.codigoODA || "").trim().toUpperCase() === wanted
+    );
+    if (found) {
+      setSelectedProject(found);
+      setCurrentPageState("gallery");
+    }
+    // Resolvido ou inexistente: em ambos os casos a URL deixa de ficar pendente.
+    setPendingResourceCode(null);
+  }, [pendingResourceCode, projects]);
+
+  // Mantém a URL em sincronia com o recurso aberto, permitindo compartilhar o link.
+  useEffect(() => {
+    const code = selectedProject?.codigoODA?.trim();
+    const desired = code ? getHashForResource(code) : getHashFromPage(currentPage);
+    if (window.location.hash !== desired) {
+      window.history.replaceState(null, "", desired);
+    }
+  }, [selectedProject, currentPage]);
+
   // Load favorites: from API when logged in, else from localStorage
   useEffect(() => {
     if (user) {
@@ -263,7 +313,16 @@ export default function App() {
 
   const handleProjectClick = (project) => {
     setSelectedProject(project);
-    setCurrentPage("gallery");
+    setCurrentPageState("gallery");
+    setPendingResourceCode(null);
+
+    // Entrada própria no histórico: o botão voltar do navegador retorna à galeria.
+    const code = project?.codigoODA?.trim();
+    const desired = code ? getHashForResource(code) : getHashFromPage("gallery");
+    if (window.location.hash !== desired) {
+      window.history.pushState(null, "", desired);
+    }
+
     // Scroll instantâneo para o topo quando abrir um ODA
     window.scrollTo(0, 0);
   };

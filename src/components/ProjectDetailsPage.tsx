@@ -7,6 +7,7 @@ import { VideoThumbnail } from './VideoThumbnail';
 import { getVimeoEmbedUrl, resolveVideoEmbedUrl } from '../utils/videoThumbnails';
 import type { Project } from '../types/project';
 import { formatDuration } from '../utils/formatters';
+import { getHashForResource } from '../utils/hashRouting';
 import { MacroformatoBadge } from './MacroformatoBadge';
 
 type RelatedCriterion = 'year' | 'bncc' | 'samr';
@@ -109,8 +110,11 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
   };
 
   const handleCopyLink = () => {
-    // Usar o link real do ODA (videoUrl) ou fallback para URL da página
-    const url = project.videoUrl || `${window.location.origin}/oda/${project.id}`;
+    // Link real do ODA; sem ele, cai na URL compartilhável do recurso no acervo.
+    const acervoUrl = project.codigoODA
+      ? `${window.location.origin}${window.location.pathname}${getHashForResource(project.codigoODA)}`
+      : window.location.href;
+    const url = project.videoUrl || acervoUrl;
     navigator.clipboard.writeText(url);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);

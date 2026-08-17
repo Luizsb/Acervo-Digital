@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { getInitialPageFromHash, getHashFromPage, type PageKey } from './hashRouting';
+import {
+  getInitialPageFromHash,
+  getHashFromPage,
+  getHashForResource,
+  getResourceCodeFromHash,
+  type PageKey,
+} from './hashRouting';
 
 describe('hashRouting', () => {
   describe('getInitialPageFromHash', () => {
@@ -32,6 +38,39 @@ describe('hashRouting', () => {
 
     it('retorna "login" para hash desconhecido', () => {
       expect(getInitialPageFromHash('#/pagina-inexistente')).toBe('login');
+    });
+
+    it('trata a rota de recurso como galeria', () => {
+      expect(getInitialPageFromHash('#/recurso/SAE26_AF73_HIS_C08_VA1')).toBe('gallery');
+    });
+  });
+
+  describe('rota de recurso', () => {
+    it('extrai o código do recurso', () => {
+      expect(getResourceCodeFromHash('#/recurso/SAE26_AF73_HIS_C08_VA1')).toBe(
+        'SAE26_AF73_HIS_C08_VA1'
+      );
+      expect(getResourceCodeFromHash('#recurso/SAE26_AF73_HIS_C08_VA1')).toBe(
+        'SAE26_AF73_HIS_C08_VA1'
+      );
+    });
+
+    it('retorna null quando o hash não é de recurso', () => {
+      expect(getResourceCodeFromHash('#/acervo')).toBeNull();
+      expect(getResourceCodeFromHash('#/recurso')).toBeNull();
+      expect(getResourceCodeFromHash('#/recurso/')).toBeNull();
+      expect(getResourceCodeFromHash('')).toBeNull();
+    });
+
+    it('gera hash compartilhável e faz round-trip', () => {
+      const codigo = 'SAE26_AF73_HIS_C08_VA1';
+      expect(getHashForResource(codigo)).toBe(`#/recurso/${codigo}`);
+      expect(getResourceCodeFromHash(getHashForResource(codigo))).toBe(codigo);
+    });
+
+    it('codifica e decodifica códigos com caracteres especiais', () => {
+      const codigo = 'SAE 26/AF73';
+      expect(getResourceCodeFromHash(getHashForResource(codigo))).toBe(codigo);
     });
   });
 

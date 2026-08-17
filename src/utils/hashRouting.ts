@@ -26,19 +26,48 @@ const PAGE_TO_PATH: Record<PageKey, string> = {
   reset: "/redefinir-senha",
 };
 
-/**
- * Retorna a página atual a partir do hash da URL.
- * @param hashOverride - Se informado, usa este valor em vez de window.location.hash (útil para testes).
- */
-export function getInitialPageFromHash(hashOverride?: string): PageKey {
-  if (typeof window === "undefined") return "login";
+/** Prefixo das URLs compartilháveis de um recurso: #/recurso/<codigo>. */
+const RESOURCE_SEGMENT = "recurso";
+
+/** Normaliza o hash para o caminho sem "#", "/" nas pontas e sem query string. */
+function normalizeHashPath(hashOverride?: string): string {
+  if (hashOverride === undefined && typeof window === "undefined") return "";
   let raw = (hashOverride !== undefined ? hashOverride : window.location.hash)
     .replace(/^#?\/?|\/+$/g, "")
     .trim();
   const qIndex = raw.indexOf("?");
   if (qIndex !== -1) raw = raw.slice(0, qIndex).trim();
-  const path = raw === "" ? "login" : raw;
-  return HASH_TO_PAGE[path] ?? "login";
+  return raw;
+}
+
+/**
+ * Retorna a página atual a partir do hash da URL.
+ * @param hashOverride - Se informado, usa este valor em vez de window.location.hash (útil para testes).
+ */
+export function getInitialPageFromHash(hashOverride?: string): PageKey {
+  if (hashOverride === undefined && typeof window === "undefined") return "login";
+  const raw = normalizeHashPath(hashOverride);
+  if (raw === "") return "login";
+  const [segment] = raw.split("/");
+  // Um recurso é aberto sobre a galeria, então a página de fundo continua sendo o acervo.
+  if (segment === RESOURCE_SEGMENT) return "gallery";
+  return HASH_TO_PAGE[segment] ?? "login";
+}
+
+/** Código do recurso quando a URL aponta para #/recurso/<codigo>. */
+export function getResourceCodeFromHash(hashOverride?: string): string | null {
+  if (hashOverride === undefined && typeof window === "undefined") return null;
+  const raw = normalizeHashPath(hashOverride);
+  if (raw === "") return null;
+  const [segment, ...rest] = raw.split("/");
+  if (segment !== RESOURCE_SEGMENT) return null;
+  const code = decodeURIComponent(rest.join("/")).trim();
+  return code === "" ? null : code;
+}
+
+/** Hash compartilhável de um recurso (ex.: #/recurso/SAE26_AF73_HIS_C08_VA1). */
+export function getHashForResource(codigo: string): string {
+  return `#/${RESOURCE_SEGMENT}/${encodeURIComponent(codigo.trim())}`;
 }
 
 /**

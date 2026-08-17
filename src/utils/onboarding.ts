@@ -8,6 +8,47 @@ type OnboardingStep = {
   intro: string;
 };
 
+type IntroInstance = ReturnType<typeof introJs>;
+
+/**
+ * O tour é único por sessão: a galeria pode disparar o start mais de uma vez
+ * (carregamento do catálogo, troca de página), e duas instâncias do intro.js
+ * criariam tooltips e overlays sobrepostos.
+ */
+let activeTour: IntroInstance | null = null;
+let pendingStart: number | null = null;
+
+/** Remove overlays/classes que o intro.js pode deixar para trás e travariam a tela. */
+function removeTourArtifacts() {
+  document
+    .querySelectorAll(
+      '.introjs-overlay, .introjs-helperLayer, .introjs-tooltipReferenceLayer, .introjs-disableInteraction'
+    )
+    .forEach((node) => node.remove());
+
+  document
+    .querySelectorAll(
+      '.introjs-showElement, .introjs-relativePosition, .introjs-fixParent, .introjs-hidden'
+    )
+    .forEach((node) => {
+      node.classList.remove(
+        'introjs-showElement',
+        'introjs-relativePosition',
+        'introjs-fixParent',
+        'introjs-hidden'
+      );
+    });
+
+  document.body.classList.remove('introjs-notransition');
+  document.documentElement.classList.remove('introjs-notransition');
+}
+
+function finishTour() {
+  activeTour = null;
+  markOnboardingDone();
+  removeTourArtifacts();
+}
+
 function hasWindow() {
   return typeof window !== 'undefined';
 }
@@ -33,11 +74,31 @@ function markOnboardingDone() {
 
 export function resetOnboardingProgress() {
   if (!hasWindow()) return;
+  stopOnboarding();
   try {
     window.localStorage.removeItem(ONBOARDING_STORAGE_KEY);
   } catch {
     // ignore errors
   }
+}
+
+/** Encerra o tour em andamento (ou agendado) e limpa a tela. */
+export function stopOnboarding() {
+  if (!hasWindow()) return;
+  if (pendingStart !== null) {
+    window.clearTimeout(pendingStart);
+    pendingStart = null;
+  }
+  if (activeTour) {
+    const tour = activeTour;
+    activeTour = null;
+    try {
+      tour.exit(true);
+    } catch {
+      // a instância pode já ter sido encerrada pelo próprio intro.js
+    }
+  }
+  removeTourArtifacts();
 }
 
 function getVisibleElement(selector: string): HTMLElement | null {
@@ -58,9 +119,11 @@ function getVisibleElement(selector: string): HTMLElement | null {
 export function startOnboardingIfNeeded() {
   if (!hasWindow()) return;
   if (!shouldRunOnboarding()) return;
+  if (activeTour || pendingStart !== null) return;
 
   // Garante que os elementos já foram renderizados
-  window.setTimeout(() => {
+  pendingStart = window.setTimeout(() => {
+    pendingStart = null;
     const steps: OnboardingStep[] = [
       {
         title: 'Encontre o recurso certo',
@@ -115,13 +178,13 @@ export function startOnboardingIfNeeded() {
       highlightClass: 'acervo-onboarding-highlight',
     });
 
-    intro.oncomplete(() => {
-      markOnboardingDone();
-    });
-    intro.onexit(() => {
-      markOnboardingDone();
-    });
+    intro.oncomplete(finishTour);
+    intro.onexit(finishTour);
 
+    activeTour = intro;
+    // Marca como visto já na abertura: se o usuário recarregar no meio do tour,
+    // ele não recomeça sozinho (e continua disponível no menu do perfil).
+    markOnboardingDone();
     intro.start();
   }, 600);
 }
