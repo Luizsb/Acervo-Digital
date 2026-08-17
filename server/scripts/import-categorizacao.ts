@@ -5,16 +5,57 @@ import prisma from '../lib/prisma';
 import { readWorksheetMatrix } from '../lib/excel';
 import { mapCategorizacaoRow, type CategorizacaoRow } from './map-categorizacao';
 import { completeBnccText, completeObjectiveList } from '../lib/completeBnccText';
+import { isVisibleInCatalog } from '../lib/catalogVisibility';
+
 const SHEET_NAME = 'Recursos Digitais';
 const HEADER_ROW = 1;
 const DATA_START_ROW = 4;
 const IMPORT_SOURCE = 'planilha-categorizacao';
 
+export type ImportSummary = {
+  filePath: string;
+  processed: number;
+  created: number;
+  updated: number;
+  unchanged: number;
+  reactivated: number;
+  deactivated: number;
+  skipped: number;
+  errors: number;
+  totalActive: number;
+  totalAudiovisual: number;
+  totalOed: number;
+  missingThumbs: {
+    codigo: string;
+    titulo: string;
+    status: string | null;
+    linkRepositorio: string | null;
+  }[];
+  missingThumbsPublic: number;
+};
+
+export type ImportOptions = {
+  clear?: boolean;
+  filePath?: string;
+  log?: boolean;
+  onProgress?: (progress: {
+    phase: 'reading' | 'importing' | 'finishing';
+    current: number;
+    total: number;
+  }) => void;
+};
+
 function sourceHash(value: unknown): string {
   return createHash('sha256').update(JSON.stringify(value)).digest('hex');
 }
 
-function findWorkbook(): string {
+export function findWorkbook(explicit?: string): string {
+  if (explicit) {
+    if (!fs.existsSync(explicit)) {
+      throw new Error(`Planilha não encontrada: ${explicit}`);
+    }
+    return explicit;
+  }
   const candidates = [
     path.join(process.cwd(), '..', 'public', 'Categorização_Recursos Digitais_Terceiros.xlsx'),
     path.join(process.cwd(), 'public', 'Categorização_Recursos Digitais_Terceiros.xlsx'),
@@ -28,8 +69,16 @@ function findWorkbook(): string {
   return found;
 }
 
-function metodologiaDir(): string {
-  return path.join(path.dirname(findWorkbook()), 'metodologia');
+function metodologiaDir(workbookPath: string): string {
+  return path.join(path.dirname(workbookPath), 'metodologia');
+}
+
+function thumbsDir(workbookPath: string): string {
+  return path.join(path.dirname(workbookPath), 'thumbs');
+}
+
+function thumbFile(thumbsRoot: string, codigo: string): string {
+  return path.join(thumbsRoot, `${String(codigo).replace(/\.(webp|jpg|jpeg|png)$/i, '')}.webp`);
 }
 
 async function loadRows(filePath: string): Promise<CategorizacaoRow[]> {
@@ -44,19 +93,55 @@ async function loadRows(filePath: string): Promise<CategorizacaoRow[]> {
   });
 }
 
-export async function importCategorizacao(options: { clear?: boolean } = {}) {
+function collectMissingThumbs(
+  workbookPath: string,
+  items: ImportSummary['missingThumbs']
+): ImportSummary['missingThumbs'] {
+  const root = thumbsDir(workbookPath);
+  return items.filter((item) => !fs.existsSync(thumbFile(root, item.codigo)));
+}
+
+function printSummary(summary: ImportSummary) {
+  console.log(`\n🎉 Importação L1 concluída`);
+  console.log(`   processados: ${summary.processed}`);
+  console.log(`   novos: ${summary.created}`);
+  console.log(`   alterados: ${summary.updated}`);
+  console.log(`   sem alteração: ${summary.unchanged}`);
+  console.log(`   reativados: ${summary.reactivated}`);
+  console.log(`   desativados por ausência na planilha: ${summary.deactivated}`);
+  console.log(`   pulados (linha vazia): ${summary.skipped}`);
+  console.log(`   erros: ${summary.errors}`);
+  console.log(
+    `   total ODAs no banco: ${summary.totalActive} (Audiovisual/Vídeo: ${summary.totalAudiovisual}, OED: ${summary.totalOed})`
+  );
+  console.log(
+    `   sem thumb: ${summary.missingThumbs.length} (público/Funcionando: ${summary.missingThumbsPublic})`
+  );
+  if (summary.missingThumbsPublic > 0) {
+    console.log('   Sem thumb (Funcionando, até 20):');
+    summary.missingThumbs
+      .filter((item) => isVisibleInCatalog(item.status, item.linkRepositorio))
+      .slice(0, 20)
+      .forEach((item) => console.log(`     ! ${item.codigo} — ${item.titulo}`));
+  }
+}
+
+export async function importCategorizacao(options: ImportOptions = {}): Promise<ImportSummary> {
   const clear = options.clear ?? process.argv.includes('--clear');
-  const filePath = findWorkbook();
-  const pdfDir = metodologiaDir();
-  console.log(`📂 Planilha: ${filePath}`);
+  const log = options.log ?? true;
+  const filePath = findWorkbook(options.filePath);
+  const pdfDir = metodologiaDir(filePath);
+  if (log) console.log(`📂 Planilha: ${filePath}`);
+  options.onProgress?.({ phase: 'reading', current: 0, total: 1 });
 
   if (clear) {
     const deletedOdas = await prisma.oDA.deleteMany({});
-    console.log(`🗑️  ${deletedOdas.count} ODAs removidos`);
+    if (log) console.log(`🗑️  ${deletedOdas.count} ODAs removidos`);
   }
 
   const rows = await loadRows(filePath);
-  let imported = 0;
+  options.onProgress?.({ phase: 'importing', current: 0, total: rows.length });
+  let processed = 0;
   let created = 0;
   let updated = 0;
   let unchanged = 0;
@@ -64,6 +149,7 @@ export async function importCategorizacao(options: { clear?: boolean } = {}) {
   let skipped = 0;
   let errors = 0;
   const seenCodes: string[] = [];
+  const thumbCandidates: ImportSummary['missingThumbs'] = [];
   const synchronizedAt = new Date();
 
   for (let i = 0; i < rows.length; i++) {
@@ -73,6 +159,7 @@ export async function importCategorizacao(options: { clear?: boolean } = {}) {
     });
     if (!mapped) {
       skipped += 1;
+      options.onProgress?.({ phase: 'importing', current: i + 1, total: rows.length });
       continue;
     }
 
@@ -88,6 +175,12 @@ export async function importCategorizacao(options: { clear?: boolean } = {}) {
 
     try {
       seenCodes.push(mapped.codigoOda);
+      thumbCandidates.push({
+        codigo: mapped.codigoOda,
+        titulo: mapped.titulo,
+        status: mapped.status,
+        linkRepositorio: mapped.linkRepositorio,
+      });
       const hashFonte = sourceHash(mapped);
       const existing = await prisma.oDA.findUnique({
         where: { codigoOda: mapped.codigoOda },
@@ -119,7 +212,8 @@ export async function importCategorizacao(options: { clear?: boolean } = {}) {
           data: { sincronizadoEm: synchronizedAt },
         });
         unchanged += 1;
-        imported += 1;
+        processed += 1;
+        options.onProgress?.({ phase: 'importing', current: i + 1, total: rows.length });
         continue;
       }
 
@@ -152,13 +246,15 @@ export async function importCategorizacao(options: { clear?: boolean } = {}) {
         updated += 1;
       }
 
-      imported += 1;
-      if (imported % 100 === 0) {
-        console.log(`✅ ${imported} ODAs importados...`);
+      processed += 1;
+      if (log && processed % 100 === 0) {
+        console.log(`✅ ${processed} ODAs importados...`);
       }
     } catch (err: any) {
       errors += 1;
-      console.error(`❌ Linha ${i + DATA_START_ROW + 1} (${mapped.codigoOda}): ${err.message}`);
+      if (log) {
+        console.error(`❌ Linha ${i + DATA_START_ROW + 1} (${mapped.codigoOda}): ${err.message}`);
+      }
       if (mapped.codigoBncc) {
         try {
           await prisma.oDA.upsert({
@@ -180,15 +276,17 @@ export async function importCategorizacao(options: { clear?: boolean } = {}) {
               sincronizadoEm: synchronizedAt,
             },
           });
-          imported += 1;
+          processed += 1;
           errors -= 1;
         } catch (retryErr: any) {
-          console.error(`   retry falhou: ${retryErr.message}`);
+          if (log) console.error(`   retry falhou: ${retryErr.message}`);
         }
       }
     }
+    options.onProgress?.({ phase: 'importing', current: i + 1, total: rows.length });
   }
 
+  options.onProgress?.({ phase: 'finishing', current: rows.length, total: rows.length });
   let deactivated = 0;
   if (errors === 0 && seenCodes.length > 0) {
     const result = await prisma.oDA.updateMany({
@@ -205,19 +303,35 @@ export async function importCategorizacao(options: { clear?: boolean } = {}) {
     deactivated = result.count;
   }
 
-  const total = await prisma.oDA.count({ where: { ativo: true } });
-  const videos = await prisma.oDA.count({ where: { ativo: true, tipoConteudo: 'Audiovisual' } });
-  const oeds = await prisma.oDA.count({ where: { ativo: true, tipoConteudo: 'OED' } });
-  console.log(`\n🎉 Importação L1 concluída`);
-  console.log(`   processados: ${imported}`);
-  console.log(`   novos: ${created}`);
-  console.log(`   alterados: ${updated}`);
-  console.log(`   sem alteração: ${unchanged}`);
-  console.log(`   reativados: ${reactivated}`);
-  console.log(`   desativados por ausência na planilha: ${deactivated}`);
-  console.log(`   pulados (linha vazia): ${skipped}`);
-  console.log(`   erros: ${errors}`);
-  console.log(`   total ODAs no banco: ${total} (Audiovisual/Vídeo: ${videos}, OED: ${oeds})`);
+  const totalActive = await prisma.oDA.count({ where: { ativo: true } });
+  const totalAudiovisual = await prisma.oDA.count({
+    where: { ativo: true, tipoConteudo: 'Audiovisual' },
+  });
+  const totalOed = await prisma.oDA.count({ where: { ativo: true, tipoConteudo: 'OED' } });
+  const missingThumbs = collectMissingThumbs(filePath, thumbCandidates);
+  const missingThumbsPublic = missingThumbs.filter((item) =>
+    isVisibleInCatalog(item.status, item.linkRepositorio)
+  ).length;
+
+  const summary: ImportSummary = {
+    filePath,
+    processed,
+    created,
+    updated,
+    unchanged,
+    reactivated,
+    deactivated,
+    skipped,
+    errors,
+    totalActive,
+    totalAudiovisual,
+    totalOed,
+    missingThumbs,
+    missingThumbsPublic,
+  };
+
+  if (log) printSummary(summary);
+  return summary;
 }
 
 if (require.main === module) {

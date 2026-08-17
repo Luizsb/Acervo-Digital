@@ -208,6 +208,136 @@ export async function apiAdminReview(params?: {
   return data;
 }
 
+export interface SpreadsheetImportSummary {
+  processed: number;
+  created: number;
+  updated: number;
+  unchanged: number;
+  reactivated: number;
+  deactivated: number;
+  skipped: number;
+  errors: number;
+  totalActive: number;
+  totalAudiovisual: number;
+  totalOed: number;
+  missingThumbsTotal: number;
+  missingThumbsPublic: number;
+  missingThumbs: { codigo: string; titulo: string; status: string | null }[];
+}
+
+export interface SpreadsheetJob {
+  id: string;
+  status: 'processing' | 'completed' | 'failed';
+  phase: 'reading' | 'importing' | 'finishing' | 'completed';
+  current: number;
+  total: number;
+  percent: number;
+  fileName: string;
+  summary?: SpreadsheetImportSummary;
+  error?: string;
+}
+
+export interface AsyncJobStartResponse {
+  ok: boolean;
+  jobId: string;
+  message: string;
+}
+
+export interface MissingThumbItem {
+  codigo: string | null;
+  titulo: string;
+  status: string | null;
+  isPublic: boolean;
+  hasLink: boolean;
+}
+
+export interface SpreadsheetStatusResponse {
+  fileName: string;
+  sizeBytes: number;
+  modifiedAt: string;
+  totalActive: number;
+  missingThumbsTotal: number;
+  missingThumbsPublic: number;
+  missingThumbsWithoutLink: number;
+  missingThumbsPublicWithoutLink: number;
+  missingThumbs: MissingThumbItem[];
+}
+
+export async function apiAdminSpreadsheetStatus(): Promise<SpreadsheetStatusResponse> {
+  const token = getAuthToken();
+  if (!token) throw new Error('Não autorizado.');
+  const res = await fetch(`${API_BASE_URL}/admin/spreadsheet/status`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Erro ao ler status da planilha.');
+  return data;
+}
+
+export async function apiAdminImportSpreadsheet(file: File): Promise<AsyncJobStartResponse> {
+  const token = getAuthToken();
+  if (!token) throw new Error('Não autorizado.');
+  const body = new FormData();
+  body.append('spreadsheet', file);
+  const res = await fetch(`${API_BASE_URL}/admin/spreadsheet`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body,
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Erro ao sincronizar a planilha.');
+  return data;
+}
+
+export async function apiAdminSpreadsheetJob(jobId: string): Promise<SpreadsheetJob> {
+  const token = getAuthToken();
+  if (!token) throw new Error('Não autorizado.');
+  const res = await fetch(`${API_BASE_URL}/admin/spreadsheet/jobs/${encodeURIComponent(jobId)}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Erro ao acompanhar a sincronização.');
+  return data;
+}
+
+export interface ThumbCaptureJob {
+  id: string;
+  status: 'processing' | 'completed' | 'failed';
+  scope: 'public';
+  current: number;
+  total: number;
+  percent: number;
+  captured: number;
+  skipped: number;
+  failed: number;
+  withoutLink: number;
+  failures: { codigo: string; error: string }[];
+  error?: string;
+}
+
+export async function apiAdminStartThumbCapture(): Promise<AsyncJobStartResponse> {
+  const token = getAuthToken();
+  if (!token) throw new Error('Não autorizado.');
+  const res = await fetch(`${API_BASE_URL}/admin/thumbs/capture`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Erro ao iniciar a captura de thumbs.');
+  return data;
+}
+
+export async function apiAdminThumbJob(jobId: string): Promise<ThumbCaptureJob> {
+  const token = getAuthToken();
+  if (!token) throw new Error('Não autorizado.');
+  const res = await fetch(`${API_BASE_URL}/admin/thumbs/jobs/${encodeURIComponent(jobId)}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Erro ao acompanhar a captura de thumbs.');
+  return data;
+}
+
 export interface BNCC {
   id: number;
   codigo: string;

@@ -80,6 +80,347 @@
   color: #64748b;
 }
 
+.admin-sheet-card {
+  max-width: 1200px;
+  margin: 0 auto 24px;
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+}
+
+.admin-sheet-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.admin-sheet-title {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  color: #012451;
+}
+
+.admin-sheet-title h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.admin-sheet-title p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #64748b;
+}
+
+.admin-sheet-upload {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: #012451;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.admin-sheet-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.admin-sheet-check {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border: 1px solid rgba(1, 36, 81, 0.22);
+  border-radius: 999px;
+  background: #fff;
+  color: #012451;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.admin-sheet-check:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.admin-sheet-check .is-spinning {
+  animation: admin-spin 800ms linear infinite;
+}
+
+@keyframes admin-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.admin-sheet-check-result {
+  margin: 12px 0 0;
+  padding: 9px 12px;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  background: #f0fdf4;
+  color: #166534;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.admin-sheet-upload:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.admin-sheet-file {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.admin-progress {
+  margin-top: 14px;
+}
+
+.admin-progress-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+  color: #475569;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.admin-progress-track {
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e2e8f0;
+}
+
+.admin-progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #012451;
+  transition: width 300ms ease;
+}
+
+.admin-sheet-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.admin-sheet-stat {
+  padding: 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #eef2f7;
+}
+
+.admin-sheet-stat strong {
+  display: block;
+  font-size: 22px;
+  font-weight: 800;
+  color: #012451;
+  line-height: 1.1;
+}
+
+.admin-sheet-stat span {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.admin-sheet-stat.is-alert {
+  background: #fff7ed;
+  border-color: #ffedd5;
+}
+
+.admin-sheet-stat.is-alert strong {
+  color: #9a3412;
+}
+
+.admin-sheet-missing {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid #eef2f7;
+}
+
+.admin-sheet-missing h3 {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #012451;
+}
+
+.admin-sheet-missing-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.admin-sheet-missing-head p {
+  max-width: 700px;
+  margin: 0;
+  color: #64748b;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.admin-sheet-missing-actions {
+  display: flex;
+  flex-shrink: 0;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-sheet-capture {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 14px;
+  border: 1px solid rgba(1, 36, 81, 0.22);
+  border-radius: 999px;
+  background: #fff;
+  color: #012451;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.admin-sheet-capture.is-primary {
+  border-color: #012451;
+  background: #012451;
+  color: #fff;
+}
+
+.admin-sheet-capture:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.admin-sheet-missing ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.admin-sheet-missing li em {
+  display: block;
+  margin-top: 2px;
+  color: #94a3b8;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.admin-sheet-missing li em.is-public {
+  color: #9a3412;
+}
+
+.admin-sheet-missing li {
+  display: grid;
+  grid-template-columns: minmax(0, 220px) minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  min-width: 0;
+  font-size: 13px;
+}
+
+.admin-sheet-missing code {
+  display: block;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  font-family: ui-monospace, Consolas, monospace;
+  color: #334155;
+}
+
+.admin-sheet-missing li span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.admin-thumb-failures {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border: 1px solid #fed7aa;
+  border-radius: 10px;
+  background: #fff7ed;
+  color: #9a3412;
+  font-size: 12px;
+}
+
+.admin-thumb-failures ul {
+  margin-top: 6px;
+}
+
+.admin-thumb-failures li {
+  grid-template-columns: minmax(0, 220px) minmax(0, 1fr);
+}
+
+@media (max-width: 640px) {
+  .admin-review {
+    padding-inline: 12px;
+  }
+
+  .admin-sheet-head,
+  .admin-sheet-missing-head {
+    flex-direction: column;
+  }
+
+  .admin-sheet-actions,
+  .admin-sheet-check,
+  .admin-sheet-upload,
+  .admin-sheet-capture {
+    width: 100%;
+  }
+
+  .admin-sheet-upload,
+  .admin-sheet-check,
+  .admin-sheet-capture {
+    justify-content: center;
+  }
+
+  .admin-sheet-missing li {
+    grid-template-columns: 1fr;
+    gap: 3px;
+    padding: 8px 0;
+    border-bottom: 1px solid #f1f5f9;
+  }
+}
+
 .admin-review-toolbar {
   max-width: 1200px;
   margin: 0 auto 16px;
@@ -232,6 +573,7 @@
 }
 
 .admin-review-status.is-acesso-restrito,
+.admin-review-status.is-sem-link,
 .admin-review-status.is-duvida {
   background: #fff7ed;
   color: #9a3412;

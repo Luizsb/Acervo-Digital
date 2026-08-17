@@ -1,7 +1,28 @@
-import React, { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, ClipboardList, ExternalLink, Search } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ArrowLeft,
+  ClipboardList,
+  ExternalLink,
+  FileImage,
+  FileSpreadsheet,
+  RefreshCw,
+  Search,
+  Upload,
+} from 'lucide-react';
 import type { AuthUser } from '../contexts/AuthContext';
-import { apiAdminReview, type AdminReviewItem, type ReviewGroup } from '../utils/api';
+import {
+  apiAdminImportSpreadsheet,
+  apiAdminReview,
+  apiAdminSpreadsheetJob,
+  apiAdminSpreadsheetStatus,
+  apiAdminStartThumbCapture,
+  apiAdminThumbJob,
+  type AdminReviewItem,
+  type ReviewGroup,
+  type SpreadsheetImportSummary,
+  type SpreadsheetStatusResponse,
+  type ThumbCaptureJob,
+} from '../utils/api';
 import { REVIEW_GROUP_LABELS, REVIEW_GROUP_ORDER } from '../utils/catalogVisibility';
 import './AdminReviewPage.css';
 
@@ -12,6 +33,21 @@ interface AdminReviewPageProps {
 
 type FilterKey = 'todos' | ReviewGroup;
 
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatDate(value?: string): string {
+  if (!value) return '—';
+  try {
+    return new Date(value).toLocaleString('pt-BR');
+  } catch {
+    return value;
+  }
+}
+
 export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
   const [items, setItems] = useState<AdminReviewItem[]>([]);
   const [counts, setCounts] = useState<Partial<Record<ReviewGroup, number>>>({});
@@ -20,6 +56,35 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [sheetStatus, setSheetStatus] = useState<SpreadsheetStatusResponse | null>(null);
+  const [importing, setImporting] = useState(false);
+  const [importError, setImportError] = useState('');
+  const [importSummary, setImportSummary] = useState<SpreadsheetImportSummary | null>(null);
+  const [importProgress, setImportProgress] = useState(0);
+  const [importPhase, setImportPhase] = useState('');
+  const [thumbJob, setThumbJob] = useState<ThumbCaptureJob | null>(null);
+  const [thumbError, setThumbError] = useState('');
+  const [checkingThumbs, setCheckingThumbs] = useState(false);
+  const [thumbCheckMessage, setThumbCheckMessage] = useState('');
+  const [selectedFileName, setSelectedFileName] = useState('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadStatus = async () => {
+      try {
+        const status = await apiAdminSpreadsheetStatus();
+        if (!cancelled) setSheetStatus(status);
+      } catch {
+        if (!cancelled) setSheetStatus(null);
+      }
+    };
+    void loadStatus();
+    return () => {
+      cancelled = true;
+    };
+  }, [reloadKey]);
 
   useEffect(() => {
     let cancelled = false;
@@ -46,7 +111,7 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [group, search]);
+  }, [group, search, reloadKey]);
 
   const filters = useMemo(
     () => [
@@ -59,6 +124,104 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
     ],
     [counts, totalReview]
   );
+  const missingThumbs = sheetStatus?.missingThumbs || [];
+  const missingThumbsPublic = sheetStatus?.missingThumbsPublic ?? 0;
+  const missingThumbsTotal = sheetStatus?.missingThumbsTotal ?? 0;
+  const missingThumbsWithoutLink = sheetStatus?.missingThumbsWithoutLink ?? 0;
+  const missingThumbsPublicWithoutLink = sheetStatus?.missingThumbsPublicWithoutLink ?? 0;
+  const capturableThumbs = Math.max(
+    0,
+    missingThumbsPublic - missingThumbsPublicWithoutLink
+  );
+
+  const handleThumbCheck = async () => {
+    setCheckingThumbs(true);
+    setThumbCheckMessage('');
+    setThumbError('');
+    try {
+      const status = await apiAdminSpreadsheetStatus();
+      setSheetStatus(status);
+      setThumbCheckMessage(
+        `Verificação concluída: ${status.missingThumbsTotal} sem capa no acervo; ${status.missingThumbsPublic} publicados.`
+      );
+    } catch (err: any) {
+      setThumbError(err?.message || 'Falha ao verificar as capas do acervo.');
+    } finally {
+      setCheckingThumbs(false);
+    }
+  };
+
+  const handleImport = async (file: File | null) => {
+    if (!file) return;
+    setSelectedFileName(file.name);
+    setImporting(true);
+    setImportError('');
+    setImportSummary(null);
+    setImportProgress(0);
+    setImportPhase('Enviando a planilha...');
+    try {
+      const started = await apiAdminImportSpreadsheet(file);
+      let finished = false;
+      while (!finished) {
+        await new Promise((resolve) => window.setTimeout(resolve, 700));
+        const job = await apiAdminSpreadsheetJob(started.jobId);
+        setImportProgress(job.percent);
+        setImportPhase(
+          job.phase === 'reading'
+            ? 'Lendo a planilha...'
+            : job.phase === 'finishing'
+              ? 'Finalizando e verificando as thumbs...'
+              : `Sincronizando ${job.current} de ${job.total} linhas...`
+        );
+        if (job.status === 'failed') throw new Error(job.error || 'Falha na sincronização.');
+        if (job.status === 'completed') {
+          if (!job.summary) throw new Error('Sincronização concluída sem relatório.');
+          setImportSummary(job.summary);
+          finished = true;
+        }
+      }
+      setReloadKey((value) => value + 1);
+    } catch (err: any) {
+      setImportError(err?.message || 'Falha ao sincronizar a planilha.');
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleThumbCapture = async () => {
+    setThumbError('');
+    setThumbJob({
+      id: '',
+      status: 'processing',
+      scope: 'public',
+      current: 0,
+      total: 0,
+      percent: 0,
+      captured: 0,
+      skipped: 0,
+      failed: 0,
+      withoutLink: 0,
+      failures: [],
+    });
+    try {
+      const started = await apiAdminStartThumbCapture();
+      let finished = false;
+      while (!finished) {
+        await new Promise((resolve) => window.setTimeout(resolve, 1000));
+        const job = await apiAdminThumbJob(started.jobId);
+        setThumbJob(job);
+        if (job.status === 'failed') throw new Error(job.error || 'Falha na captura de thumbs.');
+        if (job.status === 'completed') {
+          finished = true;
+          setReloadKey((value) => value + 1);
+        }
+      }
+    } catch (err: any) {
+      setThumbError(err?.message || 'Falha na captura de thumbs.');
+      setThumbJob(null);
+    }
+  };
 
   return (
     <div className="admin-review">
@@ -75,12 +238,188 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
           <ClipboardList size={22} />
         </div>
         <div>
-          <h1>Fila de revisão</h1>
+          <h1>Administração</h1>
           <p>
-            Visão da saúde do acervo: o que ainda não é público. Linhas da planilha sem título ou
-            código também entram aqui quando o status do link não está funcionando.
+            Sincronize a planilha oficial e acompanhe a saúde do acervo: o que ainda não é público,
+            o que mudou na importação e o que está sem thumb.
           </p>
         </div>
+      </section>
+
+      <section className="admin-sheet-card">
+        <div className="admin-sheet-head">
+          <div className="admin-sheet-title">
+            <FileSpreadsheet size={18} />
+            <div>
+              <h2>Planilha do catálogo</h2>
+              <p>
+                {sheetStatus
+                  ? `${sheetStatus.fileName} · ${formatBytes(sheetStatus.sizeBytes)} · atualizada em ${formatDate(sheetStatus.modifiedAt)} · ${sheetStatus.totalActive} ativos no banco`
+                  : 'Carregando status da planilha...'}
+              </p>
+            </div>
+          </div>
+          <div className="admin-sheet-actions">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+              hidden
+              onChange={(event) => void handleImport(event.target.files?.[0] || null)}
+            />
+            <button
+              type="button"
+              className="admin-sheet-check"
+              disabled={checkingThumbs || importing}
+              onClick={() => void handleThumbCheck()}
+            >
+              <RefreshCw size={16} className={checkingThumbs ? 'is-spinning' : ''} />
+              {checkingThumbs ? 'Verificando...' : 'Verificar capas'}
+            </button>
+            <button
+              type="button"
+              className="admin-sheet-upload"
+              disabled={importing}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Upload size={16} />
+              {importing ? 'Sincronizando...' : 'Substituir planilha'}
+            </button>
+          </div>
+        </div>
+        {selectedFileName ? (
+          <p className="admin-sheet-file">Arquivo selecionado: {selectedFileName}</p>
+        ) : null}
+        {thumbCheckMessage ? (
+          <p className="admin-sheet-check-result">{thumbCheckMessage}</p>
+        ) : null}
+        {importing ? (
+          <div className="admin-progress" aria-live="polite">
+            <div className="admin-progress-label">
+              <span>{importPhase}</span>
+              <strong>{importProgress}%</strong>
+            </div>
+            <div
+              className="admin-progress-track"
+              role="progressbar"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={importProgress}
+            >
+              <span style={{ width: `${importProgress}%` }} />
+            </div>
+          </div>
+        ) : null}
+        {importError ? <p className="admin-review-error">{importError}</p> : null}
+        {importSummary ? (
+          <div className="admin-sheet-summary">
+            <div className="admin-sheet-stat">
+              <strong>{importSummary.created}</strong>
+              <span>Novos</span>
+            </div>
+            <div className="admin-sheet-stat">
+              <strong>{importSummary.updated}</strong>
+              <span>Atualizados</span>
+            </div>
+            <div className="admin-sheet-stat">
+              <strong>{importSummary.unchanged}</strong>
+              <span>Sem alteração</span>
+            </div>
+            <div className="admin-sheet-stat">
+              <strong>{importSummary.reactivated}</strong>
+              <span>Reativados</span>
+            </div>
+            <div className="admin-sheet-stat">
+              <strong>{importSummary.deactivated}</strong>
+              <span>Desativados</span>
+            </div>
+            <div className="admin-sheet-stat">
+              <strong>{importSummary.skipped}</strong>
+              <span>Linhas ignoradas</span>
+            </div>
+            <div className="admin-sheet-stat">
+              <strong>{importSummary.totalActive}</strong>
+              <span>Ativos no banco</span>
+            </div>
+          </div>
+        ) : null}
+        {missingThumbs.length ? (
+          <div className="admin-sheet-missing">
+            <div className="admin-sheet-missing-head">
+              <div>
+                <h3>Capas ausentes ({missingThumbsTotal})</h3>
+                <p>
+                  A auditoria revisa todo o acervo: <strong>{missingThumbsPublic}</strong> publicados
+                  e <strong>{missingThumbsTotal - missingThumbsPublic}</strong> na fila de revisão.
+                  A captura automática considera somente os <strong>{capturableThumbs}</strong> com
+                  cadastro completo, status Funcionando e link do recurso.
+                  {missingThumbsPublicWithoutLink > 0
+                    ? ` ${missingThumbsPublicWithoutLink} publicado está sem link e precisa de ajuste na planilha.`
+                    : ''}
+                  {missingThumbsWithoutLink > missingThumbsPublicWithoutLink
+                    ? ` Outros ${missingThumbsWithoutLink - missingThumbsPublicWithoutLink} itens da revisão também estão sem link.`
+                    : ''}
+                </p>
+              </div>
+              <div className="admin-sheet-missing-actions">
+                <button
+                  type="button"
+                  className="admin-sheet-capture is-primary"
+                  disabled={thumbJob?.status === 'processing' || capturableThumbs === 0}
+                  onClick={() => void handleThumbCapture()}
+                >
+                  <FileImage size={16} />
+                  {thumbJob?.status === 'processing'
+                    ? 'Capturando...'
+                    : `Capturar elegíveis (${capturableThumbs})`}
+                </button>
+              </div>
+            </div>
+            {thumbJob ? (
+              <div className="admin-progress" aria-live="polite">
+                <div className="admin-progress-label">
+                  <span>
+                    {thumbJob.status === 'completed'
+                      ? `${thumbJob.captured} capturadas · ${thumbJob.failed} falhas · ${thumbJob.withoutLink} sem link`
+                      : `${thumbJob.current} de ${thumbJob.total || '...'} · ${thumbJob.captured} capturadas`}
+                  </span>
+                  <strong>{thumbJob.percent}%</strong>
+                </div>
+                <div className="admin-progress-track">
+                  <span style={{ width: `${thumbJob.percent}%` }} />
+                </div>
+              </div>
+            ) : null}
+            {thumbJob?.failures.length ? (
+              <div className="admin-thumb-failures">
+                <strong>Não foi possível capturar:</strong>
+                <ul>
+                  {thumbJob.failures.map((failure) => (
+                    <li key={failure.codigo}>
+                      <code>{failure.codigo}</code>
+                      <span>{failure.error}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+            {thumbError ? <p className="admin-review-error">{thumbError}</p> : null}
+            <ul>
+              {missingThumbs.map((item) => (
+                <li key={item.codigo || item.titulo}>
+                  <code>{item.codigo || '—'}</code>
+                  <span>
+                    {item.titulo}
+                    <em className={item.isPublic ? 'is-public' : ''}>
+                      {item.isPublic ? 'publicado' : item.status?.trim() || 'em cadastro'}
+                      {item.hasLink ? '' : ' · sem link'}
+                    </em>
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </section>
 
       <div className="admin-review-toolbar">
@@ -139,7 +478,9 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
                 <tr key={item.id}>
                   <td>
                     <span className={`admin-review-status is-${item.reviewGroup}`}>
-                      {item.status?.trim() || REVIEW_GROUP_LABELS[item.reviewGroup]}
+                      {item.reviewGroup === 'sem-link'
+                        ? REVIEW_GROUP_LABELS['sem-link']
+                        : item.status?.trim() || REVIEW_GROUP_LABELS[item.reviewGroup]}
                     </span>
                   </td>
                   <td>

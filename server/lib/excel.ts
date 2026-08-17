@@ -10,10 +10,14 @@ function normalizeCellValue(value: ExcelJS.CellValue): unknown {
   if ('richText' in value) {
     return value.richText.map((part) => part.text).join('');
   }
-  if ('text' in value) return value.text;
+  if ('text' in value && typeof value.text === 'string') return value.text;
+  if ('hyperlink' in value && typeof (value as { hyperlink?: string }).hyperlink === 'string') {
+    return (value as { hyperlink: string }).hyperlink;
+  }
   if ('error' in value) return value.error;
 
-  return String(value);
+  // Evita gravar "[object Object]" no código/título quando o Excel devolve estrutura desconhecida.
+  return '';
 }
 
 export async function readWorksheetMatrix(

@@ -80,6 +80,17 @@ export function shortLabel(value: string): string {
   return cut || value.trim();
 }
 
+function normalizeResourceCode(value: string): string {
+  const trimmed = value.trim();
+  if (!/^https?:\/\//i.test(trimmed)) return trimmed;
+  try {
+    const pathname = new URL(trimmed).pathname.replace(/\/+$/, '');
+    return decodeURIComponent(pathname.split('/').filter(Boolean).pop() || trimmed);
+  } catch {
+    return trimmed;
+  }
+}
+
 const BNCC_CODE_RE = /\b((?:EI|EF|EM)\d{2}[A-Z]{2,4}\d{2,3}[A-Z0-9]*)\b/i;
 
 export function extractBnccCode(value: string): string {
@@ -296,7 +307,7 @@ export function mapCategorizacaoRow(
   options: { metodologiaExists: (codigo: string) => boolean; sheetRow?: number }
 ): MappedODA | null {
   const tituloInformado = cell(row, 'Título do recurso');
-  const codigoInformado = cell(row, 'Código do recurso');
+  const codigoInformado = normalizeResourceCode(cell(row, 'Código do recurso'));
   const status = cell(row, 'Status do link') || null;
   const linkRepositorio = cell(row, 'Link do recurso') || null;
   if (!tituloInformado && !codigoInformado && !status && !linkRepositorio) return null;

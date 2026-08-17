@@ -16,11 +16,24 @@ export function normalizeCatalogStatus(value?: string | null): string {
     .toLowerCase();
 }
 
-export function isVisibleInCatalog(status?: string | null): boolean {
+export function hasCatalogStatus(status?: string | null): boolean {
   return normalizeCatalogStatus(status) === normalizeCatalogStatus(CATALOG_VISIBLE_STATUS);
 }
 
+/** Card sem link não tem para onde levar o usuário, então não pode publicar. */
+export function hasResourceLink(link?: string | null): boolean {
+  return Boolean(link && link.trim());
+}
+
+export function isVisibleInCatalog(
+  status: string | null | undefined,
+  resourceLink: string | null | undefined
+): boolean {
+  return hasCatalogStatus(status) && hasResourceLink(resourceLink);
+}
+
 export type ReviewGroup =
+  | 'sem-link'
   | 'em-cadastro'
   | 'quebrado'
   | 'incorreto'
@@ -30,6 +43,7 @@ export type ReviewGroup =
   | 'outro';
 
 export const REVIEW_GROUP_LABELS: Record<ReviewGroup, string> = {
+  'sem-link': 'Sem link',
   'em-cadastro': 'Em cadastro',
   quebrado: 'Quebrado',
   incorreto: 'Incorreto',
@@ -40,6 +54,7 @@ export const REVIEW_GROUP_LABELS: Record<ReviewGroup, string> = {
 };
 
 export const REVIEW_GROUP_ORDER: ReviewGroup[] = [
+  'sem-link',
   'quebrado',
   'incorreto',
   'acesso-restrito',

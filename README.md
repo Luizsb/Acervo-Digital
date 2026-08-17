@@ -70,7 +70,10 @@ São mais de mil imagens. Guardá-las como `BYTEA` deixaria o banco pesado. O ba
 ### Atualizar o catálogo quando a planilha oficial mudar
 
 1. Substitua `public/Categorização_Recursos Digitais_Terceiros.xlsx` pela versão oficial.
-2. Rode `npm run import:categorizacao` (dev local) ou `docker compose up --build -d` (a API semeia na subida).
+2. Rode `npm run import:categorizacao` (dev local), use **Administração → Substituir planilha** (login admin) ou `docker compose up --build -d` (a API semeia na subida).
+3. O feedback (terminal ou tela admin) mostra novos, atualizados, desativados e recursos sem thumb.
+
+Para comparar a planilha nova com a do Git sem tocar no banco: `npm run diff:planilha`.
 
 A chave é o **Código do recurso**:
 
@@ -118,6 +121,7 @@ As capas já vêm em `public/thumbs/`. Só rode a captura se faltar imagem:
 ```bash
 npm ci
 cd server && npm ci && cd ..
+npm run thumbs:setup
 npm run thumbs:capture
 ```
 
@@ -162,6 +166,7 @@ npm run db:reset
 As capas WebP ficam em `public/thumbs/` e vão no Git. Depois do clone, a galeria já tem imagem. Para gerar o que faltar:
 
 ```bash
+npm run thumbs:setup # uma vez no desenvolvimento local
 npm run thumbs:capture
 ```
 
@@ -178,14 +183,32 @@ npx tsx scripts/capture-thumbs.ts --validate-existing
 
 Na instância (Ubuntu 22.04 ou Amazon Linux 2023), Docker Compose sobe **Postgres + API + nginx**. O browser fala só com a porta 80; o nginx encaminha `/api` e `/health` para a API. Postgres e a porta 3001 ficam só em localhost.
 
-**Máquina:** `t3.small` (2 GB) no mínimo; `t3.medium` fica mais folgado. Disco 20 GB basta. Security group: **22** e **80** (depois 443). Não abra 5432 nem 3001.
+**Na EC2, antes do deploy**, rode:
 
 ```bash
-sudo apt-get update
-sudo apt-get install -y git ca-certificates curl
-curl -fsSL https://get.docker.com | sudo sh
+df -h
+free -h
+docker --version 2>/dev/null || echo "Docker ainda não instalado"
+docker compose version 2>/dev/null || true
+ls -la ~
+du -sh ~/Acervo-Digital 2>/dev/null || echo "Repo ainda não clonado"
+```
+
+Peça pelo menos **~8 GB livres** (imagem + thumbs + Postgres). `t3.small` (2 GB RAM) no mínimo.
+
+Na Amazon Linux 2023:
+
+```bash
+sudo dnf update -y
+sudo dnf install -y git docker
+sudo systemctl enable --now docker
 sudo usermod -aG docker $USER
 # faça logout/login para o grupo docker valer
+```
+
+No Ubuntu 22.04, instale com `apt-get` e o script oficial do Docker. Depois:
+
+```bash
 git clone https://github.com/Luizsb/Acervo-Digital.git
 cd Acervo-Digital
 cp .env.example .env
@@ -208,7 +231,9 @@ Gere o JWT com `openssl rand -base64 48`. Suba:
 docker compose up --build -d
 ```
 
-A primeira subida importa a planilha para o Postgres (volume `acervo_pgdata`). As thumbs entram na imagem do frontend.
+A primeira subida importa a planilha para o Postgres (volume `acervo_pgdata`). A pasta
+`public/thumbs` é compartilhada entre API e nginx; capturas feitas pelo painel admin persistem no
+host e aparecem no site sem rebuild.
 
 - App: `http://SEU_IP`
 - Saúde da API (via nginx): `http://SEU_IP/health`
@@ -239,6 +264,8 @@ O volume do Postgres permanece. Se o catálogo já estiver no banco, pode usar `
 | `npm run db:up` / `db:down` / `db:reset` | Só o Postgres |
 | `npm run seed` | BNCC + usuários demo/admin + planilha |
 | `npm run import:categorizacao` | Sincroniza a planilha com o banco |
+| `npm run diff:planilha` | Compara a planilha local com a versão no Git |
+| `npm run thumbs:setup` | Instala o Chromium para captura local |
 | `npm run thumbs:capture` | Captura thumbs faltantes |
 | `npm run test` | Vitest |
 
@@ -250,11 +277,11 @@ O volume do Postgres permanece. Se o catálogo já estiver no banco, pode usar `
 |------|-----------|
 | **ODAs** | `GET/POST /api/odas`, `GET/PUT/DELETE /api/odas/:id` |
 | **Auth** | `POST /api/auth/login`, `register`, `GET/PATCH /api/auth/me` |
-| **Admin** | `GET /api/admin/review` (JWT com `role=admin`; fila do que não está Funcionando) |
+| **Admin** | `GET /api/admin/review` (JWT com `role=admin`; fila do que não entra na galeria) |
 | **Favoritos** | `GET/POST /api/users/me/favorites`, `DELETE .../:projectId` |
 | **BNCC** | `GET /api/bncc`, `GET /api/bncc/:codigo` |
 
-`GET /api/odas` retorna só registros `ativo = true` com **Status do link = Funcionando**. Em branco, acesso restrito, quebrado, incorreto, não avaliado e dúvida para revisão ficam no banco para o painel admin e não entram na galeria. Para incluir desativados: `?includeInactive=true`.
+`GET /api/odas` retorna só registros `ativo = true` com **Status do link = Funcionando** e **Link do recurso preenchido**. Em branco, acesso restrito, quebrado, incorreto, não avaliado, dúvida para revisão e itens sem link ficam no banco para o painel admin e não entram na galeria. Um recurso marcado como Funcionando mas sem link aparece na fila de revisão no grupo **Sem link**. Para incluir desativados: `?includeInactive=true`.
 
 ---
 

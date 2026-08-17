@@ -78,7 +78,7 @@ router.get('/:id', async (req, res) => {
       },
     });
 
-    if (!oda || oda.ativo === false || !isVisibleInCatalog(oda.status)) {
+    if (!oda || oda.ativo === false || !isVisibleInCatalog(oda.status, oda.linkRepositorio)) {
       return res.status(404).json({ error: 'ODA not found' });
     }
 

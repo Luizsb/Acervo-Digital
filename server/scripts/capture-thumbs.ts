@@ -2,10 +2,14 @@ import fs from 'fs';
 import path from 'path';
 import https from 'https';
 import http from 'http';
-import { PrismaClient } from '@prisma/client';
+import prisma from '../lib/prisma';
+import { catalogVisibleWhere } from '../lib/catalogVisibility';
 
-const prisma = new PrismaClient();
 const thumbsDir = path.join(process.cwd(), '..', 'public', 'thumbs');
+// Caminho estável para o servidor local; no Docker, ACERVO_PLAYWRIGHT_BROWSERS_PATH=/ms-playwright.
+process.env.PLAYWRIGHT_BROWSERS_PATH =
+  process.env.ACERVO_PLAYWRIGHT_BROWSERS_PATH ||
+  path.join(process.cwd(), 'node_modules', '.playwright-browsers');
 const LIMIT = Number(process.argv.find((a) => a.startsWith('--limit='))?.split('=')[1] || 0);
 const WAIT_MS = Number(process.argv.find((a) => a.startsWith('--wait='))?.split('=')[1] || 8000);
 const RETRY_WAIT_MS = Number(
@@ -210,17 +214,40 @@ async function capturePage(
   }
 }
 
-async function main() {
+export type ThumbCaptureResult = {
+  total: number;
+  captured: number;
+  skipped: number;
+  failed: number;
+  /** Sem capa e sem link do recurso: não há como capturar. */
+  withoutLink: number;
+  failures: { codigo: string; error: string }[];
+};
+
+export type ThumbCaptureOptions = {
+  onlyPublic?: boolean;
+  limit?: number;
+  onProgress?: (progress: ThumbCaptureResult & { current: number }) => void;
+};
+
+export async function captureMissingThumbs(
+  options: ThumbCaptureOptions = {}
+): Promise<ThumbCaptureResult> {
   fs.mkdirSync(thumbsDir, { recursive: true });
   const odas = await prisma.oDA.findMany({
+    where: {
+      ativo: true,
+      ...(options.onlyPublic ? catalogVisibleWhere() : {}),
+    },
     select: { codigoOda: true, titulo: true, linkRepositorio: true },
     orderBy: { id: 'asc' },
   });
 
   const jobs: Array<(typeof odas)[number] & { replaceExisting: boolean }> = [];
   let invalidExisting = 0;
+  let withoutLink = 0;
   for (const oda of odas) {
-    if (!oda.codigoOda || !oda.linkRepositorio) continue;
+    if (!oda.codigoOda) continue;
     const exists = alreadyExists(oda.codigoOda);
     if (exists && !FORCE) {
       if (!VALIDATE_EXISTING) continue;
@@ -228,10 +255,15 @@ async function main() {
       if (!invalid) continue;
       invalidExisting += 1;
     }
+    if (!oda.linkRepositorio) {
+      withoutLink += 1;
+      continue;
+    }
     jobs.push({ ...oda, replaceExisting: exists });
   }
-  const queue = LIMIT > 0 ? jobs.slice(0, LIMIT) : jobs;
-  console.log(`🖼️  Thumbs a capturar: ${queue.length} (faltando ${jobs.length})`);
+  const requestedLimit = options.limit ?? LIMIT;
+  const queue = requestedLimit > 0 ? jobs.slice(0, requestedLimit) : jobs;
+  console.log(`🖼️  Thumbs a capturar: ${queue.length} (sem link do recurso: ${withoutLink})`);
   console.log(
     `⏭️  Arquivos existentes não serão sobrescritos${FORCE ? ' (FORCE ligado)' : ''}`
   );
@@ -242,12 +274,22 @@ async function main() {
   console.log(
     `🔁 Loader: até ${MAX_LOADING_RETRIES} novas tentativas, espera extra de ${RETRY_WAIT_MS}ms`
   );
+  options.onProgress?.({
+    total: queue.length,
+    current: 0,
+    captured: 0,
+    skipped: 0,
+    failed: 0,
+    withoutLink,
+    failures: [],
+  });
 
   const { chromium } = await import('playwright');
   const browser = await chromium.launch({ headless: true });
   let ok = 0;
   let skip = 0;
   let fail = 0;
+  const failures: ThumbCaptureResult['failures'] = [];
 
   const CONCURRENCY = 2;
   let index = 0;
@@ -261,6 +303,15 @@ async function main() {
       if (!FORCE && alreadyExists(codigo) && !oda.replaceExisting) {
         skip += 1;
         console.log(`⏭️  ${codigo} já existe`);
+        options.onProgress?.({
+          total: queue.length,
+          current: ok + skip + fail,
+          captured: ok,
+          skipped: skip,
+          failed: fail,
+          withoutLink,
+          failures,
+        });
         continue;
       }
       const dest = thumbFile(codigo);
@@ -281,22 +332,38 @@ async function main() {
         console.log(`✅ ${ok}/${queue.length} ${codigo}`);
       } catch (err: any) {
         fail += 1;
-        console.error(`❌ ${codigo}: ${err.message}`);
+        const message = err?.message || 'Falha desconhecida';
+        failures.push({ codigo, error: message });
+        console.error(`❌ ${codigo}: ${message}`);
       }
+      options.onProgress?.({
+        total: queue.length,
+        current: ok + skip + fail,
+        captured: ok,
+        skipped: skip,
+        failed: fail,
+        withoutLink,
+        failures,
+      });
     }
   }
 
   await Promise.all(Array.from({ length: CONCURRENCY }, () => worker()));
 
   await browser.close();
-  console.log(`\n🎉 Captura concluída: ${ok} ok, ${skip} pulados, ${fail} falhas`);
+  console.log(
+    `\n🎉 Captura concluída: ${ok} ok, ${skip} pulados, ${fail} falhas, ${withoutLink} sem link`
+  );
+  return { total: queue.length, captured: ok, skipped: skip, failed: fail, withoutLink, failures };
 }
 
-main()
-  .catch((err) => {
-    console.error(err);
-    process.exit(1);
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+if (require.main === module) {
+  captureMissingThumbs()
+    .catch((err) => {
+      console.error(err);
+      process.exit(1);
+    })
+    .finally(async () => {
+      await prisma.$disconnect();
+    });
+}

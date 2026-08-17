@@ -90,7 +90,7 @@ export function ProfileMenu({
               className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 rounded-xl transition-all duration-200 group"
             >
               <ClipboardList className="w-5 h-5 text-slate-500 group-hover:text-primary transition-colors" />
-              <span className="font-semibold text-slate-700 group-hover:text-primary">Fila de revisão</span>
+              <span className="font-semibold text-slate-700 group-hover:text-primary">Administração</span>
             </button>
           </div>
         ) : null}

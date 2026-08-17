@@ -1,7 +1,8 @@
 /**
  * Visibilidade no acervo público (galeria).
- * Só entra quem tem Status do link = Funcionando.
- * Em branco, quebrado, incorreto e demais status ficam no banco para o painel admin.
+ * Só entra quem tem Status do link = Funcionando E link do recurso preenchido.
+ * Em branco, quebrado, incorreto, demais status e cards sem destino ficam no
+ * banco para o painel admin.
  */
 export const CATALOG_VISIBLE_STATUS = 'Funcionando';
 
@@ -21,18 +22,31 @@ export function normalizeCatalogStatus(value?: string | null): string {
     .toLowerCase();
 }
 
-export function isVisibleInCatalog(status?: string | null): boolean {
+export function hasCatalogStatus(status?: string | null): boolean {
   return normalizeCatalogStatus(status) === normalizeCatalogStatus(CATALOG_VISIBLE_STATUS);
 }
 
-/** Cláusula Prisma: só recursos com status Funcionando. */
+/** Card sem link não tem para onde levar o usuário, então não pode publicar. */
+export function hasResourceLink(link?: string | null): boolean {
+  return Boolean(link && link.trim());
+}
+
+export function isVisibleInCatalog(
+  status: string | null | undefined,
+  linkRepositorio: string | null | undefined
+): boolean {
+  return hasCatalogStatus(status) && hasResourceLink(linkRepositorio);
+}
+
+/** Cláusula Prisma: status Funcionando e link preenchido. */
 export function catalogVisibleWhere() {
   return {
     status: { equals: CATALOG_VISIBLE_STATUS, mode: 'insensitive' as const },
+    AND: [{ linkRepositorio: { not: null } }, { NOT: { linkRepositorio: '' } }],
   };
 }
 
-/** Cláusula Prisma: fila de revisão (tudo que não está Funcionando). */
+/** Cláusula Prisma: fila de revisão (tudo que não entra na galeria). */
 export function catalogReviewWhere() {
   return {
     ativo: true as const,
@@ -45,11 +59,14 @@ export function catalogReviewWhere() {
           { NOT: { status: { equals: CATALOG_VISIBLE_STATUS, mode: 'insensitive' as const } } },
         ],
       },
+      { linkRepositorio: null },
+      { linkRepositorio: { equals: '' } },
     ],
   };
 }
 
 export type ReviewGroup =
+  | 'sem-link'
   | 'em-cadastro'
   | 'quebrado'
   | 'incorreto'
@@ -59,6 +76,7 @@ export type ReviewGroup =
   | 'outro';
 
 export const REVIEW_GROUP_LABELS: Record<ReviewGroup, string> = {
+  'sem-link': 'Sem link',
   'em-cadastro': 'Em cadastro',
   quebrado: 'Quebrado',
   incorreto: 'Incorreto',
@@ -69,6 +87,7 @@ export const REVIEW_GROUP_LABELS: Record<ReviewGroup, string> = {
 };
 
 export const REVIEW_GROUP_ORDER: ReviewGroup[] = [
+  'sem-link',
   'quebrado',
   'incorreto',
   'acesso-restrito',
@@ -87,4 +106,18 @@ export function reviewGroupFromStatus(status?: string | null): ReviewGroup {
   if (key.includes('nao avaliado')) return 'nao-avaliado';
   if (key.includes('duvida')) return 'duvida';
   return 'outro';
+}
+
+/**
+ * Agrupa um item da fila de revisão. Status Funcionando sem link cai em
+ * "Sem link": a planilha diz que está ok, mas falta o endereço do recurso.
+ */
+export function reviewGroupFor(item: {
+  status?: string | null;
+  linkRepositorio?: string | null;
+}): ReviewGroup {
+  if (hasCatalogStatus(item.status) && !hasResourceLink(item.linkRepositorio)) {
+    return 'sem-link';
+  }
+  return reviewGroupFromStatus(item.status);
 }

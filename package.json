@@ -73,6 +73,8 @@
             "seed": "cd server && npm run seed",
             "setup": "npm run db:up && npm run prisma:generate && npm run prisma:migrate && npm run seed",
             "import:categorizacao": "cd server && npm run import:categorizacao",
+            "diff:planilha": "cd server && tsx scripts/diff-planilha.ts",
+            "thumbs:setup": "cd server && npm run thumbs:setup",
             "thumbs:capture": "cd server && npm run thumbs:capture",
             "test": "vitest run"
       }
