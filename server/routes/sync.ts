@@ -9,6 +9,11 @@ import {
   getLastSync,
   getSpreadsheetJob,
 } from '../lib/spreadsheetSync';
+import {
+  attachJobToSyncRequest,
+  claimSyncRequest,
+  finishSyncRequest,
+} from '../lib/syncRequests';
 
 const router = express.Router();
 
@@ -103,10 +108,15 @@ router.post(
       if (fs.existsSync(targetPath)) fs.copyFileSync(targetPath, backupPath);
       fs.writeFileSync(targetPath, file.buffer);
 
+      const requestId = typeof req.body?.requestId === 'string' ? req.body.requestId.trim() : '';
+      // O id do job só existe depois de iniciar a importação, mas os hooks precisam dele.
+      const jobIdRef = { value: '' };
+
       const job = beginSpreadsheetImport(file.originalname || 'apps-script.xlsx', targetPath, {
         source: 'apps-script',
         onSuccess: () => {
           if (fs.existsSync(backupPath)) fs.unlinkSync(backupPath);
+          finishSyncRequest(jobIdRef.value);
           if (!shouldCaptureThumbsAfterSync()) return;
           // Rotina opcional: gera as capas que faltam logo após a sincronização.
           void captureMissingThumbs({ onlyPublic: true, limit: thumbCaptureLimit() })
@@ -122,8 +132,12 @@ router.post(
             fs.copyFileSync(backupPath, targetPath);
             fs.unlinkSync(backupPath);
           }
+          finishSyncRequest(jobIdRef.value, 'A importação da planilha falhou.');
         },
       });
+
+      jobIdRef.value = job.id;
+      if (requestId) attachJobToSyncRequest(requestId, job.id);
 
       res.status(202).json({
         ok: true,
@@ -139,6 +153,26 @@ router.post(
     }
   }
 );
+
+/**
+ * O script da planilha chama isso em um acionador curto (ex.: a cada 5 min).
+ * Se o admin pediu uma sincronização, devolve o requestId para o script enviar o arquivo.
+ */
+router.get('/pending', requireSyncToken, (_req, res) => {
+  if (getActiveSpreadsheetJobId()) {
+    return res.json({ pending: false, reason: 'Sincronização já em andamento.' });
+  }
+
+  const claimed = claimSyncRequest();
+  if (!claimed) return res.json({ pending: false });
+
+  res.json({
+    pending: true,
+    requestId: claimed.id,
+    requestedAt: claimed.requestedAt,
+    requestedBy: claimed.requestedBy,
+  });
+});
 
 router.get('/jobs/:jobId', requireSyncToken, (req, res) => {
   const job = getSpreadsheetJob(req.params.jobId);

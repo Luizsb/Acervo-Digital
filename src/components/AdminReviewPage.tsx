@@ -20,6 +20,7 @@ import {
   apiAdminSpreadsheetJob,
   apiAdminSpreadsheetStatus,
   apiAdminStartThumbCapture,
+  apiAdminSyncRequest,
   apiAdminThumbJob,
   type AdminReviewItem,
   type ReviewGroup,
@@ -214,8 +215,24 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
     }
   };
 
+  /** Espera o script da planilha atender o pedido e devolver o id do job. */
+  const waitForQueuedJob = async (): Promise<string> => {
+    const deadline = Date.now() + 12 * 60 * 1000;
+    while (Date.now() < deadline) {
+      await new Promise((resolve) => window.setTimeout(resolve, 5000));
+      const { request } = await apiAdminSyncRequest();
+      if (request?.jobId) return request.jobId;
+      if (request?.status === 'failed') {
+        throw new Error(request.error || 'O script da planilha não atendeu o pedido.');
+      }
+    }
+    throw new Error(
+      'O script da planilha não respondeu. Confirme o acionador "checkAcervoSyncRequests" no Apps Script.'
+    );
+  };
+
   const handleImportViaAppsScript = async () => {
-    setSelectedFileName(sheetStatus?.appsScript?.label || 'Apps Script');
+    setSelectedFileName('Planilha do Google (via script)');
     setImporting(true);
     setImportError('');
     setImportSummary(null);
@@ -223,7 +240,12 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
     setImportPhase('Acionando o script da planilha...');
     try {
       const started = await apiAdminImportViaAppsScript();
-      await pollSpreadsheetJob(started.jobId);
+      let jobId = started.jobId;
+      if (!jobId) {
+        setImportPhase('Pedido registrado. Aguardando o script da planilha (até 5 min)...');
+        jobId = await waitForQueuedJob();
+      }
+      await pollSpreadsheetJob(jobId);
     } catch (err: any) {
       setImportError(err?.message || 'Falha ao acionar o Apps Script.');
     } finally {
@@ -309,13 +331,13 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
               hidden
               onChange={(event) => void handleImport(event.target.files?.[0] || null)}
             />
-            {sheetStatus?.appsScript?.configured ? (
+            {sheetStatus?.appsScript?.configured || sheetStatus?.autoSyncEnabled ? (
               <button
                 type="button"
                 className="admin-sheet-upload is-google"
                 disabled={importing}
                 onClick={() => void handleImportViaAppsScript()}
-                title="Aciona o script da própria planilha: funciona mesmo com a planilha privada"
+                title="Pede a sincronização ao script da própria planilha: funciona mesmo com a planilha privada"
               >
                 <PlayCircle size={16} />
                 {importing ? 'Sincronizando...' : 'Sincronizar agora'}

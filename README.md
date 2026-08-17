@@ -75,11 +75,19 @@ roda com a conta do dono da planilha. Serve para a rotina diária e para o botã
 
 1. No `.env` da API: `SPREADSHEET_SYNC_TOKEN=` (`openssl rand -hex 32`) e `APPS_SCRIPT_SYNC_SECRET=` (`openssl rand -hex 16`)
 2. Planilha → Extensões → Apps Script → cole `scripts/apps-script/sync-acervo.gs`
-3. Ajuste `ACERVO_API_BASE`, `SYNC_TOKEN` e `WEB_APP_SECRET`, autorize rodando `testSyncNow`
-4. Acionadores → novo acionador diário em `syncAcervoDaily`
-5. Implantar → Nova implantação → **App da Web** (executar como: eu; acesso: qualquer pessoa) → copie a URL `/exec` para `APPS_SCRIPT_SYNC_URL` no `.env` e rode `docker compose up -d api`
-6. Endpoints usados: `POST /api/sync/spreadsheet` (responde `202` com `jobId`) e `GET /api/sync/jobs/:jobId`, com header `X-Acervo-Sync-Token`
-7. Capas: por padrão a sync já captura as elegíveis (até `AUTO_CAPTURE_THUMBS_LIMIT`, 50 por execução). Use `AUTO_CAPTURE_THUMBS_AFTER_SYNC=false` para deixar só sob demanda
+3. O endereço da API já está preenchido no script. Em **Configurações do projeto → Propriedades do script**, cadastre `SYNC_TOKEN` e `WEB_APP_SECRET` com os mesmos valores do `.env`; depois autorize rodando `testSyncNow`
+4. Acionadores → dois acionadores baseados em tempo:
+   - `syncAcervoDaily`: temporizador diário (ex.: 6h às 7h)
+   - `checkAcervoSyncRequests`: a cada 5 minutos — é o que atende o botão **Sincronizar agora** do painel
+5. Endpoints usados: `POST /api/sync/spreadsheet` (responde `202` com `jobId`), `GET /api/sync/pending` e `GET /api/sync/jobs/:jobId`, com header `X-Acervo-Sync-Token`
+6. Capas: por padrão a sync já captura as elegíveis (até `AUTO_CAPTURE_THUMBS_LIMIT`, 50 por execução). Use `AUTO_CAPTURE_THUMBS_AFTER_SYNC=false` para deixar só sob demanda
+
+O botão do painel não chama o Google diretamente: ele registra um pedido que a planilha
+busca no acionador de 5 minutos. Esse desenho evita a exigência de App da Web público,
+que contas Workspace normalmente bloqueiam (só oferecem “Somente eu” ou “Qualquer pessoa
+em <domínio>”). O App da Web e o `APPS_SCRIPT_SYNC_URL` seguem suportados como atalho
+opcional para quem pode liberar acesso anônimo; se a chamada direta falhar, a API cai
+automaticamente na fila.
 
 A planilha tem ~5 MB, então o Nginx do container web libera `client_max_body_size 30m`. Se aparecer `413 Request Entity Too Large`, o container web está com a config antiga: rode `docker compose up --build -d web`.
 

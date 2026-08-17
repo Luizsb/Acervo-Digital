@@ -271,6 +271,7 @@ export interface SpreadsheetStatusResponse {
     configured: boolean;
     label: string;
   };
+  syncRequest?: SyncRequestState | null;
   lastSync?: {
     at: string;
     source: 'upload' | 'google' | 'apps-script' | 'seed' | null;
@@ -321,7 +322,24 @@ export async function apiAdminImportFromGoogle(): Promise<AsyncJobStartResponse>
   return data;
 }
 
-export async function apiAdminImportViaAppsScript(): Promise<AsyncJobStartResponse> {
+export interface SyncRequestState {
+  id: string;
+  status: 'pending' | 'running' | 'completed' | 'failed';
+  requestedAt: string;
+  requestedBy: string | null;
+  jobId: string | null;
+  error: string | null;
+}
+
+export interface AppsScriptSyncStartResponse {
+  ok: boolean;
+  mode: 'direct' | 'queued';
+  jobId?: string;
+  requestId?: string;
+  message?: string;
+}
+
+export async function apiAdminImportViaAppsScript(): Promise<AppsScriptSyncStartResponse> {
   const token = getAuthToken();
   if (!token) throw new Error('Não autorizado.');
   const res = await fetch(`${API_BASE_URL}/admin/spreadsheet/from-apps-script`, {
@@ -330,6 +348,17 @@ export async function apiAdminImportViaAppsScript(): Promise<AsyncJobStartRespon
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Erro ao acionar o Apps Script.');
+  return data;
+}
+
+export async function apiAdminSyncRequest(): Promise<{ request: SyncRequestState | null }> {
+  const token = getAuthToken();
+  if (!token) throw new Error('Não autorizado.');
+  const res = await fetch(`${API_BASE_URL}/admin/spreadsheet/sync-request`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Erro ao consultar o pedido de sincronização.');
   return data;
 }
 
