@@ -1,0 +1,3 @@
+# Scripts de shell rodam no Linux (EC2 e GitHub Actions): CRLF do Windows
+# faria o bash falhar com erros de "$'\r': command not found".
+*.sh text eol=lf

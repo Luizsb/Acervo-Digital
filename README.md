@@ -255,13 +255,39 @@ host e aparecem no site sem rebuild.
 - App: `http://SEU_IP`
 - Saúde da API (via nginx): `http://SEU_IP/health`
 
-Atualizar depois de um `git pull`:
+O volume do Postgres permanece entre atualizações. Se o catálogo já estiver no banco, pode usar `SKIP_SEED=true` nas próximas subidas para a API iniciar mais rápido.
+
+---
+
+## Deploy automático (GitHub Actions)
+
+Todo push em `main` roda o workflow `.github/workflows/ci-e-deploy.yml`: primeiro testes, build do frontend e checagem de tipos da API; se tudo passar, ele entra na EC2 por SSH e executa `scripts/deploy-ec2.sh`. Em pull requests só a etapa de verificação roda. Para repetir um deploy sem novo commit, use **Run workflow** na aba Actions.
+
+O script na instância faz `git reset --hard origin/main`, sobe os containers com `--build`, espera `/health` responder e remove imagens órfãs (o disco é pequeno). Se a API não responder, o deploy falha com os logs no console do Actions e os containers anteriores continuam no ar.
+
+**Segredos** em *Settings > Secrets and variables > Actions*:
+
+| Segredo | Valor |
+|---------|-------|
+| `EC2_HOST` | IP público da instância |
+| `EC2_USER` | `ec2-user` na Amazon Linux, `ubuntu` no Ubuntu |
+| `EC2_SSH_KEY` | chave privada dedicada ao deploy, conteúdo completo do arquivo |
+
+Gere uma chave só para o CI, para poder revogá-la sem afetar seu acesso pessoal:
 
 ```bash
-docker compose up --build -d
+ssh-keygen -t ed25519 -f acervo-deploy-key -N "" -C "github-actions-acervo-digital"
 ```
 
-O volume do Postgres permanece. Se o catálogo já estiver no banco, pode usar `SKIP_SEED=true` nas próximas subidas para a API iniciar mais rápido.
+Envie a pública para a instância (`~/.ssh/authorized_keys`) e cole a privada no segredo. O grupo de segurança precisa aceitar a porta 22 da internet, porque os runners do GitHub têm IP dinâmico. Mantenha `PasswordAuthentication no` (padrão na Amazon Linux 2023): só chave é aceita, então as varreduras automáticas de bots não passam. Para eliminar essa exposição no futuro, o caminho é trocar o SSH por **AWS SSM Send-Command** com OIDC, sem porta aberta nem chave guardada no GitHub.
+
+Atualizar à mão continua possível:
+
+```bash
+cd ~/Acervo-Digital && bash scripts/deploy-ec2.sh
+```
+
+Atualização de **conteúdo** não precisa de deploy: o gatilho diário do Apps Script envia a planilha para o webhook da API e o catálogo muda sozinho.
 
 ---
 
