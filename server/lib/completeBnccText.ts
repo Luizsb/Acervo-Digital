@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import BetterSqlite3 from 'better-sqlite3';
-import type { PrismaClient } from '@prisma/client';
 
 /** Habilidades de Educação Infantil (BNCC) ausentes em public/bncc.db. */
 const EI_HABILIDADES: Record<string, string> = {
@@ -135,56 +134,5 @@ export function completeObjectiveList(
   });
 
   return JSON.stringify(next);
-}
-
-export async function repairTruncatedBncc(prisma: PrismaClient): Promise<number> {
-  const odas = await prisma.oDA.findMany({
-    where: {
-      OR: [
-        { descricaoBncc: { contains: '...' } },
-        { descricaoBnccSecundaria: { contains: '...' } },
-        { objetivosAprendizagem: { contains: '...' } },
-      ],
-    },
-    select: {
-      id: true,
-      codigoBncc: true,
-      codigoBnccSecundaria: true,
-      descricaoBncc: true,
-      descricaoBnccSecundaria: true,
-      objetivosAprendizagem: true,
-    },
-  });
-
-  let updated = 0;
-  for (const oda of odas) {
-    const descricaoBncc = completeBnccText(oda.codigoBncc, oda.descricaoBncc);
-    const descricaoBnccSecundaria = completeBnccText(
-      oda.codigoBnccSecundaria,
-      oda.descricaoBnccSecundaria
-    );
-    const objetivosAprendizagem = completeObjectiveList(oda.objetivosAprendizagem, [
-      descricaoBncc,
-      descricaoBnccSecundaria,
-    ]);
-    const changed =
-      descricaoBncc !== oda.descricaoBncc ||
-      descricaoBnccSecundaria !== oda.descricaoBnccSecundaria ||
-      objetivosAprendizagem !== oda.objetivosAprendizagem;
-    if (!changed) continue;
-
-    await prisma.oDA.update({
-      where: { id: oda.id },
-      data: { descricaoBncc, descricaoBnccSecundaria, objetivosAprendizagem },
-    });
-    if (oda.codigoBncc && descricaoBncc && !looksTruncated(descricaoBncc)) {
-      await prisma.bNCC.updateMany({
-        where: { codigo: oda.codigoBncc },
-        data: { descricao: descricaoBncc, habilidade: descricaoBncc },
-      });
-    }
-    updated += 1;
-  }
-  return updated;
 }
 

@@ -136,18 +136,8 @@ export default function App() {
         setLoadingODAs(true);
         setServerConnectionError(null);
         const odas = await loadODAsFromDatabase();
-        const odasWithAdjustedIds = odas.map((oda, index) => {
-          const originalId = oda.id || 0;
-          const adjustedId = originalId > 0 && originalId <= 100 
-            ? originalId + 10000
-            : (originalId > 0 ? originalId : (index + 1) + 10000);
-          return {
-            ...oda,
-            id: adjustedId,
-          };
-        });
-        setOdasFromExcel(odasWithAdjustedIds);
-        console.log(`✅ ${odasWithAdjustedIds.length} recursos carregados do banco (L1)`);
+        setOdasFromExcel(odas);
+        console.log(`✅ ${odas.length} recursos carregados do banco (L1)`);
       } catch (error: any) {
         console.error('Erro ao carregar ODAs do banco de dados:', error);
         setOdasFromExcel([]);
