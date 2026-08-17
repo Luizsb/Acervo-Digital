@@ -9,6 +9,7 @@ import type { Project } from '../types/project';
 import { formatDuration } from '../utils/formatters';
 import { MacroformatoBadge } from './MacroformatoBadge';
 import { apiRecordOdaView } from '../utils/api';
+import { copyTextToClipboard } from '../utils/clipboard';
 import './ProjectDetailsPage.css';
 
 type RelatedCriterion = 'year' | 'bncc' | 'samr';
@@ -35,12 +36,14 @@ interface ProjectDetailsPageProps {
 
 export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavorite, allProjects = [], onProjectClick, favorites = [] }: ProjectDetailsPageProps) {
   const [showVideo, setShowVideo] = useState(false);
-  const [copiedCode, setCopiedCode] = useState(false);
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
   const [showResourceModal, setShowResourceModal] = useState(false);
   const [relatedCriterion, setRelatedCriterion] = useState<RelatedCriterion>('year');
   const [videoEmbedUrl, setVideoEmbedUrl] = useState<string>();
   const [isPreparingVideo, setIsPreparingVideo] = useState(false);
-  const [openViewCount, setOpenViewCount] = useState(project.openViewCount ?? 0);
+  // O selo público mostra as visitas à ficha; as aberturas do recurso ficam
+  // apenas no painel administrativo.
+  const [pageViewCount, setPageViewCount] = useState(project.pageViewCount ?? 0);
   const recordedPageViewFor = useRef<number | null>(null);
 
   // Garantir que sempre rola para o topo quando a página de detalhes é aberta (sem animação)
@@ -49,8 +52,8 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
   }, [project.id]);
 
   useEffect(() => {
-    setOpenViewCount(project.openViewCount ?? 0);
-  }, [project.id, project.openViewCount]);
+    setPageViewCount(project.pageViewCount ?? 0);
+  }, [project.id, project.pageViewCount]);
 
   useEffect(() => {
     if (recordedPageViewFor.current === project.id) return;
@@ -60,7 +63,7 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
     void apiRecordOdaView(project.id, 'page')
       .then((result) => {
         if (cancelled) return;
-        setOpenViewCount(result.openViewCount);
+        setPageViewCount(result.pageViewCount);
       })
       .catch(() => {
         // A ficha continua utilizável mesmo se o registro da visita falhar.
@@ -156,13 +159,9 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
 
   const handleCopyCode = async () => {
     if (!project.codigoODA) return;
-    try {
-      await navigator.clipboard.writeText(project.codigoODA);
-      setCopiedCode(true);
-      setTimeout(() => setCopiedCode(false), 2000);
-    } catch {
-      setCopiedCode(false);
-    }
+    const copied = await copyTextToClipboard(project.codigoODA);
+    setCopyState(copied ? 'copied' : 'failed');
+    setTimeout(() => setCopyState('idle'), 2500);
   };
 
   const handleToggleFavorite = () => {
@@ -190,7 +189,7 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
     setShowResourceModal(true);
     void apiRecordOdaView(project.id, 'open')
       .then((result) => {
-        setOpenViewCount(result.openViewCount);
+        setPageViewCount(result.pageViewCount);
       })
       .catch(() => {
         // A abertura do recurso não depende do registro da métrica.
@@ -356,10 +355,10 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
 
                 {/* Stats - Views and Status (Compact) */}
                 <div className="flex items-center gap-2">
-                  <div className="detail-meta-badge cursor-pointer gap-1.5 bg-gray-50 border border-gray-200" title="Aberturas do recurso">
+                  <div className="detail-meta-badge cursor-pointer gap-1.5 bg-gray-50 border border-gray-200" title="Visualizações desta ficha">
                     <Eye className="w-3.5 h-3.5 text-accent" />
                     <span className="text-xs font-bold text-foreground">
-                      {openViewCount.toLocaleString('pt-BR')}
+                      {pageViewCount.toLocaleString('pt-BR')}
                     </span>
                   </div>
                   
@@ -575,7 +574,13 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
                   }
                 >
                   <Copy className="w-4 h-4" />
-                  <span>{copiedCode ? 'Código copiado!' : 'Copiar código'}</span>
+                  <span>
+                    {copyState === 'copied'
+                      ? 'Código copiado!'
+                      : copyState === 'failed'
+                        ? `Copie manualmente: ${project.codigoODA}`
+                        : 'Copiar código'}
+                  </span>
                 </button>
                 {project.metodologiaPdfUrl ? (
                   <a
