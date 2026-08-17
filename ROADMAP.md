@@ -7,6 +7,7 @@ Documentação versionada do produto. Canvases locais do Cursor são rascunhos d
 - Catálogo único de ODAs e audiovisual a partir da planilha de categorização
 - Login local (usuário demo) e galeria autenticada
 - Painel admin: fila de revisão e sincronização da planilha com feedback (novos, atualizados, sem thumb)
+- Sincronização sob demanda a partir do Google Sheets (sem download manual / rebuild)
 - Filtros de localização editorial: Coleção, Livro, Bloco/Capítulo, Envio à escola, Volume
 - Filtros de currículo: Segmento, Ano/série, Componente, BNCC
 - Ficha do recurso, requisitos técnicos normalizados e recomendações relacionadas

@@ -69,9 +69,18 @@ São mais de mil imagens. Guardá-las como `BYTEA` deixaria o banco pesado. O ba
 
 ### Atualizar o catálogo quando a planilha oficial mudar
 
-1. Substitua `public/Categorização_Recursos Digitais_Terceiros.xlsx` pela versão oficial.
-2. Rode `npm run import:categorizacao` (dev local), use **Administração → Substituir planilha** (login admin) ou `docker compose up --build -d` (a API semeia na subida).
-3. O feedback (terminal ou tela admin) mostra novos, atualizados, desativados e recursos sem thumb.
+**Opção A — Google Sheets (recomendado):** no painel admin, use **Atualizar do Google**.
+A API baixa o `.xlsx` da planilha do Drive e importa no Postgres — sem download manual e sem rebuild.
+
+1. Defina no `.env` da EC2: `GOOGLE_SHEETS_ID=1fAQaH8oG1UH8GMfN2xlqWULKVJ2EYvf3JGxYD2o00yk`
+2. Compartilhamento (escolha um):
+   - **Mais simples:** planilha com “Qualquer pessoa com o link — Leitor”
+   - **Corporativo:** conta de serviço Google + compartilhe a planilha com o e-mail dela (Leitor) e configure `GOOGLE_SERVICE_ACCOUNT_*` no `.env`
+3. Reinicie só a API (`docker compose up -d`) se mudou o `.env`, abra Administração e clique em **Atualizar do Google**.
+
+**Opção B — arquivo local:** substitua `public/Categorização_Recursos Digitais_Terceiros.xlsx` e rode `npm run import:categorizacao`, use **Substituir arquivo** no admin, ou `docker compose up --build -d`.
+
+O feedback (tela admin ou terminal) mostra novos, atualizados, desativados e recursos sem thumb.
 
 Para comparar a planilha nova com a do Git sem tocar no banco: `npm run diff:planilha`.
 

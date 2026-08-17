@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
   ClipboardList,
+  CloudDownload,
   ExternalLink,
   FileImage,
   FileSpreadsheet,
@@ -11,6 +12,7 @@ import {
 } from 'lucide-react';
 import type { AuthUser } from '../contexts/AuthContext';
 import {
+  apiAdminImportFromGoogle,
   apiAdminImportSpreadsheet,
   apiAdminReview,
   apiAdminSpreadsheetJob,
@@ -151,6 +153,29 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
     }
   };
 
+  const pollSpreadsheetJob = async (jobId: string) => {
+    let finished = false;
+    while (!finished) {
+      await new Promise((resolve) => window.setTimeout(resolve, 700));
+      const job = await apiAdminSpreadsheetJob(jobId);
+      setImportProgress(job.percent);
+      setImportPhase(
+        job.phase === 'reading'
+          ? 'Lendo a planilha...'
+          : job.phase === 'finishing'
+            ? 'Finalizando e verificando as thumbs...'
+            : `Sincronizando ${job.current} de ${job.total} linhas...`
+      );
+      if (job.status === 'failed') throw new Error(job.error || 'Falha na sincronização.');
+      if (job.status === 'completed') {
+        if (!job.summary) throw new Error('Sincronização concluída sem relatório.');
+        setImportSummary(job.summary);
+        finished = true;
+      }
+    }
+    setReloadKey((value) => value + 1);
+  };
+
   const handleImport = async (file: File | null) => {
     if (!file) return;
     setSelectedFileName(file.name);
@@ -161,31 +186,29 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
     setImportPhase('Enviando a planilha...');
     try {
       const started = await apiAdminImportSpreadsheet(file);
-      let finished = false;
-      while (!finished) {
-        await new Promise((resolve) => window.setTimeout(resolve, 700));
-        const job = await apiAdminSpreadsheetJob(started.jobId);
-        setImportProgress(job.percent);
-        setImportPhase(
-          job.phase === 'reading'
-            ? 'Lendo a planilha...'
-            : job.phase === 'finishing'
-              ? 'Finalizando e verificando as thumbs...'
-              : `Sincronizando ${job.current} de ${job.total} linhas...`
-        );
-        if (job.status === 'failed') throw new Error(job.error || 'Falha na sincronização.');
-        if (job.status === 'completed') {
-          if (!job.summary) throw new Error('Sincronização concluída sem relatório.');
-          setImportSummary(job.summary);
-          finished = true;
-        }
-      }
-      setReloadKey((value) => value + 1);
+      await pollSpreadsheetJob(started.jobId);
     } catch (err: any) {
       setImportError(err?.message || 'Falha ao sincronizar a planilha.');
     } finally {
       setImporting(false);
       if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
+  const handleImportFromGoogle = async () => {
+    setSelectedFileName(sheetStatus?.googleSheets?.sourceLabel || 'Google Sheets');
+    setImporting(true);
+    setImportError('');
+    setImportSummary(null);
+    setImportProgress(0);
+    setImportPhase('Baixando a planilha do Google Sheets...');
+    try {
+      const started = await apiAdminImportFromGoogle();
+      await pollSpreadsheetJob(started.jobId);
+    } catch (err: any) {
+      setImportError(err?.message || 'Falha ao sincronizar do Google Sheets.');
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -256,6 +279,9 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
                 {sheetStatus
                   ? `${sheetStatus.fileName} · ${formatBytes(sheetStatus.sizeBytes)} · atualizada em ${formatDate(sheetStatus.modifiedAt)} · ${sheetStatus.totalActive} ativos no banco`
                   : 'Carregando status da planilha...'}
+                {sheetStatus?.googleSheets?.configured
+                  ? ` · origem Google: ${sheetStatus.googleSheets.hasServiceAccount ? 'conta de serviço' : 'exportação (link ou ID)'}`
+                  : ''}
               </p>
             </div>
           </div>
@@ -278,12 +304,26 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
             </button>
             <button
               type="button"
+              className="admin-sheet-upload is-google"
+              disabled={importing || sheetStatus?.googleSheets?.configured === false}
+              onClick={() => void handleImportFromGoogle()}
+              title={
+                sheetStatus?.googleSheets?.hasServiceAccount
+                  ? 'Baixa a planilha com a conta de serviço configurada'
+                  : 'Baixa a planilha do Google (link público de leitura ou conta de serviço)'
+              }
+            >
+              <CloudDownload size={16} />
+              {importing ? 'Sincronizando...' : 'Atualizar do Google'}
+            </button>
+            <button
+              type="button"
               className="admin-sheet-upload"
               disabled={importing}
               onClick={() => fileInputRef.current?.click()}
             >
               <Upload size={16} />
-              {importing ? 'Sincronizando...' : 'Substituir planilha'}
+              {importing ? 'Sincronizando...' : 'Substituir arquivo'}
             </button>
           </div>
         </div>

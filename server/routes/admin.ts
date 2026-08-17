@@ -16,6 +16,10 @@ import {
 } from '../lib/catalogVisibility';
 import { findWorkbook, importCategorizacao } from '../scripts/import-categorizacao';
 import { captureMissingThumbs } from '../scripts/capture-thumbs';
+import {
+  downloadGoogleSheetToWorkbook,
+  getGoogleSheetsSource,
+} from '../lib/googleSheets';
 
 const router = express.Router();
 type SpreadsheetJob = {
@@ -67,6 +71,60 @@ function publicImportSummary(summary: Awaited<ReturnType<typeof importCategoriza
       .filter((item) => isVisibleInCatalog(item.status, item.linkRepositorio))
       .slice(0, 50),
   };
+}
+
+function beginSpreadsheetImport(
+  fileName: string,
+  targetPath: string,
+  hooks?: {
+    onSuccess?: () => void;
+    onFailure?: () => void;
+  }
+): SpreadsheetJob {
+  const jobId = randomUUID();
+  const job: SpreadsheetJob = {
+    id: jobId,
+    status: 'processing',
+    phase: 'reading',
+    current: 0,
+    total: 1,
+    percent: 1,
+    fileName,
+  };
+  spreadsheetJobs.set(jobId, job);
+  activeSpreadsheetJobId = jobId;
+
+  void importCategorizacao({
+    filePath: targetPath,
+    log: true,
+    onProgress: ({ phase, current, total }) => {
+      job.phase = phase;
+      job.current = current;
+      job.total = total;
+      const raw = total > 0 ? Math.round((current / total) * 100) : 0;
+      job.percent =
+        phase === 'reading' ? 2 : phase === 'finishing' ? 99 : Math.max(3, Math.min(98, raw));
+    },
+  })
+    .then((summary) => {
+      hooks?.onSuccess?.();
+      job.status = 'completed';
+      job.phase = 'completed';
+      job.percent = 100;
+      job.summary = publicImportSummary(summary);
+    })
+    .catch((error: unknown) => {
+      hooks?.onFailure?.();
+      job.status = 'failed';
+      job.error = error instanceof Error ? error.message : 'Erro ao sincronizar a planilha.';
+      console.error('Admin spreadsheet import error:', error);
+    })
+    .finally(() => {
+      activeSpreadsheetJobId = null;
+      setTimeout(() => spreadsheetJobs.delete(jobId), 30 * 60 * 1000);
+    });
+
+  return job;
 }
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -186,62 +244,86 @@ router.post(
       if (fs.existsSync(targetPath)) fs.copyFileSync(targetPath, backupPath);
       fs.writeFileSync(targetPath, file.buffer);
 
-      const jobId = randomUUID();
-      const job: SpreadsheetJob = {
-        id: jobId,
-        status: 'processing',
-        phase: 'reading',
-        current: 0,
-        total: 1,
-        percent: 1,
-        fileName: file.originalname,
-      };
-      spreadsheetJobs.set(jobId, job);
-      activeSpreadsheetJobId = jobId;
-      res.status(202).json({
-        ok: true,
-        jobId,
-        message: 'Planilha recebida. Sincronização iniciada.',
-      });
-
-      void importCategorizacao({
-        filePath: targetPath,
-        log: true,
-        onProgress: ({ phase, current, total }) => {
-          job.phase = phase;
-          job.current = current;
-          job.total = total;
-          const raw = total > 0 ? Math.round((current / total) * 100) : 0;
-          job.percent =
-            phase === 'reading' ? 2 : phase === 'finishing' ? 99 : Math.max(3, Math.min(98, raw));
-        },
-      })
-        .then((summary) => {
+      const job = beginSpreadsheetImport(file.originalname, targetPath, {
+        onSuccess: () => {
           if (fs.existsSync(backupPath)) fs.unlinkSync(backupPath);
-          job.status = 'completed';
-          job.phase = 'completed';
-          job.percent = 100;
-          job.summary = publicImportSummary(summary);
-        })
-        .catch((error: unknown) => {
+        },
+        onFailure: () => {
           if (fs.existsSync(backupPath)) {
             fs.copyFileSync(backupPath, targetPath);
             fs.unlinkSync(backupPath);
           }
-          job.status = 'failed';
-          job.error = error instanceof Error ? error.message : 'Erro ao sincronizar a planilha.';
-          console.error('Admin spreadsheet import error:', error);
-        })
-        .finally(() => {
-          activeSpreadsheetJobId = null;
-          setTimeout(() => spreadsheetJobs.delete(jobId), 30 * 60 * 1000);
-        });
+        },
+      });
+      res.status(202).json({
+        ok: true,
+        jobId: job.id,
+        message: 'Planilha recebida. Sincronização iniciada.',
+      });
     } catch (error: any) {
       console.error('Admin spreadsheet upload error:', error);
       res.status(500).json({ error: error.message || 'Erro ao receber a planilha.' });
     }
   }
 );
+
+router.post('/spreadsheet/from-google', async (_req, res) => {
+  try {
+    if (activeSpreadsheetJobId) {
+      return res.status(409).json({
+        error: 'Já existe uma sincronização em andamento. Aguarde a conclusão.',
+        jobId: activeSpreadsheetJobId,
+      });
+    }
+
+    const source = getGoogleSheetsSource();
+    if (!source.configured || !source.sheetId) {
+      return res.status(400).json({
+        error: 'Configure GOOGLE_SHEETS_ID (ou GOOGLE_SHEETS_URL) no .env da API.',
+      });
+    }
+
+    const targetPath = findWorkbook();
+    const backupPath = `${targetPath}.bak`;
+    if (fs.existsSync(targetPath)) fs.copyFileSync(targetPath, backupPath);
+
+    let downloaded;
+    try {
+      downloaded = await downloadGoogleSheetToWorkbook(targetPath);
+    } catch (error) {
+      if (fs.existsSync(backupPath)) {
+        fs.copyFileSync(backupPath, targetPath);
+        fs.unlinkSync(backupPath);
+      }
+      throw error;
+    }
+
+    const job = beginSpreadsheetImport(`Google Sheets (${downloaded.sheetId})`, targetPath, {
+      onSuccess: () => {
+        if (fs.existsSync(backupPath)) fs.unlinkSync(backupPath);
+      },
+      onFailure: () => {
+        if (fs.existsSync(backupPath)) {
+          fs.copyFileSync(backupPath, targetPath);
+          fs.unlinkSync(backupPath);
+        }
+      },
+    });
+
+    res.status(202).json({
+      ok: true,
+      jobId: job.id,
+      message: `Planilha baixada do Google (${downloaded.via}). Sincronização iniciada.`,
+      bytes: downloaded.bytes,
+      via: downloaded.via,
+    });
+  } catch (error: any) {
+    console.error('Admin Google Sheets sync error:', error);
+    res.status(500).json({
+      error: error.message || 'Erro ao baixar a planilha do Google Sheets.',
+    });
+  }
+});
 
 router.get('/spreadsheet/jobs/:jobId', (req, res) => {
   const job = spreadsheetJobs.get(req.params.jobId);
@@ -287,6 +369,7 @@ router.get('/spreadsheet/status', async (_req, res) => {
         (item) => item.isPublic && !item.hasLink
       ).length,
       missingThumbs: missingThumbs.slice(0, 200),
+      googleSheets: getGoogleSheetsSource(),
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message || 'Erro ao ler status da planilha.' });

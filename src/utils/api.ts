@@ -261,6 +261,12 @@ export interface SpreadsheetStatusResponse {
   missingThumbsWithoutLink: number;
   missingThumbsPublicWithoutLink: number;
   missingThumbs: MissingThumbItem[];
+  googleSheets?: {
+    configured: boolean;
+    sheetId: string | null;
+    hasServiceAccount: boolean;
+    sourceLabel: string;
+  };
 }
 
 export async function apiAdminSpreadsheetStatus(): Promise<SpreadsheetStatusResponse> {
@@ -286,6 +292,18 @@ export async function apiAdminImportSpreadsheet(file: File): Promise<AsyncJobSta
   });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Erro ao sincronizar a planilha.');
+  return data;
+}
+
+export async function apiAdminImportFromGoogle(): Promise<AsyncJobStartResponse> {
+  const token = getAuthToken();
+  if (!token) throw new Error('Não autorizado.');
+  const res = await fetch(`${API_BASE_URL}/admin/spreadsheet/from-google`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Erro ao sincronizar do Google Sheets.');
   return data;
 }
 

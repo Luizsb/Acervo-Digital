@@ -132,6 +132,14 @@
   cursor: pointer;
 }
 
+.admin-sheet-upload.is-google {
+  background: #0f766e;
+}
+
+.admin-sheet-upload.is-google:hover:not(:disabled) {
+  background: #0d9488;
+}
+
 .admin-sheet-actions {
   display: flex;
   flex-wrap: wrap;
