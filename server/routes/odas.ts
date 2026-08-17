@@ -1,6 +1,7 @@
 import express from 'express';
 import prisma from '../lib/prisma';
 import { catalogVisibleWhere, isVisibleInCatalog } from '../lib/catalogVisibility';
+import { isViewKind, recordOdaView } from '../lib/odaViews';
 import { authMiddleware, requireAdmin, type AuthRequest } from '../middleware/auth';
 
 const router = express.Router();
@@ -85,6 +86,36 @@ router.get('/:id', async (req, res) => {
     res.json(oda);
   } catch (error: any) {
     console.error('Error fetching ODA:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// POST /api/odas/:id/view - registra visita à ficha ou abertura do recurso (1x/usuário/dia)
+router.post('/:id/view', async (req: AuthRequest, res) => {
+  try {
+    const userId = req.user?.userId;
+    if (!userId) {
+      return res.status(401).json({ error: 'Token inválido ou expirado.' });
+    }
+
+    const id = parseInt(req.params.id, 10);
+    if (!Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ error: 'ID inválido.' });
+    }
+
+    const kind = req.body?.kind;
+    if (!isViewKind(kind)) {
+      return res.status(400).json({ error: 'kind deve ser "page" ou "open".' });
+    }
+
+    const result = await recordOdaView({ userId, odaId: id, kind });
+    if (!result) {
+      return res.status(404).json({ error: 'ODA not found' });
+    }
+
+    res.json(result);
+  } catch (error: any) {
+    console.error('Error recording ODA view:', error);
     res.status(500).json({ error: error.message });
   }
 });

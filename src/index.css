@@ -886,6 +886,12 @@
     max-width: var(--container-sm);
   }
 
+  .truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .min-w-0 {
     min-width: calc(var(--spacing) * 0);
   }
@@ -1079,7 +1085,6 @@
     border-bottom-style: var(--tw-border-style);
     border-bottom-width: 2px;
   }
-
   .border-dashed {
     --tw-border-style: dashed;
     border-style: dashed;

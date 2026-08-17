@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { X, BookOpen, Clock, Check, Eye, Sparkles, Play, Book, FileText, ArrowLeft, Heart, Copy, Maximize2, Settings, Download, Layers, GitBranch } from 'lucide-react';
 import { ProjectCard } from './ProjectCard';
 import { getCurriculumColor, getComponentFullName, getSegmentFullName, getMarcaFullName } from '../utils/curriculumColors';
@@ -8,6 +8,8 @@ import { getVimeoEmbedUrl, resolveVideoEmbedUrl } from '../utils/videoThumbnails
 import type { Project } from '../types/project';
 import { formatDuration } from '../utils/formatters';
 import { MacroformatoBadge } from './MacroformatoBadge';
+import { apiRecordOdaView } from '../utils/api';
+import './ProjectDetailsPage.css';
 
 type RelatedCriterion = 'year' | 'bncc' | 'samr';
 
@@ -38,10 +40,35 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
   const [relatedCriterion, setRelatedCriterion] = useState<RelatedCriterion>('year');
   const [videoEmbedUrl, setVideoEmbedUrl] = useState<string>();
   const [isPreparingVideo, setIsPreparingVideo] = useState(false);
+  const [openViewCount, setOpenViewCount] = useState(project.openViewCount ?? 0);
+  const recordedPageViewFor = useRef<number | null>(null);
 
   // Garantir que sempre rola para o topo quando a página de detalhes é aberta (sem animação)
   useEffect(() => {
     window.scrollTo(0, 0);
+  }, [project.id]);
+
+  useEffect(() => {
+    setOpenViewCount(project.openViewCount ?? 0);
+  }, [project.id, project.openViewCount]);
+
+  useEffect(() => {
+    if (recordedPageViewFor.current === project.id) return;
+    recordedPageViewFor.current = project.id;
+
+    let cancelled = false;
+    void apiRecordOdaView(project.id, 'page')
+      .then((result) => {
+        if (cancelled) return;
+        setOpenViewCount(result.openViewCount);
+      })
+      .catch(() => {
+        // A ficha continua utilizável mesmo se o registro da visita falhar.
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [project.id]);
 
   useEffect(() => {
@@ -93,11 +120,6 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
     };
   }, [project.contentType, project.id, project.videoUrl]);
 
-  // Mock data for demonstration
-  const odaDetails = {
-    views: "1.245",
-    lastUpdate: "15 de novembro de 2024",
-  };
   const technicalRequirements = project.technicalRequirements
     ?.split('\n')
     .map((requirement) => requirement.trim())
@@ -166,6 +188,13 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
     }
 
     setShowResourceModal(true);
+    void apiRecordOdaView(project.id, 'open')
+      .then((result) => {
+        setOpenViewCount(result.openViewCount);
+      })
+      .catch(() => {
+        // A abertura do recurso não depende do registro da métrica.
+      });
   };
 
   const handlePlayVideo = async () => {
@@ -327,9 +356,11 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
 
                 {/* Stats - Views and Status (Compact) */}
                 <div className="flex items-center gap-2">
-                  <div className="detail-meta-badge cursor-pointer gap-1.5 bg-gray-50 border border-gray-200" title="Visualizações">
+                  <div className="detail-meta-badge cursor-pointer gap-1.5 bg-gray-50 border border-gray-200" title="Aberturas do recurso">
                     <Eye className="w-3.5 h-3.5 text-accent" />
-                    <span className="text-xs font-bold text-foreground">{odaDetails.views}</span>
+                    <span className="text-xs font-bold text-foreground">
+                      {openViewCount.toLocaleString('pt-BR')}
+                    </span>
                   </div>
                   
                   {project.status && (
@@ -728,18 +759,16 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
 
       {showResourceModal && project.videoUrl ? (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm sm:p-8"
+          className="resource-modal fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm sm:p-8"
           role="dialog"
           aria-modal="true"
           aria-label={`Recurso ampliado: ${project.title}`}
           onClick={() => setShowResourceModal(false)}
         >
           <div
-            className={`flex w-full flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl ${
-              isAudiovisualResource
-                ? 'max-h-[92vh] max-w-[1200px]'
-                : 'h-[92vh] max-w-[1600px]'
-            }`}
+            className={`resource-modal-card ${
+              isAudiovisualResource ? 'is-video' : 'is-oda'
+            } flex flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl`}
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex shrink-0 items-center justify-between gap-3 border-b-2 border-gray-200 px-4 py-3 sm:px-6">
@@ -757,13 +786,7 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
                 <span className="hidden sm:inline">Fechar</span>
               </button>
             </div>
-            <div
-              className={`relative bg-black ${
-                isAudiovisualResource
-                  ? 'aspect-video w-full shrink-0'
-                  : 'min-h-0 flex-1'
-              }`}
-            >
+            <div className="resource-modal-frame relative bg-black">
               <iframe
                 src={
                   isAudiovisualResource
@@ -775,12 +798,6 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
                 allowFullScreen
               />
-            </div>
-            <div className="shrink-0 border-t-2 border-gray-200 px-4 py-3 text-center sm:px-6">
-              <p className="text-sm text-muted-foreground">
-                Explore o recurso aqui. Para localizá-lo depois, copie o código
-                {project.codigoODA ? ` ${project.codigoODA}` : ''}.
-              </p>
             </div>
           </div>
         </div>

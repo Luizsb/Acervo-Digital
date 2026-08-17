@@ -416,6 +416,8 @@ export interface ODA {
   tempoMedioEstimado?: string | null;
   usuarioPrincipal?: string | null;
   ambienteUso?: string | null;
+  pageViewCount?: number;
+  openViewCount?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -493,6 +495,8 @@ export function apiODAToFrontend(oda: ODA): Project {
     tempoMedioEstimado: oda.tempoMedioEstimado || undefined,
     usuarioPrincipal: oda.usuarioPrincipal || undefined,
     ambienteUso: oda.ambienteUso || undefined,
+    pageViewCount: oda.pageViewCount ?? 0,
+    openViewCount: oda.openViewCount ?? 0,
   };
 }
 
@@ -626,5 +630,62 @@ export async function countODAs(tipoConteudo?: 'Audiovisual' | 'OED' | 'Todos'):
 
   const data = await response.json();
   return data.count;
+}
+
+export type OdaViewKind = 'page' | 'open';
+
+export interface RecordOdaViewResponse {
+  counted: boolean;
+  pageViewCount: number;
+  openViewCount: number;
+}
+
+export async function apiRecordOdaView(
+  odaId: number,
+  kind: OdaViewKind
+): Promise<RecordOdaViewResponse> {
+  const res = await fetch(`${API_BASE_URL}/odas/${odaId}/view`, {
+    method: 'POST',
+    headers: authHeaders(true),
+    body: JSON.stringify({ kind }),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Erro ao registrar visualização.');
+  return data;
+}
+
+export type ViewRankingPeriod = '7d' | '30d' | 'all';
+
+export interface ViewRankingItem {
+  id: number;
+  codigoOda: string | null;
+  titulo: string;
+  count: number;
+}
+
+export interface ViewRankingResponse {
+  kind: OdaViewKind;
+  period: ViewRankingPeriod;
+  limit: number;
+  items: ViewRankingItem[];
+}
+
+export async function apiAdminViewsTop(params?: {
+  kind?: OdaViewKind;
+  period?: ViewRankingPeriod;
+  limit?: number;
+}): Promise<ViewRankingResponse> {
+  const token = getAuthToken();
+  if (!token) throw new Error('Não autorizado.');
+  const queryParams = new URLSearchParams();
+  if (params?.kind) queryParams.set('kind', params.kind);
+  if (params?.period) queryParams.set('period', params.period);
+  if (params?.limit) queryParams.set('limit', String(params.limit));
+  const res = await fetch(`${API_BASE_URL}/admin/views/top?${queryParams.toString()}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Erro ao carregar o ranking de acessos.');
+  return data;
 }
 

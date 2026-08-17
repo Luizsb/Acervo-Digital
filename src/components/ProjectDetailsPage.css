@@ -1,0 +1,41 @@
+/* Videoaulas e ODAs são publicados para uma área 16:9. Quando o iframe recebe
+   uma proporção diferente, o próprio recurso cria barra de rolagem interna, e
+   não temos acesso ao documento embarcado para ajustar isso. Por isso o card é
+   dimensionado a partir da altura livre da janela, preservando a proporção. */
+.resource-modal {
+  --resource-modal-gutter: 1rem;
+  --resource-modal-header: 5rem;
+}
+
+@media (min-width: 640px) {
+  .resource-modal {
+    --resource-modal-gutter: 2rem;
+  }
+}
+
+.resource-modal-card {
+  width: min(
+    var(--resource-modal-max-width),
+    calc(100vw - var(--resource-modal-gutter) * 2),
+    calc((100vh - var(--resource-modal-gutter) * 2 - var(--resource-modal-header)) * 16 / 9)
+  );
+  /* dvh acompanha a barra de endereço no mobile; vh acima é o fallback. */
+  width: min(
+    var(--resource-modal-max-width),
+    calc(100vw - var(--resource-modal-gutter) * 2),
+    calc((100dvh - var(--resource-modal-gutter) * 2 - var(--resource-modal-header)) * 16 / 9)
+  );
+}
+
+.resource-modal-card.is-video {
+  --resource-modal-max-width: 1200px;
+}
+
+.resource-modal-card.is-oda {
+  --resource-modal-max-width: 1600px;
+}
+
+.resource-modal-frame {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+}

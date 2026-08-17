@@ -80,6 +80,46 @@
   color: #64748b;
 }
 
+.admin-tabs {
+  display: flex;
+  max-width: 1200px;
+  margin: 0 auto 24px;
+  padding: 5px;
+  gap: 5px;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  background: #fff;
+}
+
+.admin-tabs button {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 9px 16px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: #64748b;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease;
+}
+
+.admin-tabs button:hover {
+  background: #f1f5f9;
+  color: #012451;
+}
+
+.admin-tabs button.is-active {
+  background: #012451;
+  color: #fff;
+}
+
 .admin-sheet-card {
   max-width: 1200px;
   margin: 0 auto 24px;
@@ -524,6 +564,10 @@
     padding-inline: 12px;
   }
 
+  .admin-tabs {
+    flex-direction: column;
+  }
+
   .admin-sheet-head,
   .admin-sheet-missing-head {
     flex-direction: column;
@@ -548,6 +592,97 @@
     padding: 8px 0;
     border-bottom: 1px solid #f1f5f9;
   }
+
+  .admin-views-list li {
+    grid-template-columns: 28px 1fr auto;
+    grid-template-rows: auto auto;
+  }
+
+  .admin-views-list code {
+    grid-column: 2;
+  }
+
+  .admin-views-title {
+    grid-column: 2;
+  }
+
+  .admin-views-list strong {
+    grid-column: 3;
+    grid-row: 1 / span 2;
+  }
+}
+
+.admin-views-filters {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.admin-views-filters .admin-review-filters {
+  margin-top: 0;
+}
+
+.admin-views-empty {
+  margin: 16px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.admin-views-list {
+  list-style: none;
+  margin: 16px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-views-list li {
+  display: grid;
+  grid-template-columns: 28px minmax(120px, auto) 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #f8fafc;
+  font-size: 13px;
+}
+
+.admin-views-rank {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #012451;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.admin-views-list code {
+  font-size: 12px;
+  color: #334155;
+  white-space: nowrap;
+}
+
+.admin-views-title {
+  color: #0f172a;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+.admin-views-list strong {
+  font-size: 14px;
+  font-weight: 800;
+  color: #012451;
 }
 
 .admin-review-toolbar {

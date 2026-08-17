@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ArrowLeft,
+  BarChart3,
   ClipboardList,
   ExternalLink,
   FileImage,
@@ -17,12 +18,16 @@ import {
   apiAdminSpreadsheetStatus,
   apiAdminStartThumbCapture,
   apiAdminThumbJob,
+  apiAdminViewsTop,
   type AdminReviewItem,
   type ReviewGroup,
   type SpreadsheetImportSummary,
   type SpreadsheetStatusResponse,
   type SyncChangeKind,
   type ThumbCaptureJob,
+  type ViewRankingItem,
+  type ViewRankingPeriod,
+  type OdaViewKind,
 } from '../utils/api';
 import { REVIEW_GROUP_LABELS, REVIEW_GROUP_ORDER } from '../utils/catalogVisibility';
 import './AdminReviewPage.css';
@@ -33,6 +38,7 @@ interface AdminReviewPageProps {
 }
 
 type FilterKey = 'todos' | ReviewGroup;
+type AdminTab = 'catalog' | 'views';
 
 const SYNC_CHANGE_LABELS: Record<SyncChangeKind, string> = {
   created: 'Novo',
@@ -47,6 +53,17 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+const VIEW_PERIOD_OPTIONS: { key: ViewRankingPeriod; label: string }[] = [
+  { key: '7d', label: '7 dias' },
+  { key: '30d', label: '30 dias' },
+  { key: 'all', label: 'Total' },
+];
+
+const VIEW_KIND_OPTIONS: { key: OdaViewKind; label: string }[] = [
+  { key: 'open', label: 'Abertura' },
+  { key: 'page', label: 'Visita à página' },
+];
+
 function formatDate(value?: string): string {
   if (!value) return '—';
   try {
@@ -57,6 +74,7 @@ function formatDate(value?: string): string {
 }
 
 export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
+  const [activeTab, setActiveTab] = useState<AdminTab>('catalog');
   const [items, setItems] = useState<AdminReviewItem[]>([]);
   const [counts, setCounts] = useState<Partial<Record<ReviewGroup, number>>>({});
   const [totalReview, setTotalReview] = useState(0);
@@ -77,8 +95,15 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
   const [selectedFileName, setSelectedFileName] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [reloadKey, setReloadKey] = useState(0);
+  const [viewPeriod, setViewPeriod] = useState<ViewRankingPeriod>('30d');
+  const [viewKind, setViewKind] = useState<OdaViewKind>('open');
+  const [viewRanking, setViewRanking] = useState<ViewRankingItem[]>([]);
+  const [viewRankingLoading, setViewRankingLoading] = useState(true);
+  const [viewRankingError, setViewRankingError] = useState('');
 
   useEffect(() => {
+    if (activeTab !== 'views') return;
+
     let cancelled = false;
     const loadStatus = async () => {
       try {
@@ -120,6 +145,29 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
       window.clearTimeout(timer);
     };
   }, [group, search, reloadKey]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadRanking = async () => {
+      setViewRankingLoading(true);
+      setViewRankingError('');
+      try {
+        const response = await apiAdminViewsTop({ kind: viewKind, period: viewPeriod, limit: 20 });
+        if (!cancelled) setViewRanking(response.items);
+      } catch (err: any) {
+        if (!cancelled) {
+          setViewRanking([]);
+          setViewRankingError(err?.message || 'Não foi possível carregar o ranking.');
+        }
+      } finally {
+        if (!cancelled) setViewRankingLoading(false);
+      }
+    };
+    void loadRanking();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, viewKind, viewPeriod, reloadKey]);
 
   const filters = useMemo(
     () => [
@@ -252,12 +300,36 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
         <div>
           <h1>Administração</h1>
           <p>
-            Sincronize a planilha oficial e acompanhe a saúde do acervo: o que ainda não é público,
-            o que mudou na importação e o que está sem thumb.
+            {activeTab === 'catalog'
+              ? 'Sincronize a planilha e acompanhe o status dos itens e das capas.'
+              : 'Acompanhe quais recursos são visitados e abertos pelos usuários.'}
           </p>
         </div>
       </section>
 
+      <nav className="admin-tabs" aria-label="Seções da administração">
+        <button
+          type="button"
+          className={activeTab === 'catalog' ? 'is-active' : ''}
+          aria-current={activeTab === 'catalog' ? 'page' : undefined}
+          onClick={() => setActiveTab('catalog')}
+        >
+          <ClipboardList size={17} />
+          Status dos itens e capas
+        </button>
+        <button
+          type="button"
+          className={activeTab === 'views' ? 'is-active' : ''}
+          aria-current={activeTab === 'views' ? 'page' : undefined}
+          onClick={() => setActiveTab('views')}
+        >
+          <BarChart3 size={17} />
+          Acessos e visualizações
+        </button>
+      </nav>
+
+      {activeTab === 'catalog' ? (
+        <>
       <section className="admin-sheet-card">
         <div className="admin-sheet-head">
           <div className="admin-sheet-title">
@@ -508,6 +580,72 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
         ) : null}
       </section>
 
+        </>
+      ) : null}
+
+      {activeTab === 'views' ? (
+      <section className="admin-sheet-card">
+        <div className="admin-sheet-head">
+          <div className="admin-sheet-title">
+            <BarChart3 size={18} />
+            <div>
+              <h2>Recursos mais acessados</h2>
+              <p>
+                {viewKind === 'open'
+                  ? 'Aberturas reais do recurso (tela ampliada), 1 por pessoa por dia'
+                  : 'Visitas à ficha do recurso, 1 por pessoa por dia'}
+              </p>
+            </div>
+          </div>
+        </div>
+        <div className="admin-views-filters">
+          <div className="admin-review-filters">
+            {VIEW_KIND_OPTIONS.map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                className={`admin-review-chip${viewKind === option.key ? ' is-active' : ''}`}
+                onClick={() => setViewKind(option.key)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          <div className="admin-review-filters">
+            {VIEW_PERIOD_OPTIONS.map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                className={`admin-review-chip${viewPeriod === option.key ? ' is-active' : ''}`}
+                onClick={() => setViewPeriod(option.key)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+        {viewRankingError ? <p className="admin-review-error">{viewRankingError}</p> : null}
+        {viewRankingLoading ? (
+          <p className="admin-views-empty">Carregando ranking...</p>
+        ) : viewRanking.length === 0 ? (
+          <p className="admin-views-empty">Ainda não há acessos registrados neste recorte.</p>
+        ) : (
+          <ol className="admin-views-list">
+            {viewRanking.map((item, index) => (
+              <li key={item.id}>
+                <span className="admin-views-rank">{index + 1}</span>
+                <code>{item.codigoOda || '—'}</code>
+                <span className="admin-views-title">{item.titulo}</span>
+                <strong>{item.count.toLocaleString('pt-BR')}</strong>
+              </li>
+            ))}
+          </ol>
+        )}
+      </section>
+      ) : null}
+
+      {activeTab === 'catalog' ? (
+        <>
       <div className="admin-review-toolbar">
         <div className="admin-review-search">
           <Search size={16} />
@@ -593,6 +731,8 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
           </tbody>
         </table>
       </div>
+        </>
+      ) : null}
     </div>
   );
 }

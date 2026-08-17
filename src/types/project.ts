@@ -47,6 +47,8 @@ export interface Project {
   capitulo?: string;
   enunciado?: string;
   nomeCapitulo?: string;
+  pageViewCount?: number;
+  openViewCount?: number;
 }
 
 /**

@@ -54,11 +54,14 @@ model ODA {
   fonteImportacao       String?  @map("fonte_importacao")
   hashFonte             String?  @map("hash_fonte")
   sincronizadoEm        DateTime? @map("sincronizado_em")
+  pageViewCount         Int      @default(0) @map("page_view_count")
+  openViewCount         Int      @default(0) @map("open_view_count")
   createdAt             DateTime @default(now()) @map("created_at")
   updatedAt             DateTime @updatedAt @map("updated_at")
   
   // Relacionamento com BNCC
   bncc                  BNCC?   @relation(fields: [codigoBncc], references: [codigo])
+  viewEvents            OdaViewEvent[]
 
   @@index([tipoConteudo])
   @@index([componenteCurricular])
@@ -102,7 +105,8 @@ model User {
   createdAt          DateTime  @default(now()) @map("created_at")
   updatedAt          DateTime  @updatedAt @map("updated_at")
 
-  favorites UserFavorite[]
+  favorites  UserFavorite[]
+  viewEvents OdaViewEvent[]
 
   @@map("users")
 }
@@ -118,4 +122,21 @@ model UserFavorite {
   @@unique([userId, projectId])
   @@index([userId])
   @@map("user_favorites")
+}
+
+model OdaViewEvent {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  odaId     Int      @map("oda_id")
+  kind      String   @map("kind") // 'page' | 'open'
+  viewedOn  DateTime @db.Date @map("viewed_on")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  oda  ODA  @relation(fields: [odaId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, odaId, kind, viewedOn])
+  @@index([odaId, kind, viewedOn])
+  @@index([kind, viewedOn])
+  @@map("oda_view_events")
 }

@@ -28,6 +28,7 @@ import {
   getSpreadsheetJob,
   SYNC_SOURCE_LABELS,
 } from '../lib/spreadsheetSync';
+import { getTopOdaViews, isViewKind, isViewPeriod } from '../lib/odaViews';
 
 const router = express.Router();
 type ThumbJob = {
@@ -391,6 +392,34 @@ router.get('/thumbs/jobs/:jobId', (req, res) => {
   const job = thumbJobs.get(req.params.jobId);
   if (!job) return res.status(404).json({ error: 'Captura não encontrada ou expirada.' });
   res.json(job);
+});
+
+router.get('/views/top', async (req, res) => {
+  try {
+    const kindParam = typeof req.query.kind === 'string' ? req.query.kind : 'open';
+    const periodParam = typeof req.query.period === 'string' ? req.query.period : '30d';
+    const limitRaw = typeof req.query.limit === 'string' ? parseInt(req.query.limit, 10) : 20;
+
+    if (!isViewKind(kindParam)) {
+      return res.status(400).json({ error: 'kind deve ser "page" ou "open".' });
+    }
+    if (!isViewPeriod(periodParam)) {
+      return res.status(400).json({ error: 'period deve ser "7d", "30d" ou "all".' });
+    }
+
+    const limit = Number.isInteger(limitRaw) ? Math.min(50, Math.max(1, limitRaw)) : 20;
+    const items = await getTopOdaViews({ kind: kindParam, period: periodParam, limit });
+
+    res.json({
+      kind: kindParam,
+      period: periodParam,
+      limit,
+      items,
+    });
+  } catch (error: any) {
+    console.error('Admin views top error:', error);
+    res.status(500).json({ error: error.message });
+  }
 });
 
 export default router;
