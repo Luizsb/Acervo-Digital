@@ -135,6 +135,29 @@ grant select on public.bncc to authenticated;
 grant all on public.auth_favorites to authenticated;
 grant select on public.auth_view_events to authenticated;
 
+-- Histórico da última importação no painel admin (Vercel lê via Data API).
+create table if not exists public.import_events (
+  id serial primary key,
+  synced_at timestamptz not null,
+  codigo text not null,
+  titulo text not null,
+  kind text not null,
+  imagem text,
+  status text
+);
+
+create index if not exists import_events_synced_at_idx on public.import_events (synced_at);
+create index if not exists import_events_kind_idx on public.import_events (kind);
+
+alter table public.import_events enable row level security;
+
+drop policy if exists import_events_admin_select on public.import_events;
+create policy import_events_admin_select on public.import_events
+  for select to authenticated
+  using (public.is_acervo_admin());
+
+grant select on table public.import_events to authenticated;
+
 -- Ping do GitHub Actions (keep-supabase-awake.yml). SELECT público, sem dado do catálogo.
 create table if not exists public.keep_alive (
   id integer primary key,

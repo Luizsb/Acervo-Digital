@@ -147,10 +147,50 @@ export function beginSpreadsheetImport(
 
 /** Data da última sincronização registrada no banco (sobrevive a restart da API). */
 export async function getLastSyncFromDatabase(): Promise<string | null> {
+  const newestEvent = await prisma.importEvent.findFirst({
+    orderBy: { syncedAt: 'desc' },
+    select: { syncedAt: true },
+  });
+  if (newestEvent?.syncedAt) return newestEvent.syncedAt.toISOString();
   const newest = await prisma.oDA.findFirst({
     where: { sincronizadoEm: { not: null } },
     orderBy: { sincronizadoEm: 'desc' },
     select: { sincronizadoEm: true },
   });
   return newest?.sincronizadoEm ? newest.sincronizadoEm.toISOString() : null;
+}
+
+export async function getLatestImportChanges(): Promise<{
+  at: string;
+  created: number;
+  updated: number;
+  reactivated: number;
+  deactivated: number;
+  changes: LastSyncInfo['changes'];
+} | null> {
+  const latest = await prisma.importEvent.findFirst({
+    orderBy: { syncedAt: 'desc' },
+    select: { syncedAt: true },
+  });
+  if (!latest) return null;
+  const events = await prisma.importEvent.findMany({
+    where: { syncedAt: latest.syncedAt },
+    orderBy: [{ kind: 'asc' }, { titulo: 'asc' }],
+  });
+  const changes = events.map((event) => ({
+    codigo: event.codigo,
+    titulo: event.titulo,
+    kind: event.kind as LastSyncInfo['changes'][number]['kind'],
+    imagem: event.imagem,
+    status: event.status,
+    syncedAt: event.syncedAt.toISOString(),
+  }));
+  return {
+    at: latest.syncedAt.toISOString(),
+    created: changes.filter((item) => item.kind === 'created').length,
+    updated: changes.filter((item) => item.kind === 'updated').length,
+    reactivated: changes.filter((item) => item.kind === 'reactivated').length,
+    deactivated: changes.filter((item) => item.kind === 'deactivated').length,
+    changes,
+  };
 }

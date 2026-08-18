@@ -143,3 +143,17 @@ model OdaViewEvent {
   @@index([kind, viewedOn])
   @@map("oda_view_events")
 }
+
+model ImportEvent {
+  id       Int      @id @default(autoincrement())
+  syncedAt DateTime @map("synced_at")
+  codigo   String
+  titulo   String
+  kind     String
+  imagem   String?
+  status   String?
+
+  @@index([syncedAt])
+  @@index([kind])
+  @@map("import_events")
+}

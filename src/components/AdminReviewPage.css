@@ -293,15 +293,96 @@
   color: #1d4ed8;
 }
 
-.admin-sheet-changes ul {
+.admin-sheet-changes ul,
+.admin-sheet-log-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  max-height: 260px;
+  gap: 8px;
+  max-height: 520px;
   overflow-y: auto;
+}
+
+.admin-sheet-log-list li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-sheet-change-body {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.admin-sheet-change-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.admin-sheet-change-row time {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+  white-space: nowrap;
+}
+
+.admin-sheet-log-tabs {
+  display: flex;
+  gap: 8px;
+  margin: 0 0 12px;
+}
+
+.admin-sheet-log-tabs button {
+  border: 1px solid #bfdbfe;
+  background: #fff;
+  color: #1e40af;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.admin-sheet-log-tabs button.is-active {
+  background: #1d4ed8;
+  border-color: #1d4ed8;
+  color: #fff;
+}
+
+.admin-sheet-log-empty {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+}
+
+.admin-sheet-change-thumb {
+  flex: none;
+  width: 72px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 6px;
+  background: #e2e8f0;
+}
+
+.admin-sheet-change-thumb.is-missing {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  color: #b91c1c;
+  background: #fee2e2;
 }
 
 .admin-sheet-changes li {

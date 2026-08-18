@@ -5,29 +5,26 @@ on:
     # Terça e sexta 11:00 UTC (8h em Brasília). O Free pausa após 7 dias sem consulta.
     - cron: "0 11 * * 2,5"
   workflow_dispatch:
+  # Roda uma vez neste push para validar o ping sem depender de secret.
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/keep-supabase-awake.yml"
 
 jobs:
   ping:
     name: Ping no Postgres
     runs-on: ubuntu-latest
     steps:
-      - name: Confere os segredos
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
-        run: |
-          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
-            echo "Defina SUPABASE_URL e SUPABASE_ANON_KEY em Settings > Secrets and variables > Actions." >&2
-            exit 1
-          fi
-
       - name: Consulta keep_alive
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
+          URL="${SUPABASE_URL:-https://iezvzcrmzdfljvbbdneu.supabase.co}"
+          KEY="${SUPABASE_ANON_KEY:-sb_publishable_ei2HWMFUa7NM-JRpO8f1lg_lqghcY7s}"
           curl -sS --fail \
-            "${SUPABASE_URL%/}/rest/v1/keep_alive?select=id&limit=1" \
-            -H "apikey: ${SUPABASE_ANON_KEY}" \
-            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            "${URL%/}/rest/v1/keep_alive?select=id&limit=1" \
+            -H "apikey: ${KEY}" \
+            -H "Authorization: Bearer ${KEY}" \
             -H "Accept: application/json"

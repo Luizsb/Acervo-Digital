@@ -288,6 +288,9 @@ export interface SyncChangeItem {
   codigo: string;
   titulo: string;
   kind: SyncChangeKind;
+  imagem?: string | null;
+  status?: string | null;
+  syncedAt?: string | null;
 }
 
 export interface SpreadsheetStatusResponse {

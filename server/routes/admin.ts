@@ -26,6 +26,7 @@ import {
   getActiveSpreadsheetJobId,
   getLastSync,
   getLastSyncFromDatabase,
+  getLatestImportChanges,
   getSpreadsheetJob,
   SYNC_SOURCE_LABELS,
 } from '../lib/spreadsheetSync';
@@ -283,6 +284,7 @@ router.get('/spreadsheet/status', async (_req, res) => {
     missingThumbs.sort((a, b) => Number(b.isPublic) - Number(a.isPublic));
 
     const memorySync = getLastSync();
+    const importLog = await getLatestImportChanges();
     const databaseSyncAt = await getLastSyncFromDatabase();
     const lastSync = memorySync
       ? {
@@ -296,14 +298,26 @@ router.get('/spreadsheet/status', async (_req, res) => {
           reactivated: memorySync.reactivated,
           changes: memorySync.changes,
         }
-      : databaseSyncAt
+      : importLog
         ? {
-            at: databaseSyncAt,
+            at: importLog.at,
             source: null,
-            sourceLabel: 'registro no banco',
+            sourceLabel: 'importação local',
             fileName: path.basename(filePath),
+            created: importLog.created,
+            updated: importLog.updated,
+            deactivated: importLog.deactivated,
+            reactivated: importLog.reactivated,
+            changes: importLog.changes,
           }
-        : null;
+        : databaseSyncAt
+          ? {
+              at: databaseSyncAt,
+              source: null,
+              sourceLabel: 'registro no banco',
+              fileName: path.basename(filePath),
+            }
+          : null;
 
     res.json({
       fileName: path.basename(filePath),

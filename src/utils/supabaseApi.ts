@@ -8,6 +8,7 @@ import type {
   OdaViewKind,
   ViewRankingResponse,
   SpreadsheetStatusResponse,
+  SyncChangeKind,
 } from './api';
 
 const LOCAL_JOB =
@@ -255,18 +256,57 @@ export async function supabaseAdminViewsTop(params?: {
 }
 
 export async function supabaseSpreadsheetStatus(): Promise<SpreadsheetStatusResponse> {
+  const supabase = getSupabaseClient();
   const odas = await supabaseFetchOdas();
+  const active = odas.filter((oda) => oda.ativo !== false);
+  const { data: latestRows, error: latestError } = await supabase
+    .from('import_events')
+    .select('synced_at')
+    .order('synced_at', { ascending: false })
+    .limit(1);
+  throwIfError(latestError, 'Erro ao ler o histórico da planilha.');
+  const latestRow = latestRows?.[0];
+
+  let lastSync: SpreadsheetStatusResponse['lastSync'] = null;
+  if (latestRow?.synced_at) {
+    const { data: events, error: eventsError } = await supabase
+      .from('import_events')
+      .select('codigo, titulo, kind, imagem, status, synced_at')
+      .eq('synced_at', latestRow.synced_at)
+      .order('titulo', { ascending: true });
+    throwIfError(eventsError, 'Erro ao ler as mudanças da planilha.');
+    const changes = (events ?? []).map((row) => ({
+      codigo: String(row.codigo),
+      titulo: String(row.titulo),
+      kind: row.kind as SyncChangeKind,
+      imagem: (row.imagem as string | null) ?? `/thumbs/${row.codigo}.webp`,
+      status: (row.status as string | null) ?? null,
+      syncedAt: row.synced_at ? String(row.synced_at) : String(latestRow.synced_at),
+    }));
+    lastSync = {
+      at: String(latestRow.synced_at),
+      source: null,
+      sourceLabel: 'importação local',
+      fileName: 'Categorização_Recursos Digitais_Terceiros.xlsx',
+      created: changes.filter((item) => item.kind === 'created').length,
+      updated: changes.filter((item) => item.kind === 'updated').length,
+      reactivated: changes.filter((item) => item.kind === 'reactivated').length,
+      deactivated: changes.filter((item) => item.kind === 'deactivated').length,
+      changes,
+    };
+  }
+
   return {
     fileName: 'importação local',
     sizeBytes: 0,
-    modifiedAt: new Date().toISOString(),
-    totalActive: odas.filter((oda) => oda.ativo !== false).length,
+    modifiedAt: lastSync?.at || new Date().toISOString(),
+    totalActive: active.length,
     missingThumbsTotal: 0,
     missingThumbsPublic: 0,
     missingThumbsWithoutLink: 0,
     missingThumbsPublicWithoutLink: 0,
     missingThumbs: [],
-    lastSync: null,
+    lastSync,
     autoSyncEnabled: false,
   };
 }

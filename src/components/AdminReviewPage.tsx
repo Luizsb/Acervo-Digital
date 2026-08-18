@@ -6,6 +6,7 @@ import {
   ExternalLink,
   FileImage,
   FileSpreadsheet,
+  History,
   RefreshCw,
   Search,
   Upload,
@@ -23,6 +24,7 @@ import {
   type ReviewGroup,
   type SpreadsheetImportSummary,
   type SpreadsheetStatusResponse,
+  type SyncChangeItem,
   type SyncChangeKind,
   type ThumbCaptureJob,
   type ViewRankingItem,
@@ -38,7 +40,8 @@ interface AdminReviewPageProps {
 }
 
 type FilterKey = 'todos' | ReviewGroup;
-type AdminTab = 'catalog' | 'views';
+type AdminTab = 'catalog' | 'history' | 'views';
+type SyncLogTab = 'created' | 'updated';
 
 const SYNC_CHANGE_LABELS: Record<SyncChangeKind, string> = {
   created: 'Novo',
@@ -64,6 +67,26 @@ const VIEW_KIND_OPTIONS: { key: OdaViewKind; label: string }[] = [
   { key: 'page', label: 'Visita à página' },
 ];
 
+function ChangeThumb({ codigo, imagem }: { codigo: string; imagem?: string | null }) {
+  const [missing, setMissing] = useState(false);
+  const src = imagem || `/thumbs/${codigo}.webp`;
+  if (missing) {
+    return (
+      <span className="admin-sheet-change-thumb is-missing" title="Capa não está no deploy">
+        sem capa
+      </span>
+    );
+  }
+  return (
+    <img
+      className="admin-sheet-change-thumb"
+      src={src}
+      alt=""
+      onError={() => setMissing(true)}
+    />
+  );
+}
+
 function formatDate(value?: string): string {
   if (!value) return '—';
   try {
@@ -75,6 +98,7 @@ function formatDate(value?: string): string {
 
 export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
   const [activeTab, setActiveTab] = useState<AdminTab>('catalog');
+  const [syncLogTab, setSyncLogTab] = useState<SyncLogTab>('created');
   const [items, setItems] = useState<AdminReviewItem[]>([]);
   const [counts, setCounts] = useState<Partial<Record<ReviewGroup, number>>>({});
   const [totalReview, setTotalReview] = useState(0);
@@ -189,6 +213,13 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
     0,
     missingThumbsPublic - missingThumbsPublicWithoutLink
   );
+  const syncChanges = sheetStatus?.lastSync?.changes ?? [];
+  const createdChanges = syncChanges.filter(
+    (item) => item.kind === 'created' || item.kind === 'reactivated'
+  );
+  const updatedChanges = syncChanges.filter((item) => item.kind === 'updated');
+  const visibleSyncChanges: SyncChangeItem[] =
+    syncLogTab === 'created' ? createdChanges : updatedChanges;
 
   const handleThumbCheck = async () => {
     setCheckingThumbs(true);
@@ -302,7 +333,9 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
           <p>
             {activeTab === 'catalog'
               ? 'Sincronize a planilha e acompanhe o status dos itens e das capas.'
-              : 'Acompanhe quais recursos são visitados e abertos pelos usuários.'}
+              : activeTab === 'history'
+                ? 'Veja o que entrou novo e o que mudou na última importação, com capa e horário.'
+                : 'Acompanhe quais recursos são visitados e abertos pelos usuários.'}
           </p>
         </div>
       </section>
@@ -316,6 +349,15 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
         >
           <ClipboardList size={17} />
           Status dos itens e capas
+        </button>
+        <button
+          type="button"
+          className={activeTab === 'history' ? 'is-active' : ''}
+          aria-current={activeTab === 'history' ? 'page' : undefined}
+          onClick={() => setActiveTab('history')}
+        >
+          <History size={17} />
+          Novos e atualizados
         </button>
         <button
           type="button"
@@ -384,42 +426,6 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
             </dd>
           </div>
         </dl>
-        {sheetStatus?.lastSync?.changes?.length ? (
-          <div className="admin-sheet-changes">
-            <div className="admin-sheet-changes-head">
-              <h3>Novidades da última sincronização</h3>
-              <p>
-                {[
-                  sheetStatus.lastSync.created
-                    ? `${sheetStatus.lastSync.created} novos`
-                    : null,
-                  sheetStatus.lastSync.updated
-                    ? `${sheetStatus.lastSync.updated} atualizados`
-                    : null,
-                  sheetStatus.lastSync.reactivated
-                    ? `${sheetStatus.lastSync.reactivated} reativados`
-                    : null,
-                  sheetStatus.lastSync.deactivated
-                    ? `${sheetStatus.lastSync.deactivated} desativados`
-                    : null,
-                ]
-                  .filter(Boolean)
-                  .join(' · ') || 'Sem alterações no catálogo'}
-              </p>
-            </div>
-            <ul>
-              {sheetStatus.lastSync.changes.map((change) => (
-                <li key={`${change.kind}-${change.codigo}`}>
-                  <span className={`admin-sheet-change-tag is-${change.kind}`}>
-                    {SYNC_CHANGE_LABELS[change.kind]}
-                  </span>
-                  <code>{change.codigo}</code>
-                  <span className="admin-sheet-change-title">{change.titulo}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
-        ) : null}
         {selectedFileName ? (
           <p className="admin-sheet-file">Arquivo selecionado: {selectedFileName}</p>
         ) : null}
@@ -581,6 +587,81 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
       </section>
 
         </>
+      ) : null}
+
+      {activeTab === 'history' ? (
+        <section className="admin-sheet-card">
+          <div className="admin-sheet-changes-head">
+            <h3>Histórico da última importação</h3>
+            <p>
+              {sheetStatus?.lastSync
+                ? `${formatDate(sheetStatus.lastSync.at)} · ${
+                    [
+                      sheetStatus.lastSync.created ? `${sheetStatus.lastSync.created} novos` : null,
+                      sheetStatus.lastSync.updated
+                        ? `${sheetStatus.lastSync.updated} atualizados`
+                        : null,
+                      sheetStatus.lastSync.reactivated
+                        ? `${sheetStatus.lastSync.reactivated} reativados`
+                        : null,
+                      sheetStatus.lastSync.deactivated
+                        ? `${sheetStatus.lastSync.deactivated} desativados`
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ') || 'sem alterações nesta sincronização'
+                  }`
+                : 'Ainda não há log. Na sua máquina: npm run import:categorizacao — a lista aparece na próxima importação que criar ou alterar recurso.'}
+            </p>
+          </div>
+          <div className="admin-sheet-log-tabs" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={syncLogTab === 'created'}
+              className={syncLogTab === 'created' ? 'is-active' : ''}
+              onClick={() => setSyncLogTab('created')}
+            >
+              Novos ({createdChanges.length})
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={syncLogTab === 'updated'}
+              className={syncLogTab === 'updated' ? 'is-active' : ''}
+              onClick={() => setSyncLogTab('updated')}
+            >
+              Atualizados ({updatedChanges.length})
+            </button>
+          </div>
+          {visibleSyncChanges.length ? (
+            <ul className="admin-sheet-log-list">
+              {visibleSyncChanges.map((change) => (
+                <li key={`${change.kind}-${change.codigo}`}>
+                  <ChangeThumb codigo={change.codigo} imagem={change.imagem} />
+                  <div className="admin-sheet-change-body">
+                    <div className="admin-sheet-change-row">
+                      <span className={`admin-sheet-change-tag is-${change.kind}`}>
+                        {SYNC_CHANGE_LABELS[change.kind]}
+                      </span>
+                      <code>{change.codigo}</code>
+                      <time dateTime={change.syncedAt || sheetStatus?.lastSync?.at || undefined}>
+                        {formatDate(change.syncedAt || sheetStatus?.lastSync?.at)}
+                      </time>
+                    </div>
+                    <span className="admin-sheet-change-title">{change.titulo}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="admin-sheet-log-empty">
+              {syncLogTab === 'created'
+                ? 'Nenhum cadastro novo nesta sincronização.'
+                : 'Nenhum recurso atualizado nesta sincronização.'}
+            </p>
+          )}
+        </section>
       ) : null}
 
       {activeTab === 'views' ? (

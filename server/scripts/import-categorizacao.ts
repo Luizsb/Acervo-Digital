@@ -41,6 +41,9 @@ export type ChangedItem = {
   codigo: string;
   titulo: string;
   kind: ChangeKind;
+  imagem?: string | null;
+  status?: string | null;
+  syncedAt?: string | null;
 };
 
 export type ImportOptions = {
@@ -108,6 +111,21 @@ function collectMissingThumbs(
 ): ImportSummary['missingThumbs'] {
   const root = thumbsDir(workbookPath);
   return items.filter((item) => !fs.existsSync(thumbFile(root, item.codigo)));
+}
+
+function toChange(
+  mapped: { codigoOda: string; titulo: string; imagem?: string | null; status?: string | null },
+  kind: ChangeKind,
+  syncedAt: Date
+): ChangedItem {
+  return {
+    codigo: mapped.codigoOda,
+    titulo: mapped.titulo,
+    kind,
+    imagem: mapped.imagem ?? `/thumbs/${mapped.codigoOda}.webp`,
+    status: mapped.status ?? null,
+    syncedAt: syncedAt.toISOString(),
+  };
 }
 
 function printSummary(summary: ImportSummary) {
@@ -250,15 +268,15 @@ export async function importCategorizacao(options: ImportOptions = {}): Promise<
 
       if (!existing) {
         created += 1;
-        changes.push({ codigo: codigoOda, titulo: mapped.titulo, kind: 'created' });
+        changes.push(toChange(mapped, 'created', synchronizedAt));
       } else if (!existing.ativo) {
         reactivated += 1;
-        changes.push({ codigo: codigoOda, titulo: mapped.titulo, kind: 'reactivated' });
+        changes.push(toChange(mapped, 'reactivated', synchronizedAt));
       } else if (existing.hashFonte === hashFonte) {
         unchanged += 1;
       } else {
         updated += 1;
-        changes.push({ codigo: codigoOda, titulo: mapped.titulo, kind: 'updated' });
+        changes.push(toChange(mapped, 'updated', synchronizedAt));
       }
 
       processed += 1;
@@ -310,7 +328,7 @@ export async function importCategorizacao(options: ImportOptions = {}): Promise<
         ativo: true,
         codigoOda: { notIn: seenCodes },
       },
-      select: { codigoOda: true, titulo: true },
+      select: { codigoOda: true, titulo: true, imagem: true, status: true },
     });
     if (toDeactivate.length > 0) {
       await prisma.oDA.updateMany({
@@ -331,6 +349,9 @@ export async function importCategorizacao(options: ImportOptions = {}): Promise<
           codigo: item.codigoOda,
           titulo: item.titulo || item.codigoOda,
           kind: 'deactivated',
+          imagem: item.imagem ?? `/thumbs/${item.codigoOda}.webp`,
+          status: item.status,
+          syncedAt: synchronizedAt.toISOString(),
         });
       }
     }
@@ -363,6 +384,19 @@ export async function importCategorizacao(options: ImportOptions = {}): Promise<
     missingThumbsPublic,
     changes,
   };
+
+  if (changes.length > 0) {
+    await prisma.importEvent.createMany({
+      data: changes.map((change) => ({
+        syncedAt: synchronizedAt,
+        codigo: change.codigo,
+        titulo: change.titulo,
+        kind: change.kind,
+        imagem: change.imagem ?? `/thumbs/${change.codigo}.webp`,
+        status: change.status ?? null,
+      })),
+    });
+  }
 
   if (log) printSummary(summary);
   return summary;
