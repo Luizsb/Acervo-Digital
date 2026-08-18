@@ -12,8 +12,13 @@ git fetch --prune origin main
 git reset --hard origin/main
 git log -1 --pretty='Commit atual: %h %s'
 
-echo "==> Reconstruindo os containers"
-docker compose up -d --build
+if [ "${FORCE_BUILD:-}" = "1" ]; then
+  echo "==> Reconstruindo os containers"
+  docker compose up -d --build
+else
+  echo "==> Subindo os containers (sem rebuild; use FORCE_BUILD=1 se mudou Dockerfile ou deps)"
+  docker compose up -d --no-build
+fi
 
 # O Caddyfile é montado no container, então editá-lo não recria o serviço nem
 # aplica a mudança. O reload valida a configuração e troca sem derrubar conexões.

@@ -314,6 +314,16 @@ Atualizar à mão continua possível:
 cd ~/Acervo-Digital && bash scripts/deploy-ec2.sh
 ```
 
+### Recuperação de emergência (site fora do ar)
+
+Se o deploy travou a instância ou `/health` retorna 504, use o script que sobe **só HTTP**, sem Caddy e **sem reimportar a planilha**:
+
+```bash
+cd ~/Acervo-Digital && git pull --ff-only && bash scripts/recover-ec2-http.sh
+```
+
+Ele para o Caddy, define `SKIP_SEED=true`, expõe o nginx na porta 80 e não roda `docker compose build`. Só funciona com SSH ativo; se a porta 22 não responder, alguém precisa reiniciar a instância no console AWS e liberar SSH no Security Group.
+
 Atualização de **conteúdo** não precisa de deploy: o gatilho diário do Apps Script envia a planilha para o webhook da API e o catálogo muda sozinho.
 
 ---
