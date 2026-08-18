@@ -116,7 +116,13 @@ export async function supabaseLogout(): Promise<void> {
 
 export async function supabaseFetchOdas(): Promise<ODA[]> {
   const supabase = getSupabaseClient();
-  const { data, error } = await supabase.from('odas').select('*').order('id', { ascending: true }).range(0, 2499);
+  const { data, error } = await supabase
+    .from('odas')
+    .select('*')
+    .order('page_view_count', { ascending: false })
+    .order('open_view_count', { ascending: false })
+    .order('id', { ascending: false })
+    .range(0, 2499);
   throwIfError(error, 'Erro ao carregar o catálogo.');
   return (data ?? []).map((row) => fromSnakeOda(row as Record<string, unknown>));
 }

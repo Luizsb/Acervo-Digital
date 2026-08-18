@@ -17,3 +17,15 @@ export function galleryPageSize(
   if (viewMode === 'list') return GALLERY_LIST_PAGE_SIZE;
   return galleryGridColumns(viewportWidth) * GALLERY_GRID_ROWS;
 }
+
+/** Visitas à ficha primeiro; empate pela abertura do recurso e depois pelo id mais novo. */
+export function compareProjectsByPopularity(
+  a: { id: number; pageViewCount?: number; openViewCount?: number },
+  b: { id: number; pageViewCount?: number; openViewCount?: number }
+): number {
+  const page = (b.pageViewCount ?? 0) - (a.pageViewCount ?? 0);
+  if (page !== 0) return page;
+  const open = (b.openViewCount ?? 0) - (a.openViewCount ?? 0);
+  if (open !== 0) return open;
+  return b.id - a.id;
+}

@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import type { ODAFromExcel } from '../types/project';
 import { getComponentFullName, getSegmentFullName, sortSegments, getMarcaFullName } from '../utils/curriculumColors';
 import { extractBnccCode, extractBnccDescription } from '../utils/formatters';
+import { compareProjectsByPopularity } from '../utils/galleryLayout';
 
 export interface SelectedFilters {
   anos: string[];
@@ -421,7 +422,7 @@ export function useProjectFilters(
         matchesVestibular &&
         matchesCapitulo
       );
-    });
+    }).sort(compareProjectsByPopularity);
   }, [contentTypeFilteredProjects, searchQuery, selectedFilters]);
 
   const handleFilterChange = useCallback((category: string, value: string) => {

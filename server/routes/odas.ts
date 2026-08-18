@@ -45,7 +45,7 @@ router.get('/', async (req: AuthRequest, res) => {
       include: {
         bncc: true, // Incluir dados da BNCC relacionada
       },
-      orderBy: { id: 'asc' },
+      orderBy: [{ pageViewCount: 'desc' }, { openViewCount: 'desc' }, { id: 'desc' }],
       take: limit ? parseInt(limit as string) : undefined,
       skip: offset ? parseInt(offset as string) : undefined,
     });
