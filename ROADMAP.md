@@ -17,10 +17,13 @@ Documentação versionada do produto. Canvases locais do Cursor são rascunhos d
 
 ## Próximo
 
+- **Migração MVP para Supabase + Vercel** (custo zero enquanto a EC2 estiver inacessível). Docker/`server/` permanecem no Git para voltar à instância com `VITE_BACKEND=ec2` e `scripts/recover-ec2-http.sh`.
+- Import da planilha, `diff:planilha` e `thumbs:capture` rodam **na máquina local** contra o Postgres do Supabase; capas sobem no Git e o Vercel publica.
 - SSO JumpCloud no lugar do login demo
-- Recaptura de thumbs sob demanda a partir do painel admin
-- HTTPS (443) e domínio na EC2
-- Política de atualização periódica da planilha oficial no repositório
+- Recaptura de thumbs sob demanda a partir do painel admin (quando houver host Node de novo)
+- HTTPS (443) e domínio na EC2, se a instância voltar
+
+Roteiro detalhado: canvas `roteiro-supabase` no Cursor.
 
 ## Em observação
 

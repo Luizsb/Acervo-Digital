@@ -2,7 +2,25 @@ import { getVideoThumbnail } from './videoThumbnails';
 import { looksLikeAudiovisual, isVideoAulaCodigo } from './contentType';
 import type { Project } from '../types/project';
 import { extractBnccCode, extractBnccDescription, formatDuration } from './formatters';
+import { isSupabaseBackend } from '../config/backend';
+import {
+  supabaseLogin,
+  supabaseAuthMe,
+  supabaseLogout,
+  supabaseFetchOdas,
+  supabaseFetchOdaById,
+  supabaseFavoritesGet,
+  supabaseFavoriteAdd,
+  supabaseFavoriteRemove,
+  supabaseRecordOdaView,
+  supabaseAdminReview,
+  supabaseAdminViewsTop,
+  supabaseSpreadsheetStatus,
+  supabaseLocalJobOnly,
+} from './supabaseApi';
 
+// Fase 4 ramifica com getBackendTarget() (src/config/backend.ts).
+// Padrão VITE_BACKEND=ec2: Express local, Docker e instância AWS.
 const API_BASE_URL = import.meta.env?.VITE_API_URL || 'http://localhost:3001/api';
 
 const AUTH_TOKEN_KEY = 'acervo_token';
@@ -29,6 +47,9 @@ export function clearAuthToken(): void {
   } catch {
     // ignore
   }
+  if (isSupabaseBackend()) {
+    void supabaseLogout();
+  }
 }
 
 function authHeaders(json = false): HeadersInit {
@@ -48,6 +69,7 @@ export interface AuthUserResponse {
 }
 
 export async function apiLogin(email: string, password: string): Promise<{ token: string; user: AuthUserResponse }> {
+  if (isSupabaseBackend()) return supabaseLogin(email, password);
   const res = await fetch(`${API_BASE_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -59,6 +81,7 @@ export async function apiLogin(email: string, password: string): Promise<{ token
 }
 
 export async function apiRegister(name: string, email: string, password: string): Promise<{ token: string; user: AuthUserResponse }> {
+  if (isSupabaseBackend()) throw new Error('Cadastro público está desativado. Use o acesso interno.');
   const res = await fetch(`${API_BASE_URL}/auth/register`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -70,6 +93,7 @@ export async function apiRegister(name: string, email: string, password: string)
 }
 
 export async function apiAuthMe(): Promise<AuthUserResponse | null> {
+  if (isSupabaseBackend()) return supabaseAuthMe();
   const token = getAuthToken();
   if (!token) return null;
   const res = await fetch(`${API_BASE_URL}/auth/me`, {
@@ -81,6 +105,7 @@ export async function apiAuthMe(): Promise<AuthUserResponse | null> {
 }
 
 export async function apiUpdateMe(params: { name?: string; currentPassword?: string; newPassword?: string }): Promise<AuthUserResponse> {
+  if (isSupabaseBackend()) throw new Error('Altere a senha pelo painel do Supabase Auth neste MVP.');
   const token = getAuthToken();
   if (!token) throw new Error('Não autorizado.');
   const res = await fetch(`${API_BASE_URL}/auth/me`, {
@@ -97,6 +122,7 @@ export async function apiUpdateMe(params: { name?: string; currentPassword?: str
 }
 
 export async function apiForgotPassword(email: string): Promise<{ message: string; emailExists: boolean; token?: string }> {
+  if (isSupabaseBackend()) throw new Error('Redefinição de senha neste MVP: Authentication no painel do Supabase.');
   const res = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -108,6 +134,7 @@ export async function apiForgotPassword(email: string): Promise<{ message: strin
 }
 
 export async function apiResetPassword(token: string, newPassword: string): Promise<{ message: string }> {
+  if (isSupabaseBackend()) throw new Error('Redefinição de senha neste MVP: Authentication no painel do Supabase.');
   const res = await fetch(`${API_BASE_URL}/auth/reset-password`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -120,6 +147,7 @@ export async function apiResetPassword(token: string, newPassword: string): Prom
 
 // Favoritos do usuário logado
 export async function apiFavoritesGet(): Promise<number[]> {
+  if (isSupabaseBackend()) return supabaseFavoritesGet();
   const token = getAuthToken();
   if (!token) return [];
   const res = await fetch(`${API_BASE_URL}/users/me/favorites`, {
@@ -131,6 +159,7 @@ export async function apiFavoritesGet(): Promise<number[]> {
 }
 
 export async function apiFavoriteAdd(projectId: number): Promise<void> {
+  if (isSupabaseBackend()) return supabaseFavoriteAdd(projectId);
   const token = getAuthToken();
   if (!token) throw new Error('Não autorizado.');
   const res = await fetch(`${API_BASE_URL}/users/me/favorites`, {
@@ -148,6 +177,7 @@ export async function apiFavoriteAdd(projectId: number): Promise<void> {
 }
 
 export async function apiFavoriteRemove(projectId: number): Promise<void> {
+  if (isSupabaseBackend()) return supabaseFavoriteRemove(projectId);
   const token = getAuthToken();
   if (!token) throw new Error('Não autorizado.');
   const res = await fetch(`${API_BASE_URL}/users/me/favorites/${projectId}`, {
@@ -195,6 +225,7 @@ export async function apiAdminReview(params?: {
   group?: string;
   search?: string;
 }): Promise<AdminReviewResponse> {
+  if (isSupabaseBackend()) return supabaseAdminReview(params);
   const token = getAuthToken();
   if (!token) throw new Error('Não autorizado.');
   const queryParams = new URLSearchParams();
@@ -290,6 +321,7 @@ export interface SpreadsheetStatusResponse {
 }
 
 export async function apiAdminSpreadsheetStatus(): Promise<SpreadsheetStatusResponse> {
+  if (isSupabaseBackend()) return supabaseSpreadsheetStatus();
   const token = getAuthToken();
   if (!token) throw new Error('Não autorizado.');
   const res = await fetch(`${API_BASE_URL}/admin/spreadsheet/status`, {
@@ -301,6 +333,7 @@ export async function apiAdminSpreadsheetStatus(): Promise<SpreadsheetStatusResp
 }
 
 export async function apiAdminImportSpreadsheet(file: File): Promise<AsyncJobStartResponse> {
+  if (isSupabaseBackend()) supabaseLocalJobOnly();
   const token = getAuthToken();
   if (!token) throw new Error('Não autorizado.');
   const body = new FormData();
@@ -316,6 +349,7 @@ export async function apiAdminImportSpreadsheet(file: File): Promise<AsyncJobSta
 }
 
 export async function apiAdminSpreadsheetJob(jobId: string): Promise<SpreadsheetJob> {
+  if (isSupabaseBackend()) supabaseLocalJobOnly();
   const token = getAuthToken();
   if (!token) throw new Error('Não autorizado.');
   const res = await fetch(`${API_BASE_URL}/admin/spreadsheet/jobs/${encodeURIComponent(jobId)}`, {
@@ -342,6 +376,7 @@ export interface ThumbCaptureJob {
 }
 
 export async function apiAdminStartThumbCapture(): Promise<AsyncJobStartResponse> {
+  if (isSupabaseBackend()) supabaseLocalJobOnly();
   const token = getAuthToken();
   if (!token) throw new Error('Não autorizado.');
   const res = await fetch(`${API_BASE_URL}/admin/thumbs/capture`, {
@@ -354,6 +389,7 @@ export async function apiAdminStartThumbCapture(): Promise<AsyncJobStartResponse
 }
 
 export async function apiAdminThumbJob(jobId: string): Promise<ThumbCaptureJob> {
+  if (isSupabaseBackend()) supabaseLocalJobOnly();
   const token = getAuthToken();
   if (!token) throw new Error('Não autorizado.');
   const res = await fetch(`${API_BASE_URL}/admin/thumbs/jobs/${encodeURIComponent(jobId)}`, {
@@ -416,6 +452,7 @@ export interface ODA {
   tempoMedioEstimado?: string | null;
   usuarioPrincipal?: string | null;
   ambienteUso?: string | null;
+  ativo?: boolean;
   pageViewCount?: number;
   openViewCount?: number;
   createdAt: string;
@@ -523,6 +560,7 @@ export async function fetchAllODAs(params?: {
   }
 
   try {
+    if (isSupabaseBackend()) return supabaseFetchOdas();
     const response = await fetch(`${API_BASE_URL}/odas?${queryParams.toString()}`, {
       headers: authHeaders(),
     });
@@ -553,6 +591,7 @@ export async function fetchAllODAs(params?: {
 
 // Buscar ODA por ID
 export async function fetchODAById(id: number): Promise<ODA | null> {
+  if (isSupabaseBackend()) return supabaseFetchOdaById(id);
   const response = await fetch(`${API_BASE_URL}/odas/${id}`, {
     headers: authHeaders(),
   });
@@ -570,6 +609,7 @@ export async function fetchODAById(id: number): Promise<ODA | null> {
 
 // Criar novo ODA
 export async function createODA(oda: Partial<ODA>): Promise<ODA> {
+  if (isSupabaseBackend()) supabaseLocalJobOnly();
   const response = await fetch(`${API_BASE_URL}/odas`, {
     method: 'POST',
     headers: authHeaders(true),
@@ -586,6 +626,7 @@ export async function createODA(oda: Partial<ODA>): Promise<ODA> {
 
 // Atualizar ODA
 export async function updateODA(id: number, oda: Partial<ODA>): Promise<ODA> {
+  if (isSupabaseBackend()) supabaseLocalJobOnly();
   const response = await fetch(`${API_BASE_URL}/odas/${id}`, {
     method: 'PUT',
     headers: authHeaders(true),
@@ -602,6 +643,7 @@ export async function updateODA(id: number, oda: Partial<ODA>): Promise<ODA> {
 
 // Deletar ODA
 export async function deleteODA(id: number): Promise<void> {
+  if (isSupabaseBackend()) supabaseLocalJobOnly();
   const response = await fetch(`${API_BASE_URL}/odas/${id}`, {
     method: 'DELETE',
     headers: authHeaders(),
@@ -615,6 +657,11 @@ export async function deleteODA(id: number): Promise<void> {
 
 // Contar ODAs
 export async function countODAs(tipoConteudo?: 'Audiovisual' | 'OED' | 'Todos'): Promise<number> {
+  if (isSupabaseBackend()) {
+    const odas = await supabaseFetchOdas();
+    if (!tipoConteudo || tipoConteudo === 'Todos') return odas.length;
+    return odas.filter((oda) => oda.tipoConteudo === tipoConteudo).length;
+  }
   const queryParams = new URLSearchParams();
   if (tipoConteudo && tipoConteudo !== 'Todos') {
     queryParams.append('tipoConteudo', tipoConteudo);
@@ -644,6 +691,7 @@ export async function apiRecordOdaView(
   odaId: number,
   kind: OdaViewKind
 ): Promise<RecordOdaViewResponse> {
+  if (isSupabaseBackend()) return supabaseRecordOdaView(odaId, kind);
   const res = await fetch(`${API_BASE_URL}/odas/${odaId}/view`, {
     method: 'POST',
     headers: authHeaders(true),
@@ -675,6 +723,7 @@ export async function apiAdminViewsTop(params?: {
   period?: ViewRankingPeriod;
   limit?: number;
 }): Promise<ViewRankingResponse> {
+  if (isSupabaseBackend()) return supabaseAdminViewsTop(params);
   const token = getAuthToken();
   if (!token) throw new Error('Não autorizado.');
   const queryParams = new URLSearchParams();

@@ -32,6 +32,7 @@ services:
         condition: service_healthy
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-acervo}:${POSTGRES_PASSWORD:-acervo}@postgres:5432/${POSTGRES_DB:-acervo}
+      DIRECT_URL: postgresql://${POSTGRES_USER:-acervo}:${POSTGRES_PASSWORD:-acervo}@postgres:5432/${POSTGRES_DB:-acervo}
       PORT: 3001
       CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
       JWT_SECRET: ${JWT_SECRET:-acervo-dev-local-only-altere-em-producao}

@@ -6,8 +6,11 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // Pooler 6543 (PgBouncer) quebra migrate. DIRECT_URL usa sessão 5432.
+  // Na EC2/Docker local os dois apontam para o mesmo Postgres.
+  directUrl = env("DIRECT_URL")
 }
 
 model ODA {

@@ -78,3 +78,13 @@ export function reviewGroupFromStatus(status?: string | null): ReviewGroup {
 export function isAdminRole(role?: string | null): boolean {
   return role === 'admin';
 }
+
+export function reviewGroupFor(item: {
+  status?: string | null;
+  linkRepositorio?: string | null;
+}): ReviewGroup {
+  if (hasCatalogStatus(item.status) && !hasResourceLink(item.linkRepositorio)) {
+    return 'sem-link';
+  }
+  return reviewGroupFromStatus(item.status);
+}
