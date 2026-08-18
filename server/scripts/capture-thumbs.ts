@@ -4,6 +4,7 @@ import https from 'https';
 import http from 'http';
 import prisma from '../lib/prisma';
 import { catalogVisibleWhere } from '../lib/catalogVisibility';
+import { isPlaceholderResourceCode } from './map-categorizacao';
 
 const thumbsDir = path.join(process.cwd(), '..', 'public', 'thumbs');
 // Caminho estável para o servidor local; no Docker, ACERVO_PLAYWRIGHT_BROWSERS_PATH=/ms-playwright.
@@ -225,7 +226,6 @@ export type ThumbCaptureResult = {
 };
 
 export type ThumbCaptureOptions = {
-  onlyPublic?: boolean;
   limit?: number;
   onProgress?: (progress: ThumbCaptureResult & { current: number }) => void;
 };
@@ -234,10 +234,11 @@ export async function captureMissingThumbs(
   options: ThumbCaptureOptions = {}
 ): Promise<ThumbCaptureResult> {
   fs.mkdirSync(thumbsDir, { recursive: true });
+  // Igual ao botão do admin: só catálogo público (Funcionando + link).
   const odas = await prisma.oDA.findMany({
     where: {
       ativo: true,
-      ...(options.onlyPublic ? catalogVisibleWhere() : {}),
+      ...catalogVisibleWhere(),
     },
     select: { codigoOda: true, titulo: true, linkRepositorio: true },
     orderBy: { id: 'asc' },
@@ -246,8 +247,12 @@ export async function captureMissingThumbs(
   const jobs: Array<(typeof odas)[number] & { replaceExisting: boolean }> = [];
   let invalidExisting = 0;
   let withoutLink = 0;
+  let withoutCode = 0;
   for (const oda of odas) {
-    if (!oda.codigoOda) continue;
+    if (!oda.codigoOda || isPlaceholderResourceCode(oda.codigoOda)) {
+      withoutCode += 1;
+      continue;
+    }
     const exists = alreadyExists(oda.codigoOda);
     if (exists && !FORCE) {
       if (!VALIDATE_EXISTING) continue;
@@ -263,7 +268,9 @@ export async function captureMissingThumbs(
   }
   const requestedLimit = options.limit ?? LIMIT;
   const queue = requestedLimit > 0 ? jobs.slice(0, requestedLimit) : jobs;
-  console.log(`🖼️  Thumbs a capturar: ${queue.length} (sem link do recurso: ${withoutLink})`);
+  console.log(
+    `🖼️  Thumbs a capturar: ${queue.length} (sem link: ${withoutLink}, sem código: ${withoutCode}; critério do admin: Funcionando + link + código)`
+  );
   console.log(
     `⏭️  Arquivos existentes não serão sobrescritos${FORCE ? ' (FORCE ligado)' : ''}`
   );

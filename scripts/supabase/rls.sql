@@ -134,3 +134,21 @@ grant select on public.odas to authenticated;
 grant select on public.bncc to authenticated;
 grant all on public.auth_favorites to authenticated;
 grant select on public.auth_view_events to authenticated;
+
+-- Ping do GitHub Actions (keep-supabase-awake.yml). SELECT público, sem dado do catálogo.
+create table if not exists public.keep_alive (
+  id integer primary key,
+  poked_at timestamptz not null default now()
+);
+
+insert into public.keep_alive (id) values (1)
+on conflict (id) do nothing;
+
+alter table public.keep_alive enable row level security;
+
+drop policy if exists keep_alive_select on public.keep_alive;
+create policy keep_alive_select on public.keep_alive
+  for select to anon, authenticated
+  using (true);
+
+grant select on table public.keep_alive to anon, authenticated;

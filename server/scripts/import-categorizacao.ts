@@ -3,7 +3,7 @@ import path from 'path';
 import { createHash } from 'crypto';
 import prisma from '../lib/prisma';
 import { readWorksheetMatrix } from '../lib/excel';
-import { mapCategorizacaoRow, type CategorizacaoRow } from './map-categorizacao';
+import { isPlaceholderResourceCode, mapCategorizacaoRow, type CategorizacaoRow } from './map-categorizacao';
 import { completeBnccText, completeObjectiveList } from '../lib/completeBnccText';
 import { isVisibleInCatalog } from '../lib/catalogVisibility';
 
@@ -185,12 +185,14 @@ export async function importCategorizacao(options: ImportOptions = {}): Promise<
 
     try {
       seenCodes.push(mapped.codigoOda);
-      thumbCandidates.push({
-        codigo: mapped.codigoOda,
-        titulo: mapped.titulo,
-        status: mapped.status,
-        linkRepositorio: mapped.linkRepositorio,
-      });
+      if (!isPlaceholderResourceCode(mapped.codigoOda)) {
+        thumbCandidates.push({
+          codigo: mapped.codigoOda,
+          titulo: mapped.titulo,
+          status: mapped.status,
+          linkRepositorio: mapped.linkRepositorio,
+        });
+      }
       const hashFonte = sourceHash(mapped);
       const existing = await prisma.oDA.findUnique({
         where: { codigoOda: mapped.codigoOda },

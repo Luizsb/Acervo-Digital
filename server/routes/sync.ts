@@ -109,7 +109,7 @@ router.post(
           if (fs.existsSync(backupPath)) fs.unlinkSync(backupPath);
           if (!shouldCaptureThumbsAfterSync()) return;
           // Rotina opcional: gera as capas que faltam logo após a sincronização.
-          void captureMissingThumbs({ onlyPublic: true, limit: thumbCaptureLimit() })
+          void captureMissingThumbs({ limit: thumbCaptureLimit() })
             .then((result) =>
               console.log(
                 `🖼️  Captura pós-sync: ${result.captured} novas, ${result.failed} falhas, ${result.withoutLink} sem link.`

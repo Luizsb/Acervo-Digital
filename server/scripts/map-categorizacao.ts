@@ -80,6 +80,15 @@ export function shortLabel(value: string): string {
   return cut || value.trim();
 }
 
+/** Código sintético de linha sem "Código do recurso". Não gera thumb nem entra no catálogo público. */
+export function placeholderResourceCode(sheetRow: number): string {
+  return `PLANILHA_L${sheetRow}`;
+}
+
+export function isPlaceholderResourceCode(codigo?: string | null): boolean {
+  return /^PLANILHA_L\d+$/i.test((codigo || '').trim());
+}
+
 function normalizeResourceCode(value: string): string {
   const trimmed = value.trim();
   if (!/^https?:\/\//i.test(trimmed)) return trimmed;
@@ -321,7 +330,7 @@ export function mapCategorizacaoRow(
   // Linha incompleta com "Funcionando" não entra no acervo nem na fila.
   if ((!tituloInformado || !codigoInformado) && statusKey === 'funcionando') return null;
 
-  const codigoOda = codigoInformado || `PLANILHA_L${sheetRow}`;
+  const codigoOda = codigoInformado || placeholderResourceCode(sheetRow);
   const titulo = tituloInformado || codigoInformado || `Linha ${sheetRow} da planilha`;
 
   const componente = cell(row, 'Componente/campo de experiência');

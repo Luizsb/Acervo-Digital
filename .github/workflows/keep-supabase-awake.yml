@@ -1,0 +1,33 @@
+name: Manter Supabase acordado
+
+on:
+  schedule:
+    # Terça e sexta 11:00 UTC (8h em Brasília). O Free pausa após 7 dias sem consulta.
+    - cron: "0 11 * * 2,5"
+  workflow_dispatch:
+
+jobs:
+  ping:
+    name: Ping no Postgres
+    runs-on: ubuntu-latest
+    steps:
+      - name: Confere os segredos
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_ANON_KEY" ]; then
+            echo "Defina SUPABASE_URL e SUPABASE_ANON_KEY em Settings > Secrets and variables > Actions." >&2
+            exit 1
+          fi
+
+      - name: Consulta keep_alive
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          curl -sS --fail \
+            "${SUPABASE_URL%/}/rest/v1/keep_alive?select=id&limit=1" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}" \
+            -H "Accept: application/json"

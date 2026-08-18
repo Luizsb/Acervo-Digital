@@ -16,6 +16,7 @@ import {
 } from '../lib/catalogVisibility';
 import { findWorkbook } from '../scripts/import-categorizacao';
 import { captureMissingThumbs } from '../scripts/capture-thumbs';
+import { isPlaceholderResourceCode } from '../scripts/map-categorizacao';
 import {
   downloadGoogleSheetToWorkbook,
   getGoogleSheetsSource,
@@ -266,8 +267,9 @@ router.get('/spreadsheet/status', async (_req, res) => {
     const thumbsPath = path.join(path.dirname(filePath), 'thumbs');
     const missingThumbs = activeItems
       .filter((item) => {
+        if (isPlaceholderResourceCode(item.codigoOda)) return false;
         const code = String(item.codigoOda || '').replace(/\.(webp|jpg|jpeg|png)$/i, '');
-        return !code || !fs.existsSync(path.join(thumbsPath, `${code}.webp`));
+        return Boolean(code) && !fs.existsSync(path.join(thumbsPath, `${code}.webp`));
       })
       .map((item) => ({
         codigo: item.codigoOda,
@@ -351,9 +353,6 @@ router.post('/thumbs/capture', (_req, res) => {
   res.status(202).json({ ok: true, jobId, message: 'Captura de thumbs iniciada.' });
 
   void captureMissingThumbs({
-    // Somente status Funcionando. Quebrados, incorretos e itens em cadastro
-    // continuam na auditoria, mas nunca entram na fila automática de captura.
-    onlyPublic: true,
     onProgress: (progress) => {
       job.current = progress.current;
       job.total = progress.total;
