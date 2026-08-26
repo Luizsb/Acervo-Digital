@@ -12,6 +12,11 @@ as $$
       or coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '') = 'admin';
 $$;
 
+-- Postgres concede EXECUTE a PUBLIC por padrão; o Security Advisor reclama de DEFINER aberto.
+revoke execute on function public.is_acervo_admin() from public;
+revoke execute on function public.is_acervo_admin() from anon;
+grant execute on function public.is_acervo_admin() to authenticated;
+
 alter table public.odas enable row level security;
 alter table public.bncc enable row level security;
 alter table public.user_favorites enable row level security;
@@ -129,11 +134,22 @@ begin
 end;
 $$;
 
+revoke execute on function public.record_oda_view(integer, text) from public;
+revoke execute on function public.record_oda_view(integer, text) from anon;
 grant execute on function public.record_oda_view(integer, text) to authenticated;
 grant select on public.odas to authenticated;
 grant select on public.bncc to authenticated;
 grant all on public.auth_favorites to authenticated;
 grant select on public.auth_view_events to authenticated;
+
+-- Tabela interna do Prisma: não deve aparecer na Data API sem RLS.
+do $$
+begin
+  if to_regclass('public._prisma_migrations') is not null then
+    execute 'alter table public._prisma_migrations enable row level security';
+    execute 'revoke all on table public._prisma_migrations from anon, authenticated';
+  end if;
+end $$;
 
 -- Histórico da última importação no painel admin (Vercel lê via Data API).
 create table if not exists public.import_events (
