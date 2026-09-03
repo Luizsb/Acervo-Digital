@@ -6,7 +6,58 @@ Entrada pelo **login**. Fonte editorial: planilha `public/Categorização_Recurs
 
 **Macroformato `Vídeo`, `Playlist` ou `Áudio`** → **Audiovisual** na UI. Demais macroformatos → **OED**.
 
-Roadmap: [ROADMAP.md](./ROADMAP.md).
+---
+
+## Documentação
+
+Este README cuida de **instalação, comandos e solução de problemas**. O entendimento
+do projeto está em `docs/`, no padrão [D.N.E.E. Docs](./.cursorrules):
+
+| Arquivo | O que traz |
+|---------|-----------|
+| [docs/SOBRE.md](./docs/SOBRE.md) | Visão de negócio: problema, público, valor, momento atual |
+| [docs/SDD.md](./docs/SDD.md) | Arquitetura, regras de negócio e **a rotina de operação (runbook)** |
+| [docs/ROADMAP.md](./docs/ROADMAP.md) | Fases, backlog, bugs conhecidos e débitos técnicos |
+| [docs/CHANGELOG_EVIDENCES.md](./docs/CHANGELOG_EVIDENCES.md) | Decisões tomadas e evidências de entrega |
+| [docs/visao-projeto.html](./docs/visao-projeto.html) | Interface visual que reúne os quatro arquivos acima |
+
+### Como ler a documentação
+
+**Direto no GitHub ou no editor.** Os quatro arquivos são Markdown comum: basta
+clicar nos links da tabela acima. É o caminho mais rápido e não exige instalar nada.
+
+**Na interface visual, com as quatro abas.** A página `docs/visao-projeto.html` lê os
+Markdown em tempo de execução e os apresenta num painel único, com tema claro e
+escuro. Ela precisa ser servida por HTTP — abrir o arquivo direto do disco não
+funciona, porque o navegador bloqueia a leitura de arquivos locais:
+
+```bash
+npx serve docs -l 4000
+```
+
+Depois abra **http://localhost:4000/visao-projeto.html**. A porta 4000 evita
+conflito com o Vite, que usa a 3000. A extensão *Live Server* do VS Code também
+resolve: clique com o botão direito no arquivo e escolha *Open with Live Server*.
+
+Não há build nem dependência a instalar: a página é um HTML único.
+
+**Por onde começar.** Se você acabou de assumir o projeto, vá para a seção *Rotina de
+operação* do [SDD.md](./docs/SDD.md) — é o que mantém o catálogo atualizado. Depois
+leia o [SOBRE.md](./docs/SOBRE.md) para entender o produto.
+
+### Como manter a documentação
+
+Os arquivos `.md` são a **fonte da verdade**; a página HTML só os exibe. Toda mudança
+relevante de comportamento, dado, regra, fluxo ou infraestrutura precisa atualizar o
+Markdown correspondente e registrar a entrega em
+[CHANGELOG_EVIDENCES.md](./docs/CHANGELOG_EVIDENCES.md). O processo completo, que a
+IA do Cursor é obrigada a seguir neste repositório, está no
+[.cursorrules](./.cursorrules).
+
+> **Onde o projeto está hospedado hoje:** front na **Vercel**, banco e autenticação
+> no **Supabase** (`VITE_BACKEND=supabase`). A infraestrutura Docker + EC2 descrita
+> mais abaixo continua íntegra no repositório como **plano de retorno**, não como
+> ambiente ativo — a instância está inacessível desde agosto de 2026.
 
 ---
 
@@ -27,6 +78,12 @@ Roadmap: [ROADMAP.md](./ROADMAP.md).
 
 ```
 Acervo-Digital/
+├── docs/                         # Documentação D.N.E.E (fonte da verdade)
+│   ├── SOBRE.md                  # Visão de produto
+│   ├── SDD.md                    # Norte técnico + runbook de operação
+│   ├── ROADMAP.md                # Planejamento e débitos
+│   ├── CHANGELOG_EVIDENCES.md    # Decisões e evidências
+│   └── visao-projeto.html        # Interface visual de leitura
 ├── src/                          # Frontend (React + Vite)
 ├── server/                       # API Express + Prisma
 │   ├── Dockerfile                # Imagem da API
@@ -35,11 +92,14 @@ Acervo-Digital/
 │   ├── thumbs/                   # Capas webp versionadas (~60 MB)
 │   ├── Categorização_Recursos Digitais_Terceiros.xlsx
 │   └── bncc.db
+├── scripts/
+│   ├── supabase/rls.sql          # Políticas e funções do Supabase
+│   └── apps-script/              # Gatilho de sincronização (parado)
 ├── docker/
 │   └── nginx.conf                # Frontend em container
 ├── Dockerfile                    # Imagem do frontend
 ├── docker-compose.yml            # Postgres + API + frontend
-├── ROADMAP.md
+├── .cursorrules                  # Processo que a IA segue no repositório
 └── README.md
 ```
 
@@ -196,7 +256,12 @@ npx tsx scripts/capture-thumbs.ts --validate-existing
 
 ---
 
-## Publicar na EC2
+## Publicar na EC2 (plano de retorno, hoje inativo)
+
+> A instância está inacessível desde agosto de 2026 e a produção migrou para
+> Vercel + Supabase. Esta seção e as duas seguintes ficam registradas para o dia em
+> que o acesso for recuperado. Para operar o ambiente atual, use o runbook do
+> [SDD.md](./docs/SDD.md).
 
 Na instância (Ubuntu 22.04 ou Amazon Linux 2023), Docker Compose sobe **Postgres + API + nginx**. O browser fala só com a porta 80; o nginx encaminha `/api` e `/health` para a API. Postgres e a porta 3001 ficam só em localhost.
 
@@ -288,7 +353,9 @@ Os certificados ficam no volume `acervo_caddy_data`. Não remova esse volume sem
 
 ## Deploy automático (GitHub Actions)
 
-Todo push em `main` roda o workflow `.github/workflows/ci-e-deploy.yml`: primeiro testes, build do frontend e checagem de tipos da API; se tudo passar, ele entra na EC2 por SSH e executa `scripts/deploy-ec2.sh`. Em pull requests só a etapa de verificação roda. Para repetir um deploy sem novo commit, use **Run workflow** na aba Actions.
+Todo push em `main` roda o workflow `.github/workflows/ci-e-deploy.yml`: testes, build do frontend e checagem de tipos da API.
+
+**A etapa de deploy na EC2 está desativada.** Ela só executa se a variável de repositório `ENABLE_EC2_DEPLOY` for `true`, o que hoje não é o caso — a instância está inacessível. Enquanto isso, quem publica o frontend é a Vercel, a cada push em `main`. O parágrafo abaixo descreve o comportamento do deploy quando reativado.
 
 O script na instância faz `git reset --hard origin/main`, sobe os containers com `--build`, espera `/health` responder e remove imagens órfãs (o disco é pequeno). Se a API não responder, o deploy falha com os logs no console do Actions e os containers anteriores continuam no ar.
 

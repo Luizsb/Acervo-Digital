@@ -1,6 +1,10 @@
 # Backend - Acervo Digital
 
-API Node.js + Express + Prisma. Documentação completa: [README.md](../README.md). Roadmap: [ROADMAP.md](../ROADMAP.md).
+API Node.js + Express + Prisma. Instalação e comandos: [README.md](../README.md). Arquitetura, regras de negócio e rotina de operação: [docs/SDD.md](../docs/SDD.md). Planejamento: [docs/ROADMAP.md](../docs/ROADMAP.md).
+
+> Esta API corresponde ao modo `VITE_BACKEND=ec2`, usado no desenvolvimento local e
+> guardado como plano de retorno para a instância AWS. A produção atual roda sobre o
+> Supabase e não passa por aqui.
 
 ## Docker (recomendado)
 

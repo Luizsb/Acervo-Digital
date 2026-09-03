@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acervo Digital · Visão do Projeto | D.N.E.E. Docs</title>
+
+    <!--
+      Interface visual do padrão D.N.E.E. Docs.
+      Esta página NÃO é fonte da verdade: ela apenas renderiza os arquivos Markdown
+      desta pasta. Para mudar o conteúdo, edite o .md correspondente.
+      Layout padronizado do framework, deliberadamente diferente da identidade
+      visual do produto.
+    -->
+
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' };
+        (function () {
+            const saved = localStorage.getItem('dnee-theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if (saved === 'dark' || (!saved && prefersDark)) {
+                document.documentElement.classList.add('dark');
+            }
+        })();
+    </script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .gradient-text {
+            background: linear-gradient(135deg, #4F46E5 0%, #06B6D4 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .dark .gradient-text {
+            background: linear-gradient(135deg, #818CF8 0%, #22D3EE 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; animation: fadeIn .25s ease-in-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+        a:focus-visible, button:focus-visible {
+            outline: 2px solid #6366F1;
+            outline-offset: 2px;
+            border-radius: 6px;
+        }
+
+        /* Destaque das marcações do framework dentro do conteúdo renderizado */
+        .mark-validar, .mark-pergunta, .mark-hipotese {
+            display: inline-block;
+            padding: .05rem .45rem;
+            border-radius: 9999px;
+            font-size: .75rem;
+            font-weight: 700;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            white-space: nowrap;
+        }
+        .mark-validar   { background: #FEF3C7; color: #92400E; }
+        .mark-pergunta  { background: #DBEAFE; color: #1E40AF; }
+        .mark-hipotese  { background: #F3E8FF; color: #6B21A8; }
+        .dark .mark-validar  { background: rgba(245,158,11,.15); color: #FCD34D; }
+        .dark .mark-pergunta { background: rgba(59,130,246,.15); color: #93C5FD; }
+        .dark .mark-hipotese { background: rgba(168,85,247,.15); color: #D8B4FE; }
+
+        @media (prefers-reduced-motion: reduce) {
+            .tab-panel.active { animation: none; }
+            * { transition-duration: .01ms !important; }
+        }
+        @media print {
+            header, footer, #tabs, #theme-toggle { display: none !important; }
+            .tab-panel { display: block !important; }
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-800 dark:text-slate-200 antialiased">
+
+<header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 sticky top-0 z-50">
+    <div class="max-w-5xl mx-auto px-6 py-4 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <svg class="w-9 h-9" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Logo D.N.E.E. Docs">
+                <defs>
+                    <linearGradient id="logo-g" x1="0" y1="0" x2="64" y2="64" gradientUnits="userSpaceOnUse">
+                        <stop offset="0" stop-color="#4F46E5"/>
+                        <stop offset="1" stop-color="#06B6D4"/>
+                    </linearGradient>
+                </defs>
+                <rect width="64" height="64" rx="14" fill="url(#logo-g)"/>
+                <path d="M21 12h14l11 11v26a3 3 0 0 1-3 3H21a3 3 0 0 1-3-3V15a3 3 0 0 1 3-3z" fill="#fff"/>
+                <path d="M35 12l11 11H35z" fill="#C7D2FE"/>
+                <path d="M23 22h9" stroke="#CBD5E1" stroke-width="3" stroke-linecap="round"/>
+                <path d="M28.5 32.5 23.5 37.5l5 5" stroke="#4F46E5" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="m35.5 32.5 5 5-5 5" stroke="#4F46E5" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <div>
+                <h1 class="text-xl font-bold tracking-tight leading-tight">Acervo Digital</h1>
+                <p class="text-xs text-slate-500 dark:text-slate-400">Visão do Projeto · <span class="gradient-text font-semibold">D.N.E.E. Docs</span></p>
+            </div>
+        </div>
+        <button id="theme-toggle" aria-label="Alternar entre tema claro e escuro" title="Alternar tema"
+                class="p-2 rounded-lg border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition">
+            <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+            <svg class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
+        </button>
+    </div>
+
+    <nav id="tabs" class="max-w-5xl mx-auto px-6 flex gap-1 overflow-x-auto" role="tablist" aria-label="Seções da documentação"></nav>
+</header>
+
+<main class="max-w-5xl mx-auto px-6 py-10">
+    <div id="panels"></div>
+</main>
+
+<footer class="border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+    <div class="max-w-5xl mx-auto px-6 py-6 text-center text-xs text-slate-500 dark:text-slate-400 space-y-1">
+        <p>
+            Esta página é apenas a interface visual. A fonte da verdade são os arquivos
+            <code class="bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded">.md</code> desta pasta.
+        </p>
+        <p>Framework <strong class="text-slate-600 dark:text-slate-300">D.N.E.E. Docs</strong> · Time Interações Digitais</p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+<script>
+    const SECTIONS = [
+        { id: 'sobre',      label: '💡 Sobre o projeto',      file: 'SOBRE.md' },
+        { id: 'norte',      label: '🧭 Norte do projeto',     file: 'SDD.md' },
+        { id: 'roadmap',    label: '🗺️ Roadmap',              file: 'ROADMAP.md' },
+        { id: 'evidencias', label: '📌 Decisões & Evidências', file: 'CHANGELOG_EVIDENCES.md' },
+    ];
+
+    const PROSE = 'prose prose-slate dark:prose-invert max-w-none ' +
+        'prose-headings:scroll-mt-32 prose-a:text-indigo-600 dark:prose-a:text-indigo-400 ' +
+        'prose-table:text-sm prose-code:before:content-none prose-code:after:content-none ' +
+        'prose-code:bg-slate-100 dark:prose-code:bg-slate-800 prose-code:px-1 prose-code:py-0.5 prose-code:rounded';
+
+    const TAB_BASE = 'whitespace-nowrap px-4 py-3 text-sm font-semibold border-b-2 transition';
+    const TAB_ON = TAB_BASE + ' text-indigo-600 dark:text-indigo-400 border-indigo-600 dark:border-indigo-400';
+    const TAB_OFF = TAB_BASE + ' text-slate-500 dark:text-slate-400 border-transparent hover:text-slate-700 dark:hover:text-slate-200';
+
+    const tabsEl = document.getElementById('tabs');
+    const panelsEl = document.getElementById('panels');
+
+    /** Realça [A VALIDAR], [PERGUNTA AO RESPONSÁVEL] e [HIPÓTESE — CONFIRMAR] no HTML já sanitizado pelo marked. */
+    function highlightMarks(html) {
+        return html
+            .replace(/\[A VALIDAR\]/g, '<span class="mark-validar">A VALIDAR</span>')
+            .replace(/\[PERGUNTA AO RESPONS[ÁA]VEL\]/g, '<span class="mark-pergunta">PERGUNTA AO RESPONSÁVEL</span>')
+            .replace(/\[HIP[ÓO]TESE\s*[—-]\s*CONFIRMAR\]/g, '<span class="mark-hipotese">HIPÓTESE — CONFIRMAR</span>');
+    }
+
+    function offlineNotice(section) {
+        return `
+            <div class="rounded-2xl border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 p-6 text-sm leading-relaxed text-amber-900 dark:text-amber-200">
+                <p class="font-bold mb-2">Não foi possível carregar <code>${section.file}</code>.</p>
+                <p class="mb-3">
+                    O navegador bloqueia a leitura de arquivos locais quando a página é aberta
+                    direto do disco (<code>file://</code>). Sirva a pasta por HTTP:
+                </p>
+                <pre class="bg-slate-900 text-indigo-300 rounded-lg p-4 overflow-x-auto text-xs"><code>npx serve docs -l 4000</code></pre>
+                <p class="mt-3">
+                    Depois abra <code>http://localhost:4000/visao-projeto.html</code>.
+                    A extensão Live Server do VS Code também resolve.
+                </p>
+                <p class="mt-3">
+                    Enquanto isso, o conteúdo pode ser lido direto em
+                    <a class="underline font-semibold" href="${section.file}">${section.file}</a>.
+                </p>
+            </div>`;
+    }
+
+    async function loadSection(section, panel) {
+        try {
+            const response = await fetch(section.file, { cache: 'no-store' });
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            const markdown = await response.text();
+            panel.innerHTML = highlightMarks(marked.parse(markdown));
+        } catch (error) {
+            console.warn(`Falha ao carregar ${section.file}:`, error);
+            panel.innerHTML = offlineNotice(section);
+        }
+    }
+
+    function activate(id) {
+        const target = SECTIONS.some((s) => s.id === id) ? id : SECTIONS[0].id;
+        SECTIONS.forEach((section) => {
+            const isActive = section.id === target;
+            document.getElementById(`tab-${section.id}`).className = isActive ? TAB_ON : TAB_OFF;
+            document.getElementById(`tab-${section.id}`).setAttribute('aria-selected', String(isActive));
+            document.getElementById(`panel-${section.id}`).classList.toggle('active', isActive);
+        });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    SECTIONS.forEach((section, index) => {
+        const tab = document.createElement('button');
+        tab.id = `tab-${section.id}`;
+        tab.className = index === 0 ? TAB_ON : TAB_OFF;
+        tab.textContent = section.label;
+        tab.setAttribute('role', 'tab');
+        tab.setAttribute('aria-controls', `panel-${section.id}`);
+        tab.setAttribute('aria-selected', String(index === 0));
+        tab.addEventListener('click', () => { location.hash = section.id; });
+        tabsEl.appendChild(tab);
+
+        const panel = document.createElement('article');
+        panel.id = `panel-${section.id}`;
+        panel.className = `tab-panel ${PROSE}${index === 0 ? ' active' : ''}`;
+        panel.setAttribute('role', 'tabpanel');
+        panel.setAttribute('aria-labelledby', `tab-${section.id}`);
+        panel.innerHTML = '<p class="text-slate-400">Carregando…</p>';
+        panelsEl.appendChild(panel);
+
+        loadSection(section, panel);
+    });
+
+    window.addEventListener('hashchange', () => activate(location.hash.slice(1)));
+    if (location.hash) activate(location.hash.slice(1));
+
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+        const isDark = document.documentElement.classList.toggle('dark');
+        localStorage.setItem('dnee-theme', isDark ? 'dark' : 'light');
+    });
+</script>
+</body>
+</html>

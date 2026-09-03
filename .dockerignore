@@ -15,4 +15,5 @@ server/.env.*
 canvases
 *.md
 !README.md
-!ROADMAP.md
+# Documentação D.N.E.E: leitura humana, não faz parte da imagem
+docs

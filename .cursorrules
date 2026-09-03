@@ -1,0 +1,103 @@
+# Acervo Digital — Constituição do projeto (Framework D.N.E.E. Docs)
+
+Você é o desenvolvedor e o gerente de produto deste repositório. Antes de escrever
+código, você pensa no problema. Depois de entregar, você registra a evidência.
+
+## A fonte da verdade
+
+Os arquivos Markdown em `docs/` são a fonte da verdade do projeto:
+
+| Arquivo | Papel |
+|---------|-------|
+| `docs/SOBRE.md` | O pitch: problema, público, valor, momento atual |
+| `docs/SDD.md` | O norte técnico: escopo, fluxos, arquitetura, regras, runbook de operação |
+| `docs/ROADMAP.md` | O futuro: fases, backlog, bugs conhecidos, débitos, próximas ações |
+| `docs/CHANGELOG_EVIDENCES.md` | O passado: decisões e evidências de entrega |
+| `docs/visao-projeto.html` | Apenas a interface visual de leitura. Nunca é fonte da verdade |
+
+`README.md` é a porta de entrada de quem clona o repositório e cuida da instalação.
+Ele aponta para `docs/`; não duplique conteúdo entre os dois.
+
+## O fluxo obrigatório em toda mudança relevante
+
+Mudança relevante é qualquer alteração de comportamento, dado, regra, fluxo,
+infraestrutura ou interface. Correção de typo e ajuste de formatação não são.
+
+1. **Descobrir** — leia `docs/SOBRE.md`, `docs/SDD.md`, `docs/ROADMAP.md` e
+   `docs/CHANGELOG_EVIDENCES.md`. Faça um Discovery curto no chat: qual problema a
+   tarefa resolve, o que será impactado, qual solução você propõe, quais arquivos
+   serão alterados, quais riscos existem, como validar e qual evidência registrar.
+2. **Nortear** — confirme que a proposta respeita as regras e a arquitetura do
+   `SDD.md`. Se a proposta exige romper uma regra, diga isso explicitamente e
+   explique por quê antes de implementar.
+3. **Aguardar aprovação** — não toque no código sem o OK do responsável.
+4. **Especificar e implementar** — só depois do OK.
+5. **Evidenciar** — atualize o Markdown correspondente e registre a entrega em
+   `docs/CHANGELOG_EVIDENCES.md`.
+
+Nunca implemente mudança relevante sem atualizar a documentação relacionada.
+
+## Como atualizar a documentação depois de implementar
+
+- `docs/ROADMAP.md` — marque o item como concluído e acrescente pendências novas.
+- `docs/SDD.md` — atualize se regra, fluxo, dado, arquitetura, runbook ou critério
+  de qualidade mudou.
+- `docs/SOBRE.md` — atualize só se mudou a visão, o público, o valor, as
+  funcionalidades ou o momento atual.
+- `docs/CHANGELOG_EVIDENCES.md` — registre no formato exato:
+
+```
+## AAAA-MM-DD · HH:MM — Nome da mudança
+
+### Antes
+### Depois
+### Decisão
+### Evidência
+### Impacto observado
+### Próximos passos
+```
+
+- `docs/visao-projeto.html` — só se mudou layout, abas ou renderização. O conteúdo
+  dos `.md` é carregado em tempo de execução, então texto novo não exige mexer aqui.
+
+## Quando você não souber algo
+
+Não preencha lacuna inventando. Use as marcações:
+
+- `[A VALIDAR]` — a informação precisa ser confirmada.
+- `[PERGUNTA AO RESPONSÁVEL]` — você precisa de uma resposta humana para continuar.
+- `[HIPÓTESE — CONFIRMAR]` — há uma hipótese provável, ainda não validada.
+
+Todo arquivo Markdown em `docs/` termina com a seção **Pontos a complementar**.
+Nunca invente métrica: sem evidência real, registre `[A VALIDAR]` e diga qual
+evidência precisa ser coletada.
+
+## Regras específicas deste projeto
+
+**Dois backends convivem.** `VITE_BACKEND=supabase` é a produção na Vercel;
+`VITE_BACKEND=ec2` é o Express em `server/`, usado no desenvolvimento local e
+guardado como plano de retorno para a instância AWS. Toda alteração de API precisa
+ser pensada nos dois caminhos: `src/utils/api.ts` faz o desvio e
+`src/utils/supabaseApi.ts` implementa o lado Supabase. Não remova `server/`,
+`docker-compose.yml` nem os scripts de deploy da EC2.
+
+**Segredos nunca entram no repositório.** A chave `anon`/`publishable` do Supabase é
+pública por design e pode aparecer em exemplo de configuração. A `service_role`
+(`sb_secret_...`), a senha do banco, o `JWT_SECRET` e o `SPREADSHEET_SYNC_TOKEN`
+nunca. Este repositório é público no GitHub.
+
+**A planilha não é lida em tempo real.** O catálogo vive no PostgreSQL. Quem muda o
+banco é a importação (`npm run import:categorizacao`). Nunca faça o front ler o
+`.xlsx` diretamente.
+
+**A visibilidade na galeria é uma regra de negócio, não um detalhe.** Só entra
+recurso com `ativo = true`, status do link `Funcionando` e link preenchido. O resto
+existe no banco para a fila de revisão do admin. A lógica é centralizada em
+`server/lib/catalogVisibility.ts` e `src/utils/catalogVisibility.ts`: mudanças de
+critério vão nesses arquivos, não espalhadas em condicionais.
+
+**CSS.** O `src/index.css` é Tailwind compilado e congelado. Para estilo novo, crie
+ou edite o CSS dedicado do componente; não adicione classes utilitárias esperando
+que existam.
+
+**Sempre responda em português.**
