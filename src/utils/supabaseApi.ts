@@ -114,17 +114,33 @@ export async function supabaseLogout(): Promise<void> {
   await getSupabaseClient().auth.signOut();
 }
 
+/** A Data API corta cada resposta no "Max rows" do projeto (1000 por padrão), qualquer que seja o range pedido. */
+const CATALOG_PAGE_SIZE = 1000;
+
 export async function supabaseFetchOdas(): Promise<ODA[]> {
   const supabase = getSupabaseClient();
-  const { data, error } = await supabase
-    .from('odas')
-    .select('*')
-    .order('page_view_count', { ascending: false })
-    .order('open_view_count', { ascending: false })
-    .order('id', { ascending: false })
-    .range(0, 2499);
-  throwIfError(error, 'Erro ao carregar o catálogo.');
-  return (data ?? []).map((row) => fromSnakeOda(row as Record<string, unknown>));
+  const byId = new Map<number, ODA>();
+  let total = Number.POSITIVE_INFINITY;
+  for (let from = 0; from < total; ) {
+    const { data, error, count } = await supabase
+      .from('odas')
+      .select('*', { count: 'exact' })
+      .order('page_view_count', { ascending: false })
+      .order('open_view_count', { ascending: false })
+      .order('id', { ascending: false })
+      .range(from, from + CATALOG_PAGE_SIZE - 1);
+    throwIfError(error, 'Erro ao carregar o catálogo.');
+    const page = data ?? [];
+    if (count !== null) total = count;
+    if (page.length === 0) break;
+    // Contagens de visualização podem mudar entre páginas e repetir um recurso.
+    for (const row of page) {
+      const oda = fromSnakeOda(row as Record<string, unknown>);
+      if (!byId.has(oda.id)) byId.set(oda.id, oda);
+    }
+    from += page.length;
+  }
+  return [...byId.values()];
 }
 
 export async function supabaseFetchOdaById(id: number): Promise<ODA | null> {
