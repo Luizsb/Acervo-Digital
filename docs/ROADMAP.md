@@ -72,6 +72,15 @@ Resposta à perda de acesso à EC2, com custo zero.
   aceito pelo responsável
 - 🔄 Repassar acessos por mensagem direta: Supabase, Vercel, GitHub e a senha do banco
 - ⬜ Excluir o projeto Supabase `adungjmhuibxvgiqrume` no painel
+- ✅ Etiqueta "Admin" no botão de perfil para identificar o acesso administrador
+- ✅ Importação por fases (`import:categorizacao:com-capa`) e planilha nova versionada
+- ⬜ Corrigir o limite de 1000 linhas do catálogo no modo Supabase (bloqueia o item
+  seguinte)
+- ⬜ Importar a planilha nova no Supabase só com os recursos que já têm capa
+- 🔄 Capturar as capas restantes em lotes: cerca de 1050 recursos visíveis da
+  planilha nova sem capa, repetindo a importação a cada lote
+- ⬜ Investigar `EF21_9_ING_L2_U4_01_od2` e `EF22_9_ING_L4_U7_01_OD1`, presos na tela
+  de carregamento na captura
 
 ### Fase 6 — Reduzir a dependência de máquina local ⬜ Planejada
 
@@ -98,6 +107,7 @@ O objetivo é que atualizar o catálogo deixe de exigir um ambiente Node configu
 
 | Prioridade | Item | Por quê |
 |---|---|---|
+| 0 | Paginar o catálogo no modo Supabase | Sem isso a galeria corta em 1000 recursos após a próxima importação |
 | 1 | Repassar acessos por mensagem direta a quem assume | Sem isso o catálogo congela |
 | 2 | Decidir entre consolidar no Supabase ou voltar para a EC2 | O débito dos dois backends só cresce enquanto não há decisão |
 | 3 | Excluir o projeto Supabase `adungjmhuibxvgiqrume` | Decidido: elimina a ambiguidade sobre qual é a produção |
@@ -112,6 +122,13 @@ O objetivo é que atualizar o catálogo deixe de exigir um ambiente Node configu
 
 ## Bugs conhecidos
 
+- **Catálogo cortado em 1000 linhas no modo Supabase.** A Data API devolve no máximo
+  1000 linhas por consulta, mesmo com `range(0, 2499)` em `supabaseFetchOdas`.
+  Medido em 2026-10-19: o admin recebe `0-999/1194` e vê 803 recursos na galeria em
+  vez de 997. Usuário comum ainda não é afetado porque recebe só os 997 visíveis, mas
+  **passa a ser** assim que a importação levar os visíveis acima de 1000. Correção
+  proposta: paginar a consulta em blocos de 1000. Bloqueia a importação da planilha
+  nova. O modo Express não tem o problema.
 - **Visualizador em tela ampliada abre em branco** em recursos cujo servidor recusa
   `iframe`. Não há fallback de abertura externa nem sinalização automática na fila
   de revisão. Frequência desconhecida.

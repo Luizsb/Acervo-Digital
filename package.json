@@ -33,6 +33,7 @@
             "seed": "cd server && npm run seed",
             "setup": "npm run db:up && npm run prisma:generate && npm run prisma:migrate && npm run seed",
             "import:categorizacao": "cd server && npm run import:categorizacao",
+            "import:categorizacao:com-capa": "cd server && npm run import:categorizacao:com-capa",
             "diff:planilha": "cd server && npm run diff:planilha",
             "thumbs:setup": "cd server && npm run thumbs:setup",
             "thumbs:capture": "cd server && npm run thumbs:capture",

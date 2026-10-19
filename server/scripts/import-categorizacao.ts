@@ -32,6 +32,8 @@ export type ImportSummary = {
     linkRepositorio: string | null;
   }[];
   missingThumbsPublic: number;
+  /** Recursos novos que entrariam na galeria sem capa, deixados para a próxima importação. */
+  deferredWithoutThumb: number;
   changes: ChangedItem[];
 };
 
@@ -50,6 +52,11 @@ export type ImportOptions = {
   clear?: boolean;
   filePath?: string;
   log?: boolean;
+  /**
+   * Não cria recurso novo que entraria na galeria sem capa em public/thumbs.
+   * Recursos já cadastrados continuam sendo atualizados normalmente.
+   */
+  onlyWithThumb?: boolean;
   onProgress?: (progress: {
     phase: 'reading' | 'importing' | 'finishing';
     current: number;
@@ -138,6 +145,9 @@ function printSummary(summary: ImportSummary) {
   console.log(`   desativados por ausência na planilha: ${summary.deactivated}`);
   console.log(`   pulados (linha vazia): ${summary.skipped}`);
   console.log(`   erros: ${summary.errors}`);
+  if (summary.deferredWithoutThumb > 0) {
+    console.log(`   adiados por falta de capa (--somente-com-capa): ${summary.deferredWithoutThumb}`);
+  }
   console.log(
     `   total ODAs no banco: ${summary.totalActive} (Audiovisual/Vídeo: ${summary.totalAudiovisual}, OED: ${summary.totalOed})`
   );
@@ -155,9 +165,11 @@ function printSummary(summary: ImportSummary) {
 
 export async function importCategorizacao(options: ImportOptions = {}): Promise<ImportSummary> {
   const clear = options.clear ?? process.argv.includes('--clear');
+  const onlyWithThumb = options.onlyWithThumb ?? process.argv.includes('--somente-com-capa');
   const log = options.log ?? true;
   const filePath = findWorkbook(options.filePath);
   const pdfDir = metodologiaDir(filePath);
+  const thumbsRoot = thumbsDir(filePath);
   if (log) console.log(`📂 Planilha: ${filePath}`);
   options.onProgress?.({ phase: 'reading', current: 0, total: 1 });
 
@@ -175,6 +187,7 @@ export async function importCategorizacao(options: ImportOptions = {}): Promise<
   let reactivated = 0;
   let skipped = 0;
   let errors = 0;
+  let deferredWithoutThumb = 0;
   const seenCodes: string[] = [];
   const thumbCandidates: ImportSummary['missingThumbs'] = [];
   const changes: ChangedItem[] = [];
@@ -216,6 +229,17 @@ export async function importCategorizacao(options: ImportOptions = {}): Promise<
         where: { codigoOda: mapped.codigoOda },
         select: { id: true, ativo: true, hashFonte: true },
       });
+
+      if (
+        onlyWithThumb &&
+        !existing &&
+        isVisibleInCatalog(mapped.status, mapped.linkRepositorio) &&
+        !fs.existsSync(thumbFile(thumbsRoot, mapped.codigoOda))
+      ) {
+        deferredWithoutThumb += 1;
+        options.onProgress?.({ phase: 'importing', current: i + 1, total: rows.length });
+        continue;
+      }
 
       if (mapped.codigoBncc) {
         await prisma.bNCC.upsert({
@@ -382,6 +406,7 @@ export async function importCategorizacao(options: ImportOptions = {}): Promise<
     totalOed,
     missingThumbs,
     missingThumbsPublic,
+    deferredWithoutThumb,
     changes,
   };
 

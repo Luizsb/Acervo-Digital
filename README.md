@@ -411,6 +411,7 @@ Atualização de **conteúdo** não precisa de deploy: o gatilho diário do Apps
 | `npm run db:up` / `db:down` / `db:reset` | Só o Postgres |
 | `npm run seed` | BNCC + usuários demo/admin + planilha |
 | `npm run import:categorizacao` | Sincroniza a planilha com o banco |
+| `npm run import:categorizacao:com-capa` | Igual, mas adia recurso novo visível que ainda não tem capa |
 | `npm run diff:planilha` | Compara a planilha local com a versão no Git |
 | `npm run thumbs:setup` | Instala o Chromium para captura local |
 | `npm run thumbs:capture` | Captura thumbs faltantes |

@@ -9,6 +9,7 @@
     "start": "node dist/index.js",
     "postinstall": "prisma generate",
     "import:categorizacao": "tsx scripts/import-categorizacao.ts",
+    "import:categorizacao:com-capa": "tsx scripts/import-categorizacao.ts --somente-com-capa",
     "diff:planilha": "tsx scripts/diff-planilha.ts",
     "thumbs:setup": "tsx scripts/setup-playwright.ts",
     "thumbs:capture": "tsx scripts/capture-thumbs.ts",

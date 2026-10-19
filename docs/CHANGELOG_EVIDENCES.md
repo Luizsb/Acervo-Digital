@@ -10,6 +10,103 @@ trazem a seção "Impacto observado" com dado medido: nenhuma métrica foi colet
 
 ---
 
+## 2026-10-19 · 15:45 — Importação por fases: só entra na galeria o recurso com capa
+
+### Antes
+
+A planilha nova de categorização tem 2508 recursos visíveis, contra 997 na versão
+importada. Das capas necessárias, cerca de 1450 não existiam em `public/thumbs/`. A
+importação sincroniza a planilha inteira, então rodá-la publicaria mais de mil cards
+sem capa. Capturar tudo antes de importar leva várias horas de Playwright.
+
+### Depois
+
+`npm run import:categorizacao:com-capa` (atalho para `--somente-com-capa`) importa a
+planilha normalmente, mas **não cria** recurso novo que entraria na galeria sem capa.
+Recursos já cadastrados recebem as atualizações da planilha; recursos novos que vão
+para a fila de revisão são criados; o resumo informa quantos foram adiados. Sem a
+opção, o comportamento é o anterior, inclusive no upload do admin e no Apps Script.
+
+Planilha nova versionada em `public/` e 402 capas novas capturadas.
+
+### Decisão
+
+O filtro fica na **entrada da importação**, não na regra de visibilidade. O banco
+guarda só o caminho da capa, sem saber se o arquivo existe, então exigir capa em
+`catalogVisibility.ts` obrigaria a criar coluna e manter o dado sincronizado. Filtrar
+a planilha à mão também foi descartado: a planilha oficial deixaria de ser a fonte.
+
+A captura foi rodada a partir da lista da planilha nova, sem banco, reutilizando
+`captureMissingThumbs`, e interrompida pelo responsável em cerca de 400 capas. O
+restante será capturado em lotes no dia a dia.
+
+### Evidência
+
+- `server/scripts/import-categorizacao.ts`: opção `onlyWithThumb` /
+  `--somente-com-capa` e campo `deferredWithoutThumb` no resumo.
+- Scripts `import:categorizacao:com-capa` na raiz e em `server/`.
+- `npm test` (41 testes), `npm run build` e `npx tsc --noEmit` passando.
+- Comparação das planilhas sem banco: 1454 códigos novos, 302 alterados, nenhum
+  removido, 127 passam a visíveis, 1 sai da galeria (`SAE26_AI33_HIS_C07_OA1`, agora
+  `Incorreto`).
+
+### Impacto observado
+
+`[A VALIDAR]` A importação em produção ainda não foi executada: depende da senha do
+banco em `server/.env` e da correção do limite de 1000 linhas do Supabase (ver
+`ROADMAP.md`, bugs conhecidos). Medir depois: total da galeria antes e depois, e se
+uma segunda execução não produz diferença.
+
+### Próximos passos
+
+1. Corrigir a paginação do catálogo no modo Supabase.
+2. Rodar `npm run import:categorizacao:com-capa` contra o Supabase.
+3. Capturar as capas restantes em lotes e repetir a importação a cada lote.
+4. Investigar `EF21_9_ING_L2_U4_01_od2` e `EF22_9_ING_L4_U7_01_OD1`, que ficam presos
+   na tela de carregamento e nunca geram capa.
+
+---
+
+## 2026-10-19 · 15:40 — Etiqueta de perfil administrador no cabeçalho
+
+### Antes
+
+Quem entrava pelo acesso admin não tinha sinal visual do perfil. A única diferença
+era o item "Painel administrativo" escondido dentro do menu, o que confundia quem
+alterna entre os dois acessos.
+
+### Depois
+
+Etiqueta "Admin" sobreposta à borda inferior do botão de perfil, no desktop, no
+mobile e na página de favoritos. No menu de perfil, "Administrador" aparece abaixo do
+nome. Usuário comum não vê nenhuma etiqueta.
+
+### Decisão
+
+Componente único `RoleBadge` com CSS dedicado (`RoleBadge.css`), porque o
+`index.css` é Tailwind congelado e o botão de perfil está repetido em três lugares.
+A decisão de mostrar ou não usa `isAdminRole`, a mesma regra que já libera o painel,
+e o papel chega igual nos dois backends — sem mudança de API.
+
+### Evidência
+
+- `src/components/RoleBadge.tsx` e `RoleBadge.css`; uso em `Navigation.tsx`,
+  `FavoritesPage.tsx` e `ProfileMenu.tsx`.
+- Verificado no navegador contra o Supabase: etiqueta presente como admin, ausente
+  como demo, em largura mobile e desktop.
+- `npm test`, `npm run build` e `npx tsc --noEmit` passando.
+
+### Impacto observado
+
+`[A VALIDAR]` Sem medição. Confirmar com quem usa o acesso admin se a dúvida sobre o
+perfil logado deixou de acontecer.
+
+### Próximos passos
+
+Nenhum. Revisitar quando o SSO JumpCloud trouxer papéis além de `admin` (Fase 7).
+
+---
+
 ## 2026-09-03 · 11:55 — Decisões da transferência de responsabilidade
 
 ### Antes

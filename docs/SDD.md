@@ -295,6 +295,25 @@ painel admin, na aba de histórico, com data, hora e a capa de cada item.
 O passo 5 dispara o build da Vercel automaticamente. O banco já está atualizado
 desde o passo 3, então o catálogo muda antes das capas.
 
+### Importar em fases, quando faltam muitas capas
+
+Se a planilha nova traz muitos recursos sem capa, a ordem se inverte para a galeria
+não exibir cards vazios:
+
+```bash
+# 1. Capture as capas que conseguir (pode ser em lotes: --limit=100).
+#    Enquanto o banco não tiver os recursos novos, a captura precisa ler a lista da
+#    planilha; o thumbs:capture padrão lê do banco.
+# 2. Publique as capas (git add / commit / push) e espere o deploy da Vercel.
+# 3. Importe só o que já tem capa:
+npm run import:categorizacao:com-capa
+```
+
+Com `--somente-com-capa`, recurso **novo** que entraria na galeria sem capa não é
+criado e fica para a próxima rodada; o resumo mostra quantos foram adiados. Recursos
+já cadastrados são atualizados normalmente e nada é desativado por ter sido adiado.
+Repita os passos a cada lote de capas.
+
 ### Recapturar capas que saíram erradas
 
 Quando a captura pegou uma tela de carregamento em vez do recurso:
@@ -371,6 +390,9 @@ detalhamento de HTTPS, Caddy e certificados está no `README.md`.
 | Cards sem capa | Capas não vieram no clone ou faltou captura | Conferir `public/thumbs/`, rodar `npm run thumbs:capture` e **commitar** |
 | Capa nova não aparece no site | Falta o push | As capas são arquivos versionados; sem commit não sobem |
 | Porta 3000 ou 3001 ocupada | Vite ou API já rodando | Encerrar os processos antes de subir o Docker |
+| `unable to get local issuer certificate` no `prisma generate` ou no `thumbs:setup` | Proxy corporativo com inspeção TLS | Node 23.8+ usa a cadeia do Windows com `setx NODE_USE_SYSTEM_CA 1` (abrir terminal novo). Não desligar a validação TLS |
+| Docker Desktop: *Virtualization support not detected* | Recursos "Plataforma de Máquina Virtual" e WSL desligados no Windows, mesmo com virtualização ligada na BIOS | `wsl --install --no-distribution` como administrador e reiniciar; em máquina corporativa, pode exigir a TI. Para só consultar o catálogo, use o modo Supabase, que não precisa de Docker |
+| Galeria do admin com menos recursos que a do usuário comum | Limite de 1000 linhas da Data API do Supabase | Ver bug conhecido no `ROADMAP.md` |
 
 ---
 
