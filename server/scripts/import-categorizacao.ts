@@ -9,7 +9,7 @@ import { isVisibleInCatalog } from '../lib/catalogVisibility';
 
 const SHEET_NAME = 'Recursos Digitais';
 const HEADER_ROW = 1;
-const DATA_START_ROW = 4;
+export const DATA_START_ROW = 4;
 const IMPORT_SOURCE = 'planilha-categorizacao';
 
 export type ImportSummary = {
@@ -100,7 +100,7 @@ function thumbFile(thumbsRoot: string, codigo: string): string {
   return path.join(thumbsRoot, `${String(codigo).replace(/\.(webp|jpg|jpeg|png)$/i, '')}.webp`);
 }
 
-async function loadRows(filePath: string): Promise<CategorizacaoRow[]> {
+export async function loadRows(filePath: string): Promise<CategorizacaoRow[]> {
   const { rows: matrix } = await readWorksheetMatrix(filePath, SHEET_NAME);
   const headers = (matrix[HEADER_ROW] || []).map((h) => String(h).trim());
   return matrix.slice(DATA_START_ROW).map((line) => {

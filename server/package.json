@@ -13,6 +13,7 @@
     "diff:planilha": "tsx scripts/diff-planilha.ts",
     "thumbs:setup": "tsx scripts/setup-playwright.ts",
     "thumbs:capture": "tsx scripts/capture-thumbs.ts",
+    "thumbs:capture:planilha": "tsx scripts/capture-thumbs.ts --da-planilha",
     "seed": "tsx scripts/seed-database.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",

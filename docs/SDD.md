@@ -301,9 +301,9 @@ Se a planilha nova traz muitos recursos sem capa, a ordem se inverte para a gale
 não exibir cards vazios:
 
 ```bash
-# 1. Capture as capas que conseguir (pode ser em lotes: --limit=100).
-#    Enquanto o banco não tiver os recursos novos, a captura precisa ler a lista da
-#    planilha; o thumbs:capture padrão lê do banco.
+# 1. Capture um lote de capas lendo a lista da planilha (o thumbs:capture padrão
+#    lê do banco, que ainda não tem os recursos adiados):
+npm run thumbs:capture:planilha -- --limit=100
 # 2. Publique as capas (git add / commit / push) e espere o deploy da Vercel.
 # 3. Importe só o que já tem capa:
 npm run import:categorizacao:com-capa
@@ -392,7 +392,7 @@ detalhamento de HTTPS, Caddy e certificados está no `README.md`.
 | Porta 3000 ou 3001 ocupada | Vite ou API já rodando | Encerrar os processos antes de subir o Docker |
 | `unable to get local issuer certificate` no `prisma generate` ou no `thumbs:setup` | Proxy corporativo com inspeção TLS | Node 23.8+ usa a cadeia do Windows com `setx NODE_USE_SYSTEM_CA 1` (abrir terminal novo). Não desligar a validação TLS |
 | Docker Desktop: *Virtualization support not detected* | Recursos "Plataforma de Máquina Virtual" e WSL desligados no Windows, mesmo com virtualização ligada na BIOS | `wsl --install --no-distribution` como administrador e reiniciar; em máquina corporativa, pode exigir a TI. Para só consultar o catálogo, use o modo Supabase, que não precisa de Docker |
-| Galeria do admin com menos recursos que a do usuário comum | Limite de 1000 linhas da Data API do Supabase | Ver bug conhecido no `ROADMAP.md` |
+| Galeria com menos recursos que o esperado no modo Supabase | Limite de "Max rows" da Data API (1000 por padrão) | `supabaseFetchOdas` pagina a consulta desde 2026-10-19. Se voltar a ocorrer, conferir se alguma consulta nova de listagem deixou de paginar |
 
 ---
 

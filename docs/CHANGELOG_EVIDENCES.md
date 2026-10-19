@@ -10,6 +10,87 @@ trazem a seção "Impacto observado" com dado medido: nenhuma métrica foi colet
 
 ---
 
+## 2026-10-19 · 16:10 — Captura de capas a partir da planilha
+
+### Antes
+
+`npm run thumbs:capture` monta a lista a partir do banco. Com a importação por fases,
+os recursos adiados por falta de capa não estão no banco, então a captura nunca os
+encontrava — e eles nunca ganhavam capa para poder entrar.
+
+### Depois
+
+`npm run thumbs:capture:planilha -- --limit=100` (atalho para `--da-planilha`) lê a
+lista da planilha em `public/` com o mesmo critério do banco: status `Funcionando`,
+link preenchido e código real, sem repetir código. O log informa a origem da lista.
+A captura padrão continua lendo do banco, inclusive no botão do admin.
+
+### Decisão
+
+A leitura da planilha reaproveita `loadRows` e `findWorkbook` da importação, agora
+exportados, em vez de duplicar o parser. O script da raiz termina em `--` para que
+`--limit` e as demais opções cheguem ao script do `server/`.
+
+### Evidência
+
+- `server/scripts/capture-thumbs.ts`: opção `fromSheet` / `--da-planilha`.
+- Execução real com `--limit=2`: "Origem da lista: planilha em public/", dois
+  recursos processados.
+- `npm test`, `npm run build` e `npx tsc --noEmit` passando.
+
+### Impacto observado
+
+`[A VALIDAR]` Medir capas por hora nos lotes do dia a dia. Referência da primeira
+rodada: cerca de 400 capas em uma hora.
+
+### Próximos passos
+
+Os dois primeiros códigos da lista (`EF21_9_ING_L2_U4_01_od2` e
+`EF22_9_ING_L4_U7_01_OD1`) falham sempre e consomem parte de cada lote até serem
+corrigidos na planilha.
+
+---
+
+## 2026-10-19 · 16:05 — Paginação do catálogo no modo Supabase
+
+### Antes
+
+`supabaseFetchOdas` pedia `range(0, 2499)`, mas a Data API corta cada resposta no
+"Max rows" do projeto, 1000 por padrão. Medido no navegador: o admin recebia
+`content-range 0-999/1194` e a galeria mostrava 803 recursos, contra 997 do usuário
+comum. A importação da planilha nova levaria os visíveis acima de 1000 e cortaria a
+galeria de todos.
+
+### Depois
+
+A consulta é feita em blocos de 1000, avançando pelo tamanho real de cada resposta
+até o total informado (`count: 'exact'`). Recurso repetido entre blocos é descartado
+pelo id. A galeria do admin passou a mostrar 997 recursos.
+
+### Decisão
+
+Paginar no cliente em vez de aumentar o "Max rows" no painel: o painel não é
+versionado e a correção valeria só até o catálogo crescer de novo. A regra de
+visibilidade não mudou. O modo Express não tinha o problema, porque filtra no
+servidor e não tem teto de linhas.
+
+### Evidência
+
+- `src/utils/supabaseApi.ts`: `supabaseFetchOdas` com paginação.
+- Galeria do admin contra o Supabase: de 803 para 997 resultados.
+- `npm test`, `npm run build` e `npx tsc --noEmit` passando.
+
+### Impacto observado
+
+Galeria do admin igual à do usuário comum (997). `[A VALIDAR]` Conferir após a
+importação se o total da galeria bate com o número de visíveis informado pelo script.
+
+### Próximos passos
+
+Nenhum específico. Qualquer nova listagem no modo Supabase precisa paginar.
+
+---
+
 ## 2026-10-19 · 15:45 — Importação por fases: só entra na galeria o recurso com capa
 
 ### Antes

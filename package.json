@@ -37,6 +37,7 @@
             "diff:planilha": "cd server && npm run diff:planilha",
             "thumbs:setup": "cd server && npm run thumbs:setup",
             "thumbs:capture": "cd server && npm run thumbs:capture",
+            "thumbs:capture:planilha": "cd server && npm run thumbs:capture:planilha --",
             "test": "vitest run"
       }
 }

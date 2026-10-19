@@ -3,8 +3,9 @@ import path from 'path';
 import https from 'https';
 import http from 'http';
 import prisma from '../lib/prisma';
-import { catalogVisibleWhere } from '../lib/catalogVisibility';
-import { isPlaceholderResourceCode } from './map-categorizacao';
+import { catalogVisibleWhere, isVisibleInCatalog } from '../lib/catalogVisibility';
+import { isPlaceholderResourceCode, mapCategorizacaoRow } from './map-categorizacao';
+import { DATA_START_ROW, findWorkbook, loadRows } from './import-categorizacao';
 
 const thumbsDir = path.join(process.cwd(), '..', 'public', 'thumbs');
 // Caminho estável para o servidor local; no Docker, ACERVO_PLAYWRIGHT_BROWSERS_PATH=/ms-playwright.
@@ -21,6 +22,7 @@ const MAX_LOADING_RETRIES = Number(
 );
 const FORCE = process.argv.includes('--force');
 const VALIDATE_EXISTING = process.argv.includes('--validate-existing');
+const FROM_SHEET = process.argv.includes('--da-planilha');
 
 // Assinatura RGB 32x18 da tela "carregando objeto digital" usada pelos ODAs.
 // A baixa resolução torna a comparação tolerante ao tamanho original da captura.
@@ -227,22 +229,53 @@ export type ThumbCaptureResult = {
 
 export type ThumbCaptureOptions = {
   limit?: number;
+  /**
+   * Lê os recursos elegíveis da planilha em public/ em vez do banco. Serve para
+   * capturar capas de recursos que a importação ainda não criou (--somente-com-capa).
+   */
+  fromSheet?: boolean;
   onProgress?: (progress: ThumbCaptureResult & { current: number }) => void;
 };
+
+type CaptureCandidate = { codigoOda: string | null; titulo: string; linkRepositorio: string | null };
+
+/** Mesmo critério do banco (Funcionando + link), aplicado às linhas da planilha. */
+async function loadSheetCandidates(): Promise<CaptureCandidate[]> {
+  const rows = await loadRows(findWorkbook());
+  const byCode = new Map<string, CaptureCandidate>();
+  rows.forEach((row, i) => {
+    const mapped = mapCategorizacaoRow(row, {
+      metodologiaExists: () => false,
+      sheetRow: i + DATA_START_ROW + 1,
+    });
+    if (!mapped || !isVisibleInCatalog(mapped.status, mapped.linkRepositorio)) return;
+    if (byCode.has(mapped.codigoOda)) return;
+    byCode.set(mapped.codigoOda, {
+      codigoOda: mapped.codigoOda,
+      titulo: mapped.titulo,
+      linkRepositorio: mapped.linkRepositorio,
+    });
+  });
+  return [...byCode.values()];
+}
 
 export async function captureMissingThumbs(
   options: ThumbCaptureOptions = {}
 ): Promise<ThumbCaptureResult> {
   fs.mkdirSync(thumbsDir, { recursive: true });
+  const fromSheet = options.fromSheet ?? FROM_SHEET;
   // Igual ao botão do admin: só catálogo público (Funcionando + link).
-  const odas = await prisma.oDA.findMany({
-    where: {
-      ativo: true,
-      ...catalogVisibleWhere(),
-    },
-    select: { codigoOda: true, titulo: true, linkRepositorio: true },
-    orderBy: { id: 'asc' },
-  });
+  const odas: CaptureCandidate[] = fromSheet
+    ? await loadSheetCandidates()
+    : await prisma.oDA.findMany({
+        where: {
+          ativo: true,
+          ...catalogVisibleWhere(),
+        },
+        select: { codigoOda: true, titulo: true, linkRepositorio: true },
+        orderBy: { id: 'asc' },
+      });
+  console.log(`📋 Origem da lista: ${fromSheet ? 'planilha em public/' : 'banco'}`);
 
   const jobs: Array<(typeof odas)[number] & { replaceExisting: boolean }> = [];
   let invalidExisting = 0;
