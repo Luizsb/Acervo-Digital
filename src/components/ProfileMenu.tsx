@@ -3,6 +3,7 @@ import { User, Settings, Heart, LogOut, Sparkles, ClipboardList } from 'lucide-r
 import type { AuthUser } from '../contexts/AuthContext';
 import { resetOnboardingProgress, startOnboardingIfNeeded } from '../utils/onboarding';
 import { isAdminRole } from '../utils/catalogVisibility';
+import { RoleBadge } from './RoleBadge';
 
 interface ProfileMenuProps {
   user: AuthUser;
@@ -35,6 +36,7 @@ export function ProfileMenu({
           </div>
           <div className="min-w-0">
             <p className="font-bold text-gray-900 truncate">{user.name || 'Usuário'}</p>
+            <RoleBadge role={user.role} variant="inline" />
           </div>
         </div>
       </div>

@@ -3,6 +3,7 @@ import { Search, X, User, LogIn } from 'lucide-react';
 import type { AuthUser } from '../contexts/AuthContext';
 import { ProfileMenu } from './ProfileMenu';
 import { BrandMark } from './BrandMark';
+import { RoleBadge } from './RoleBadge';
 
 interface NavigationProps {
   searchQuery: string;
@@ -84,9 +85,10 @@ export function Navigation({ searchQuery, onSearchChange, onNavigateToSettings, 
                 <>
                   <button
                     onClick={() => setIsProfileOpen(!isProfileOpen)}
-                    className="p-3 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all duration-300 group"
+                    className="acervo-profile-trigger p-3 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all duration-300 group"
                   >
                     <User className="w-5 h-5 text-gray-700 group-hover:text-primary transition-colors" />
+                    <RoleBadge role={user.role} />
                   </button>
                   {isProfileOpen && (
                     <>
@@ -132,11 +134,12 @@ export function Navigation({ searchQuery, onSearchChange, onNavigateToSettings, 
                 <button
                   type="button"
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
-                  className="p-2.5 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all duration-300"
+                  className="acervo-profile-trigger p-2.5 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all duration-300"
                   aria-expanded={isProfileOpen}
                   aria-label="Abrir menu do perfil"
                 >
                   <User className="w-5 h-5 text-gray-700" />
+                  <RoleBadge role={user.role} />
                 </button>
                 {isProfileOpen ? (
                   <>

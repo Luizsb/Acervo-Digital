@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ArrowLeft, Heart, Sparkles, User } from 'lucide-react';
 import { ProjectGrid } from './ProjectGrid';
 import { ProfileMenu } from './ProfileMenu';
+import { RoleBadge } from './RoleBadge';
 import type { AuthUser } from '../contexts/AuthContext';
 import type { Project } from '../types/project';
 
@@ -81,9 +82,10 @@ export function FavoritesPage({
               <div className="relative">
                 <button
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
-                  className="p-3 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all duration-300 group"
+                  className="acervo-profile-trigger p-3 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all duration-300 group"
                 >
                   <User className="w-5 h-5 text-gray-700 group-hover:text-primary transition-colors" />
+                  <RoleBadge role={user?.role} />
                 </button>
 
                 {/* Profile Dropdown - reutiliza ProfileMenu */}

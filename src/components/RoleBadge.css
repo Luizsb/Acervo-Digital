@@ -1,0 +1,31 @@
+.acervo-profile-trigger {
+  position: relative;
+}
+
+.acervo-role-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: var(--secondary, #f05039);
+  color: var(--secondary-foreground, #fff);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.3;
+  text-transform: uppercase;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.acervo-role-badge--anchored {
+  position: absolute;
+  left: 50%;
+  bottom: -0.5rem;
+  transform: translateX(-50%);
+  border: 2px solid #fff;
+}
+
+.acervo-role-badge--inline {
+  margin-top: 0.25rem;
+}
