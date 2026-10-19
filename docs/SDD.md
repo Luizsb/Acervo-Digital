@@ -31,7 +31,7 @@ o ponto único de desvio entre os dois.
 - Galeria autenticada com busca textual, filtros combináveis, paginação e dois modos
   de exibição.
 - Ficha do recurso com metadados pedagógicos, BNCC e relacionados.
-- Visualizador do recurso em modal de tela ampliada.
+- Abertura do recurso: vídeo em modal de tela ampliada; ODA e demais em nova guia.
 - Favoritos por usuário.
 - Telemetria de visualização (ficha aberta e recurso aberto).
 - Painel administrativo: fila de revisão, status de sincronização, histórico de
@@ -436,9 +436,10 @@ repositório.
 console AWS para investigar. Enquanto isso, o gatilho diário do Apps Script está
 parado, porque aponta para a API daquela instância.
 
-**O visualizador em tela ampliada pode abrir em branco.** ODAs de terceiros podem
-recusar `iframe` por `X-Frame-Options` ou `CSP: frame-ancestors`. Não há hoje
-fallback de abertura externa nem medição de quantos links são afetados.
+**O modal de vídeo depende de embed.** Desde 2026-10-19 só o audiovisual abre no
+`iframe`; ODAs abrem em nova guia porque, embarcados, parte deles cortava o conteúdo
+ou não carregava. Um vídeo hospedado fora do Vimeo/YouTube que recuse `iframe` abriria
+em branco no modal.
 
 **Autenticação sem SSO.** Usuários com senha definida manualmente e o botão
 JumpCloud sem função. A proteção contra senha vazada do Supabase Auth está
@@ -482,7 +483,7 @@ qualquer pessoa.
   voltar para a EC2? A decisão registrada em setembro de 2026 foi manter os dois
   documentados, com a EC2 como plano de retorno, mas sem prazo definido. Enquanto
   não houver decisão, o débito dos dois backends continua crescendo.
-- `[A VALIDAR]` Quantos recursos do catálogo aceitam `iframe`, para dimensionar o
-  risco do visualizador em tela ampliada.
+- `[A VALIDAR]` Se algum vídeo do catálogo está hospedado fora do Vimeo/YouTube e
+  recusa `iframe` no modal.
 - `[A VALIDAR]` Se há backup do banco além do que o plano Free do Supabase oferece.
   Não encontrei rotina de dump no repositório.

@@ -10,6 +10,89 @@ trazem a seção "Impacto observado" com dado medido: nenhuma métrica foi colet
 
 ---
 
+## 2026-10-19 · 16:25 — ODAs abrem em nova guia
+
+### Antes
+
+"Explorar recurso em tela ampliada" abria o ODA num `iframe` dentro de um modal
+16:9. Jogos com outra proporção apareciam cortados, e parte dos ODAs ficava presa em
+"carregando objeto digital 0%" quando embarcada (relato do responsável com captura de
+tela, recurso `EI23_5A_L4_U1_01_OD2`).
+
+### Depois
+
+Para ODA e demais recursos não audiovisuais, o botão virou o link "Abrir recurso em
+nova guia" (`target="_blank"`, `rel="noopener noreferrer"`). Vídeo continua no modal
+"Assistir em tela ampliada". A abertura continua contando no ranking como `open`.
+
+### Decisão
+
+Revisão da decisão da coordenação de manter o recurso dentro do Acervo, tomada pelo
+responsável: o `iframe` não oferece controle sobre a proporção nem sobre a
+inicialização do ODA. Foi usado um link de verdade, não `window.open`, para não
+esbarrar em bloqueador de pop-up e permitir clique do meio. Vídeo ficou no modal
+porque o embed do Vimeo funciona bem.
+
+### Evidência
+
+- `src/components/ProjectDetailsPage.tsx`: link de nova guia para não audiovisual;
+  modal restrito ao audiovisual. `ProjectDetailsPage.css` sem a variante `is-oda`.
+- Navegador, ficha `SAE25_EI_G5_BL3_UT3_OA2`: link com destino correto e
+  `target="_blank"`; botão de tela ampliada ausente; o clique chamou
+  `record_oda_view` com `p_kind: "open"`.
+- `npm test` e `npm run build` passando.
+
+### Impacto observado
+
+`[A VALIDAR]` Confirmar com quem usa se os jogos deixaram de aparecer cortados e se
+o ranking de aberturas mantém o volume.
+
+### Próximos passos
+
+Nenhum.
+
+---
+
+## 2026-10-19 · 16:20 — Primeira importação por fases em produção
+
+### Antes
+
+Supabase com 1194 recursos e 997 visíveis na galeria, da planilha anterior.
+
+### Depois
+
+`npm run import:categorizacao:com-capa` contra o Supabase: 408 novos, 305
+alterados, nenhum desativado, nenhum erro, 1065 adiados por falta de capa. Galeria
+de 997 para **1459** recursos, conferida no banco e no front. Dos visíveis, só
+`EF21_9_ING_L2_U4_01_od2` e `EF22_9_ING_L4_U7_01_OD1` estão sem capa — já estavam
+antes.
+
+### Decisão
+
+As capas foram publicadas na Vercel antes da importação, e a presença delas foi
+conferida por HTTP, para nenhum card novo nascer sem imagem.
+
+### Evidência
+
+- Saída do script na primeira execução (números acima).
+- Segunda execução: 0 novos, 28 alterados, 1054 adiados.
+- Contagem no banco com `catalogVisibleWhere`: 1459 visíveis, 2 sem arquivo de capa.
+- Galeria do usuário comum: "1459 resultados encontrados", capas carregando.
+
+### Impacto observado
+
+A segunda execução não foi totalmente estável: 28 alterados e 11 adiados a menos.
+Causa: 20 códigos repetidos na planilha, com linhas que se sobrescrevem a cada
+importação (ver `ROADMAP.md`, bugs conhecidos). Comportamento anterior à opção nova;
+a galeria não foi afetada.
+
+### Próximos passos
+
+1. Corrigir os códigos repetidos na planilha.
+2. Seguir capturando capas em lotes e repetindo a importação.
+
+---
+
 ## 2026-10-19 · 16:10 — Captura de capas a partir da planilha
 
 ### Antes

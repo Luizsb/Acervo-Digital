@@ -673,7 +673,7 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
               <h2>Recursos mais acessados</h2>
               <p>
                 {viewKind === 'open'
-                  ? 'Aberturas reais do recurso (tela ampliada), 1 por pessoa por dia'
+                  ? 'Aberturas reais do recurso (vídeo ampliado ou nova guia), 1 por pessoa por dia'
                   : 'Visitas à ficha do recurso, 1 por pessoa por dia'}
               </p>
             </div>

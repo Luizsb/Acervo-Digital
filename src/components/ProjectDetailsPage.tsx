@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { X, BookOpen, Clock, Check, Eye, Sparkles, Play, Book, FileText, ArrowLeft, Heart, Copy, Maximize2, Settings, Download, Layers, GitBranch } from 'lucide-react';
+import { X, BookOpen, Clock, Check, Eye, Sparkles, Play, Book, FileText, ArrowLeft, Heart, Copy, Maximize2, Settings, Download, Layers, GitBranch, ExternalLink } from 'lucide-react';
 import { ProjectCard } from './ProjectCard';
 import { getCurriculumColor, getComponentFullName, getSegmentFullName, getMarcaFullName } from '../utils/curriculumColors';
 import { ScrollToTop } from './ScrollToTop';
@@ -154,7 +154,7 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
     bncc: getBnccCodes(project).length > 0,
     samr: Boolean(normalizeRelationValue(project.samr)),
   };
-  // Vídeo tem proporção fixa; ODA é aplicação web e precisa da maior área possível.
+  // Vídeo abre no modal 16:9; os demais recursos abrem em nova guia.
   const isAudiovisualResource = project.contentType === 'Audiovisual';
 
   const handleCopyCode = async () => {
@@ -170,11 +170,21 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
     }
   };
 
+  const recordOpenView = () => {
+    void apiRecordOdaView(project.id, 'open')
+      .then((result) => {
+        setPageViewCount(result.pageViewCount);
+      })
+      .catch(() => {
+        // A abertura do recurso não depende do registro da métrica.
+      });
+  };
+
   /** Resolve o embed antes de abrir, para o modal já nascer com o conteúdo certo. */
-  const handleOpenResourceModal = async () => {
+  const handleOpenVideoModal = async () => {
     if (!project.videoUrl) return;
 
-    if (project.contentType === 'Audiovisual' && !videoEmbedUrl) {
+    if (!videoEmbedUrl) {
       setIsPreparingVideo(true);
       try {
         const resolvedUrl = await resolveVideoEmbedUrl(project.videoUrl);
@@ -187,13 +197,7 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
     }
 
     setShowResourceModal(true);
-    void apiRecordOdaView(project.id, 'open')
-      .then((result) => {
-        setPageViewCount(result.pageViewCount);
-      })
-      .catch(() => {
-        // A abertura do recurso não depende do registro da métrica.
-      });
+    recordOpenView();
   };
 
   const handlePlayVideo = async () => {
@@ -530,19 +534,28 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
 
               {/* Action Buttons */}
               <div className="flex flex-col sm:flex-row gap-3 pt-3">
-                {project.videoUrl && (
+                {project.videoUrl && isAudiovisualResource ? (
                   <button
-                    onClick={() => void handleOpenResourceModal()}
+                    onClick={() => void handleOpenVideoModal()}
                     className="flex-1 bg-primary px-4 py-3 rounded-[20px] text-white hover:bg-[#013668] transition-all flex items-center justify-center gap-2 font-semibold shadow-sm hover:shadow-md"
                   >
                     <Maximize2 className="w-4 h-4" />
-                    <span>
-                      {project.contentType === 'Audiovisual'
-                        ? 'Assistir em tela ampliada'
-                        : 'Explorar recurso em tela ampliada'}
-                    </span>
+                    <span>Assistir em tela ampliada</span>
                   </button>
-                )}
+                ) : null}
+                {/* ODAs têm proporção e inicialização próprias: dentro de iframe, parte deles corta o conteúdo ou não carrega. */}
+                {project.videoUrl && !isAudiovisualResource ? (
+                  <a
+                    href={project.videoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={recordOpenView}
+                    className="flex-1 bg-primary px-4 py-3 rounded-[20px] text-white hover:bg-[#013668] transition-all flex items-center justify-center gap-2 font-semibold shadow-sm hover:shadow-md"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    <span>Abrir recurso em nova guia</span>
+                  </a>
+                ) : null}
                 <button 
                   onClick={handleToggleFavorite}
                   className={`flex items-center justify-center gap-2 px-4 py-3 rounded-[20px] transition-all font-semibold border-2 shadow-sm hover:shadow-md ${
@@ -762,7 +775,7 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
         )}
       </div>
 
-      {showResourceModal && project.videoUrl ? (
+      {showResourceModal && project.videoUrl && isAudiovisualResource ? (
         <div
           className="resource-modal fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm sm:p-8"
           role="dialog"
@@ -771,9 +784,7 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
           onClick={() => setShowResourceModal(false)}
         >
           <div
-            className={`resource-modal-card ${
-              isAudiovisualResource ? 'is-video' : 'is-oda'
-            } flex flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl`}
+            className="resource-modal-card flex flex-col overflow-hidden rounded-[20px] bg-white shadow-2xl"
             onClick={(event) => event.stopPropagation()}
           >
             <div className="flex shrink-0 items-center justify-between gap-3 border-b-2 border-gray-200 px-4 py-3 sm:px-6">
@@ -793,11 +804,7 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
             </div>
             <div className="resource-modal-frame relative bg-black">
               <iframe
-                src={
-                  isAudiovisualResource
-                    ? getVimeoEmbedUrl(videoEmbedUrl || project.videoUrl, { autoplay: true })
-                    : project.videoUrl
-                }
+                src={getVimeoEmbedUrl(videoEmbedUrl || project.videoUrl, { autoplay: true })}
                 title={project.title}
                 className="h-full w-full"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"

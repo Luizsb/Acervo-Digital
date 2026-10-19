@@ -77,7 +77,9 @@ Resposta à perda de acesso à EC2, com custo zero.
 - ✅ Corrigir o limite de 1000 linhas do catálogo no modo Supabase (paginação em
   `supabaseFetchOdas`)
 - ✅ Captura de capas a partir da planilha (`thumbs:capture:planilha`)
-- ⬜ Importar a planilha nova no Supabase só com os recursos que já têm capa
+- ✅ Importar a planilha nova no Supabase só com os recursos que já têm capa (galeria
+  de 997 para 1459 recursos)
+- ✅ ODAs abrem em nova guia; só o audiovisual continua no modal
 - 🔄 Capturar as capas restantes em lotes: cerca de 1050 recursos visíveis da
   planilha nova sem capa, com `npm run thumbs:capture:planilha -- --limit=100`,
   repetindo a importação a cada lote
@@ -113,7 +115,7 @@ O objetivo é que atualizar o catálogo deixe de exigir um ambiente Node configu
 | 2 | Decidir entre consolidar no Supabase ou voltar para a EC2 | O débito dos dois backends só cresce enquanto não há decisão |
 | 3 | Excluir o projeto Supabase `adungjmhuibxvgiqrume` | Decidido: elimina a ambiguidade sobre qual é a produção |
 | 4 | Cadastrar os secrets do workflow de ping e remover o gatilho de push | Hoje funciona com valor embutido |
-| 5 | Medir quantos recursos aceitam `iframe` | Dimensiona o risco do visualizador |
+| 5 | Corrigir os 20 códigos repetidos na planilha | Hoje a última linha sobrescreve a anterior e a importação nunca estabiliza |
 | 6 | SSO JumpCloud | Tira o login com senha manual |
 | 7 | Teste end-to-end do fluxo de login e galeria | Única forma de detectar quebra dos dois backends |
 | 8 | Reduzir o bundle inicial | Aviso do Vite, sem impacto relatado por usuário |
@@ -123,9 +125,12 @@ O objetivo é que atualizar o catálogo deixe de exigir um ambiente Node configu
 
 ## Bugs conhecidos
 
-- **Visualizador em tela ampliada abre em branco** em recursos cujo servidor recusa
-  `iframe`. Não há fallback de abertura externa nem sinalização automática na fila
-  de revisão. Frequência desconhecida.
+- **Códigos repetidos na planilha.** 20 códigos aparecem em duas linhas cada, às vezes
+  com status diferentes (ex.: `EF21_8_POR_L1_U1_02_OD1` como `Funcionando` e
+  `Não avaliado`). A última linha vence e cada importação registra cerca de 28
+  "alterados" que não mudaram de verdade. Correção editorial: manter uma linha por
+  código. Lista completa obtida com `loadRows` + `mapCategorizacaoRow` agrupando por
+  código.
 - **`ERR_NAME_NOT_RESOLVED` no domínio do Supabase dentro da rede corporativa.**
   Ocorreu em setembro de 2026 e foi diagnosticado inicialmente como pausa do
   projeto; era o DNS da rede. `[HIPÓTESE — CONFIRMAR]` se acontece de forma
@@ -162,22 +167,23 @@ Ideias sem compromisso de execução, registradas para não se perderem:
 
 ## Em observação
 
-### Visualizador do recurso em tela ampliada
+### Abertura do recurso
 
-A pedido da coordenação, a experiência é explorar o recurso dentro do Acervo em vez
-de compartilhar o link: "Copiar Link" virou "Copiar código" e "Abrir em outra
-janela" virou um modal em tela ampliada, para audiovisual e ODA
-(`src/components/ProjectDetailsPage.tsx`).
+A pedido da coordenação, a experiência era explorar o recurso dentro do Acervo em
+vez de compartilhar o link: "Copiar Link" virou "Copiar código" e "Abrir em outra
+janela" virou um modal em tela ampliada, para audiovisual e ODA.
+
+**Desde 2026-10-19, só o audiovisual continua no modal.** ODAs e demais recursos
+abrem em nova guia (`src/components/ProjectDetailsPage.tsx`), por decisão do
+responsável: dentro do `iframe` 16:9, jogos com outra proporção ficavam cortados e
+parte dos ODAs travava em "carregando objeto digital 0%".
 
 Pontos a acompanhar:
 
-- Esconder o link é fricção, não proteção: o endereço do `iframe` continua visível
-  no HTML da página.
-- Vimeo e YouTube aceitam `iframe`, mas ODAs de terceiros podem recusar por
-  `X-Frame-Options` ou `CSP: frame-ancestors` — nesses casos o modal abre em branco.
-- Não há fallback de abertura externa. Se o bloqueio se mostrar frequente, decidir
-  entre reintroduzir a abertura externa ou sinalizar o recurso na revisão do admin.
-- Medir quantos links publicados aceitam `iframe` para dimensionar esse risco.
+- O endereço do ODA passa a ficar visível na barra da nova guia. Se a coordenação
+  ainda quiser esconder o link, a alternativa precisa resolver o corte e o
+  carregamento — o `iframe` não resolveu.
+- Vídeos seguem no `iframe`; Vimeo e YouTube aceitam embed.
 
 ---
 

@@ -15,7 +15,7 @@ do que está quebrado.
 
 O Acervo Digital transforma essa planilha em produto: a informação editorial
 continua sendo mantida na planilha, mas quem consulta usa uma galeria com busca,
-filtros, capa, ficha pedagógica e o recurso abrindo dentro da própria aplicação.
+filtros, capa, ficha pedagógica e acesso direto ao recurso.
 
 ## Para quem é
 
@@ -34,9 +34,10 @@ localização editorial (coleção, livro, bloco/capítulo, envio à escola, vol
 currículo (segmento, ano/série, componente, habilidade BNCC).
 
 Cada recurso tem ficha própria com capa, requisitos técnicos normalizados,
-habilidades BNCC com o texto completo e recomendações relacionadas. O recurso abre
-em um modal em tela ampliada, dentro do Acervo, em vez de o usuário levar o link
-embora — decisão da coordenação registrada no `ROADMAP.md`.
+habilidades BNCC com o texto completo e recomendações relacionadas. Vídeos abrem em
+um modal em tela ampliada, dentro do Acervo; ODAs e demais recursos abrem em nova
+guia, porque embarcados parte deles cortava o conteúdo ou não carregava. O histórico
+dessa decisão está no `ROADMAP.md`.
 
 Administradores têm um painel próprio com a fila de revisão (tudo que não entra na
 galeria e por quê), o status da última sincronização da planilha, o histórico de
@@ -49,7 +50,7 @@ faltantes.
 - Galeria com busca, filtros combináveis, paginação e alternância entre grade e lista.
 - Ordenação do catálogo pelos recursos mais visualizados.
 - Ficha do recurso com BNCC, requisitos técnicos e relacionados.
-- Visualizador em tela ampliada para ODA e audiovisual.
+- Vídeo em tela ampliada; ODA e demais recursos em nova guia.
 - Favoritos por usuário.
 - Contagem de visualizações, separando visita à ficha de abertura do recurso.
 - Painel admin: fila de revisão, status da planilha, histórico de novos e
@@ -95,9 +96,11 @@ planilha como origem e tratá-la como fonte de importação, não como banco de 
 `BYTEA` deixaria o PostgreSQL pesado. O banco guarda o caminho, o arquivo vai para o
 disco e para o Git.
 
-**Por que o recurso abre dentro do Acervo.** Pedido da coordenação: a experiência
-desejada é explorar o recurso no contexto do acervo. O efeito colateral conhecido é
-que ODAs de terceiros podem recusar o `iframe`.
+**Por que o vídeo abre dentro do Acervo e o ODA não.** A coordenação pediu que o
+recurso fosse explorado no contexto do acervo, e o modal foi feito para os dois.
+Na prática, o ODA embarcado cortava jogos fora de 16:9 e parte deles não terminava
+de carregar; em outubro de 2026 o ODA passou a abrir em nova guia. O vídeo, que
+funciona bem embarcado, continua no modal.
 
 ## Pitch em 30 segundos
 
