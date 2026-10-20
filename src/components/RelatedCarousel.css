@@ -1,0 +1,109 @@
+.related-carousel {
+  --related-gap: 1.25rem;
+  position: relative;
+}
+
+.related-carousel-track {
+  display: flex;
+  gap: var(--related-gap);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  overscroll-behavior-x: contain;
+  padding: 0.25rem 0.25rem 1rem;
+  margin: -0.25rem -0.25rem 0;
+  cursor: grab;
+  scrollbar-width: none;
+}
+
+.related-carousel-track::-webkit-scrollbar {
+  display: none;
+}
+
+.related-carousel-track:focus-visible {
+  outline: 2px solid #1e3a8a;
+  outline-offset: 2px;
+  border-radius: 20px;
+}
+
+/* Sem snap durante o arraste: o cartão encaixa quando o mouse é solto. */
+.related-carousel-track--dragging {
+  cursor: grabbing;
+  scroll-snap-type: none;
+  user-select: none;
+}
+
+.related-carousel-track--dragging .related-carousel-item {
+  pointer-events: none;
+}
+
+.related-carousel-item {
+  flex: 0 0 85%;
+  min-width: 0;
+  scroll-snap-align: start;
+}
+
+@media (min-width: 640px) {
+  .related-carousel-item {
+    flex-basis: calc((100% - var(--related-gap)) / 2);
+  }
+}
+
+@media (min-width: 1024px) {
+  .related-carousel-item {
+    flex-basis: calc((100% - 2 * var(--related-gap)) / 3);
+  }
+}
+
+@media (min-width: 1280px) {
+  .related-carousel-item {
+    flex-basis: calc((100% - 3 * var(--related-gap)) / 4);
+  }
+}
+
+@media (min-width: 1536px) {
+  .related-carousel-item {
+    flex-basis: calc((100% - 4 * var(--related-gap)) / 5);
+  }
+}
+
+.related-carousel-arrow {
+  position: absolute;
+  top: 40%;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 9999px;
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.18);
+  transform: translateY(-50%);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.related-carousel-arrow:hover {
+  transform: translateY(-50%) scale(1.06);
+  box-shadow: 0 8px 22px rgba(15, 23, 42, 0.24);
+}
+
+.related-carousel-arrow:focus-visible {
+  outline: 2px solid #1e3a8a;
+  outline-offset: 2px;
+}
+
+.related-carousel-arrow svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.related-carousel-arrow--prev {
+  left: -0.75rem;
+}
+
+.related-carousel-arrow--next {
+  right: -0.75rem;
+}

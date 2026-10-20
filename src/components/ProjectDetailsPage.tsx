@@ -9,11 +9,14 @@ import type { Project } from '../types/project';
 import { formatDuration } from '../utils/formatters';
 import { MacroformatoBadge } from './MacroformatoBadge';
 import { MarcaBadge } from './MarcaBadge';
+import { RelatedCarousel } from './RelatedCarousel';
 import { apiRecordOdaView } from '../utils/api';
 import { copyTextToClipboard } from '../utils/clipboard';
 import './ProjectDetailsPage.css';
 
 type RelatedCriterion = 'year' | 'bncc' | 'samr';
+
+const RELATED_LIMIT = 12;
 
 function normalizeRelationValue(value?: string): string {
   return value?.trim().toLocaleLowerCase('pt-BR') ?? '';
@@ -148,7 +151,7 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
         const samr = normalizeRelationValue(project.samr);
         return Boolean(samr) && normalizeRelationValue(candidate.samr) === samr;
       })
-      .slice(0, 5);
+      .slice(0, RELATED_LIMIT);
   }, [allProjects, project, relatedCriterion]);
   const relatedCriterionAvailable: Record<RelatedCriterion, boolean> = {
     year: Boolean(normalizeRelationValue(project.location)),
@@ -743,7 +746,7 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
             </div>
 
             {relatedProjects.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-5">
+              <RelatedCarousel label="Recursos relacionados" resetKey={`${project.id}-${relatedCriterion}`}>
                 {relatedProjects.map((relatedProject) => (
                   <ProjectCard
                     key={relatedProject.id}
@@ -753,7 +756,7 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
                     onToggleFavorite={onToggleFavorite}
                   />
                 ))}
-              </div>
+              </RelatedCarousel>
             ) : (
               <div className="rounded-[20px] border-2 border-dashed border-gray-300 bg-white p-8 text-center">
                 <p className="font-semibold text-primary">Nenhum recurso relacionado encontrado por este critério.</p>

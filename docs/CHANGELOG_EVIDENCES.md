@@ -10,6 +10,48 @@ trazem a seção "Impacto observado" com dado medido: nenhuma métrica foi colet
 
 ---
 
+## 2026-10-20 · 14:45 — Relacionados em carrossel
+
+### Antes
+
+A seção "Você pode se interessar também por:" mostrava até 5 relacionados numa grade
+de 1 a 5 colunas, que quebrava em várias linhas nas telas menores.
+
+### Depois
+
+- Componente `RelatedCarousel` (`src/components/RelatedCarousel.tsx` e `.css`): uma
+  linha com encaixe por cartão (*scroll snap*), de 1 a 5 cartões visíveis conforme a
+  largura, setas que aparecem só quando há para onde rolar, arraste com o mouse,
+  deslize nativo no toque e rolagem pelo teclado com a linha em foco.
+- O clique que encerra um arraste é descartado; o clique normal abre o recurso.
+- Limite de relacionados de 5 para 12 (`RELATED_LIMIT`). Trocar de critério ou de
+  recurso volta a linha ao início.
+
+### Decisão
+
+Carrossel em vez de "Ver mais", e até 12 itens, por escolha do responsável.
+
+### Evidência
+
+No navegador, ficha `SAE25_EI_G5_BL3_UT3_OA1`, critério BNCC:
+- 12 itens na mesma linha, trilha de 1171 px com 4715 px de conteúdo;
+- seta de avançar: rolagem de 4 para 1185 px, seta de voltar aparece e o endereço não
+  muda;
+- arraste simulado por eventos de ponteiro: 397 px de rolagem, sem abrir o card;
+- um clique normal abre `SAE25_EI_G4_BL2_UT4_OD1`.
+
+`npm test` (72) e `npm run build` passando.
+
+### Impacto observado
+
+`[A VALIDAR]` Arraste real com mouse e toque num celular, na Vercel.
+
+### Próximos passos
+
+Nenhum.
+
+---
+
 ## 2026-10-20 · 14:40 — Auditoria ativa no Supabase e Vite estável durante a importação
 
 ### Antes

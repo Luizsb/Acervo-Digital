@@ -115,6 +115,9 @@ Resposta à perda de acesso à EC2, com custo zero.
 - ✅ 14 capas `SAE25_AF61/AF62_ING_...` soltas na raiz de `public/thumbs/` apagadas:
   os códigos não existem na planilha nem no banco (a planilha passou a ter os
   `SAE26_AF71/AF72_ING_...`). Ficam no histórico do Git
+- ✅ Relacionados da ficha em carrossel de uma linha (`RelatedCarousel`): até 12
+  recursos, setas, arraste com o mouse, deslize no toque e rolagem pelo teclado; o
+  arraste não abre o card
 - ✅ Selos sem cor repetida: macroformato e SAMR passam ao selo neutro; cor só para
   componente, campo de experiência e marca
 - ✅ Filtro de Marca promovido a primeiro item do grupo Localização; recurso `IMP/...`
