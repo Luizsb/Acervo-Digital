@@ -1,0 +1,15 @@
+# Fora do grafo do Graphify (além do que já está no .gitignore).
+# Planilha e exports: dado pessoal, nunca vão para o grafo nem para LLM.
+data/
+*.xlsx
+# Mais de mil capas: caro para a extração por imagem e sem valor estrutural.
+public/thumbs/
+public/*.db
+# Segredos e artefatos.
+.env*
+server/.env*
+dist/
+server/dist/
+node_modules/
+server/node_modules/
+graphify-out/

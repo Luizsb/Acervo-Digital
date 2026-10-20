@@ -1,5 +1,6 @@
 import { getSupabaseClient } from '../lib/supabaseClient';
 import { hasCatalogStatus, hasResourceLink, reviewGroupFor, type ReviewGroup } from './catalogVisibility';
+import { thumbPublicPath } from './thumbPaths';
 import type {
   AuthUserResponse,
   ODA,
@@ -19,9 +20,9 @@ function uuidToId(uuid: string): number {
   return Number.parseInt(hex, 16) % 2147483647;
 }
 
-function roleFromUser(user: { user_metadata?: Record<string, unknown>; app_metadata?: Record<string, unknown> }): string {
-  const meta = user.user_metadata?.role ?? user.app_metadata?.role;
-  return meta === 'admin' ? 'admin' : 'user';
+/** Só app_metadata: user_metadata é editável pelo próprio usuário e não pode conceder papel. */
+export function roleFromUser(user: { app_metadata?: Record<string, unknown> }): string {
+  return user.app_metadata?.role === 'admin' ? 'admin' : 'user';
 }
 
 function throwIfError(error: { message?: string } | null, fallback: string): void {
@@ -301,7 +302,7 @@ export async function supabaseSpreadsheetStatus(): Promise<SpreadsheetStatusResp
       codigo: String(row.codigo),
       titulo: String(row.titulo),
       kind: row.kind as SyncChangeKind,
-      imagem: (row.imagem as string | null) ?? `/thumbs/${row.codigo}.webp`,
+      imagem: (row.imagem as string | null) ?? thumbPublicPath(String(row.codigo), null),
       status: (row.status as string | null) ?? null,
       syncedAt: row.synced_at ? String(row.synced_at) : String(latestRow.synced_at),
     }));

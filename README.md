@@ -2,7 +2,7 @@
 
 Biblioteca interna de Objetos Digitais de Aprendizagem (ODAs) e audiovisual — busca, filtros e ficha pedagógica para o time de Interações Digitais, NDE e editores (Lançamento 1).
 
-Entrada pelo **login**. Fonte editorial: planilha `public/Categorização_Recursos Digitais_Terceiros.xlsx`. Depois da primeira importação, a aplicação lê o **PostgreSQL**, não a planilha.
+Entrada pelo **login**. Fonte editorial: planilha `data/Categorização_Recursos Digitais_Terceiros.xlsx`, que fica **fora do Git e fora de `public/`** (contém dados pessoais e recursos não publicáveis). Depois da primeira importação, a aplicação lê o **PostgreSQL**, não a planilha.
 
 **Macroformato `Vídeo`, `Playlist` ou `Áudio`** → **Audiovisual** na UI. Demais macroformatos → **OED**.
 
@@ -90,8 +90,8 @@ Acervo-Digital/
 │   └── docker-entrypoint.sh      # migrate + seed + start
 ├── public/
 │   ├── thumbs/                   # Capas webp versionadas (~60 MB)
-│   ├── Categorização_Recursos Digitais_Terceiros.xlsx
 │   └── bncc.db
+├── data/                         # Planilha de categorização (fora do Git)
 ├── scripts/
 │   ├── supabase/rls.sql          # Políticas e funções do Supabase
 │   └── apps-script/              # Gatilho de sincronização (parado)
@@ -144,13 +144,14 @@ upload manual de `.xlsx` e a data/origem da última sincronização concluída.
 
 A planilha tem ~5 MB, então o Nginx do container web libera `client_max_body_size 30m`. Se aparecer `413 Request Entity Too Large`, o container web está com a config antiga: rode `docker compose up --build -d web`.
 
-**Opção B — arquivo manual:** use **Enviar arquivo** no admin, substitua
-`public/Categorização_Recursos Digitais_Terceiros.xlsx` e rode
-`npm run import:categorizacao`, ou execute `docker compose up --build -d`.
+**Opção B — arquivo manual:** baixe a planilha do Drive do NDE e rode
+`npm run planilha:preparar -- "caminho/do/arquivo-baixado.xlsx"`, que grava em
+`data/` só a aba `Recursos Digitais`, sem dados pessoais. Depois rode
+`npm run import:categorizacao`. No Docker, `./data` é montado na API.
 
 O feedback (tela admin ou terminal) mostra novos, atualizados, desativados e recursos sem thumb.
 
-Para comparar a planilha nova com a do Git sem tocar no banco: `npm run diff:planilha`.
+Para comparar a planilha nova com a última importada sem tocar no banco: `npm run diff:planilha`.
 
 A chave é o **Código do recurso**:
 
@@ -253,6 +254,33 @@ Para recapturar capas com tela de carregamento:
 cd server
 npx tsx scripts/capture-thumbs.ts --validate-existing
 ```
+
+### Graphify (mapa do código)
+
+O [Graphify](https://github.com/Graphify-Labs/graphify) gera um grafo consultável do
+código, para humanos e agentes de IA se orientarem no projeto. É ferramenta local de
+desenvolvimento: não entra no `package.json`, no build nem no deploy. Precisa de Python
+3.10+ e do [uv](https://docs.astral.sh/uv/).
+
+```bash
+uv tool install "graphifyy[sql]"      # o pacote PyPI tem dois "y"
+graphify install --platform cursor    # cria .cursor/rules/graphify.mdc (local, fora do Git)
+graphify extract . --code-only        # grafo só do código, análise local, sem LLM
+graphify cluster-only . --no-label    # gera graphify-out/GRAPH_REPORT.md e graph.html
+graphify update .                     # depois de mudar código; também sem LLM
+graphify query "como a planilha chega ao banco"
+```
+
+Cuidados, por causa dos dados e do relatório de segurança:
+
+- `.graphifyignore` tira do grafo `data/` (planilha e exports), `public/thumbs/`,
+  `.env` e artefatos. `graphify-out/` fica fora do Git.
+- A extração completa (sem `--code-only`) envia documentos e imagens para um LLM. Use
+  só conscientemente.
+- **Nunca** use `--postgres` com a conexão do Supabase: a senha do banco iria para a
+  linha de comando e o esquema real, para o grafo.
+- Não instale `graphify hook install` nem rode `--watch`: os dois reprocessam tudo
+  automaticamente.
 
 ---
 
@@ -406,16 +434,18 @@ Atualização de **conteúdo** não precisa de deploy: o gatilho diário do Apps
 | `npm run build` | Build do frontend |
 | `npm run server:dev` | API local em watch (porta 3001) |
 | `npm run prisma:generate` | Cliente Prisma |
-| `npm run prisma:migrate` | `migrate deploy` |
+| `npm run prisma:migrate` | Aplica as migrações pendentes (`migrate deploy`). Para criar migração nova: `cd server && npm run prisma:migrate:dev` |
 | `npm run prisma:studio` | Prisma Studio |
-| `npm run db:up` / `db:down` / `db:reset` | Só o Postgres |
+| `npm run db:up` / `db:reset` | Sobe ou recria só o Postgres. Para parar, `npm run docker:down` |
 | `npm run seed` | BNCC + usuários demo/admin + planilha |
 | `npm run import:categorizacao` | Sincroniza a planilha com o banco |
 | `npm run import:categorizacao:com-capa` | Igual, mas adia recurso novo visível que ainda não tem capa |
-| `npm run thumbs:capture:planilha -- --limit=100` | Captura capas lendo a lista da planilha, não do banco |
-| `npm run diff:planilha` | Compara a planilha local com a versão no Git |
+| `npm run planilha:preparar -- "arquivo.xlsx"` | Prepara a planilha baixada do Drive: só a aba Recursos Digitais, sem dados pessoais, em `data/` |
+| `npm run diff:planilha` | Compara a planilha de `data/` com a última importada |
+| `npm run db:exportar` | Exporta o banco em JSON para `data/export-*` (migração e backup; contém dado pessoal) |
 | `npm run thumbs:setup` | Instala o Chromium para captura local |
-| `npm run thumbs:capture` | Captura thumbs faltantes |
+| `npm run thumbs:capture` | Captura as capas que faltam, lendo a lista da planilha. Opções: `-- --limit=100`, `-- --do-banco` |
+| `npm run thumbs:organizar` | Confere se as capas estão na pasta da marca; só simula sem opção (ver `docs/SDD.md`) |
 | `npm run test` | Vitest |
 
 ---

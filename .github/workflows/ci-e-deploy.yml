@@ -24,6 +24,9 @@ jobs:
       - name: Instala dependências do frontend
         run: npm ci
 
+      - name: Audita dependências do frontend (SCA)
+        run: npm audit --omit=dev --audit-level=high
+
       - name: Roda os testes
         run: npm test
 
@@ -35,6 +38,10 @@ jobs:
         run: npm ci
         env:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+
+      - name: Audita dependências da API (SCA)
+        working-directory: server
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Verifica os tipos da API
         working-directory: server

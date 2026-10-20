@@ -57,10 +57,18 @@ desktop.ini
 # Temporary files
 *.tmp
 *.temp
+# Planilha de categorização: contém dados pessoais e recursos não publicáveis.
+# Fica só na máquina de quem opera; nunca em public/ nem no Git.
+/data/
+public/**/*.xlsx
+
 # Cópias de segurança da planilha feitas antes de uma importação
 *.bak
 .cache/
 *.zip
+
+# Grafo local do Graphify (regenerável com graphify extract).
+graphify-out/
 
 # Rascunhos de captura. As capas webp em public/thumbs/ sobem no Git (~60 MB).
 public/converted_images_webp/

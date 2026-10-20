@@ -1,5 +1,6 @@
 import express from 'express';
 import prisma from '../lib/prisma';
+import { recordAuditEvent } from '../lib/audit';
 import { catalogVisibleWhere, isVisibleInCatalog } from '../lib/catalogVisibility';
 import { isViewKind, recordOdaView } from '../lib/odaViews';
 import { authMiddleware, requireAdmin, type AuthRequest } from '../middleware/auth';
@@ -121,12 +122,19 @@ router.post('/:id/view', async (req: AuthRequest, res) => {
 });
 
 // POST /api/odas - Criar novo ODA
-router.post('/', requireAdmin, async (req, res) => {
+router.post('/', requireAdmin, async (req: AuthRequest, res) => {
   try {
     const oda = await prisma.oDA.create({
       data: req.body,
     });
 
+    await recordAuditEvent({
+      action: 'catalog.resource_created',
+      origin: 'express',
+      actor: req.user?.email,
+      target: oda.codigoOda ?? String(oda.id),
+      ip: req.ip,
+    });
     res.status(201).json(oda);
   } catch (error: any) {
     console.error('Error creating ODA:', error);
@@ -135,7 +143,7 @@ router.post('/', requireAdmin, async (req, res) => {
 });
 
 // PUT /api/odas/:id - Atualizar ODA
-router.put('/:id', requireAdmin, async (req, res) => {
+router.put('/:id', requireAdmin, async (req: AuthRequest, res) => {
   try {
     const id = parseInt(req.params.id);
     const oda = await prisma.oDA.update({
@@ -143,6 +151,14 @@ router.put('/:id', requireAdmin, async (req, res) => {
       data: req.body,
     });
 
+    await recordAuditEvent({
+      action: 'catalog.resource_updated',
+      origin: 'express',
+      actor: req.user?.email,
+      target: oda.codigoOda ?? String(oda.id),
+      ip: req.ip,
+      details: { campos: Object.keys(req.body ?? {}) },
+    });
     res.json(oda);
   } catch (error: any) {
     console.error('Error updating ODA:', error);
@@ -154,13 +170,20 @@ router.put('/:id', requireAdmin, async (req, res) => {
 });
 
 // DELETE /api/odas/:id - Deletar ODA
-router.delete('/:id', requireAdmin, async (req, res) => {
+router.delete('/:id', requireAdmin, async (req: AuthRequest, res) => {
   try {
     const id = parseInt(req.params.id);
-    await prisma.oDA.delete({
+    const removed = await prisma.oDA.delete({
       where: { id },
     });
 
+    await recordAuditEvent({
+      action: 'catalog.resource_deleted',
+      origin: 'express',
+      actor: req.user?.email,
+      target: removed.codigoOda ?? String(removed.id),
+      ip: req.ip,
+    });
     res.json({ message: 'ODA deleted successfully' });
   } catch (error: any) {
     console.error('Error deleting ODA:', error);

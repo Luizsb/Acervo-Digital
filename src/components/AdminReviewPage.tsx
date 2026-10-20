@@ -32,6 +32,7 @@ import {
   type OdaViewKind,
 } from '../utils/api';
 import { REVIEW_GROUP_LABELS, REVIEW_GROUP_ORDER } from '../utils/catalogVisibility';
+import { thumbPublicPath } from '../utils/thumbPaths';
 import './AdminReviewPage.css';
 
 interface AdminReviewPageProps {
@@ -69,7 +70,7 @@ const VIEW_KIND_OPTIONS: { key: OdaViewKind; label: string }[] = [
 
 function ChangeThumb({ codigo, imagem }: { codigo: string; imagem?: string | null }) {
   const [missing, setMissing] = useState(false);
-  const src = imagem || `/thumbs/${codigo}.webp`;
+  const src = imagem || thumbPublicPath(codigo, null);
   if (missing) {
     return (
       <span className="admin-sheet-change-thumb is-missing" title="Capa não está no deploy">

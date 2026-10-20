@@ -1,6 +1,8 @@
 -- Políticas para o front no Vercel falar com o Postgres via Data API.
 -- Express/EC2 não depende disto.
 
+-- O papel vem só de app_metadata: user_metadata é editável pelo próprio usuário
+-- via supabase.auth.updateUser e não pode conceder privilégio.
 create or replace function public.is_acervo_admin()
 returns boolean
 language sql
@@ -8,8 +10,7 @@ stable
 security definer
 set search_path = public
 as $$
-  select coalesce(auth.jwt() -> 'user_metadata' ->> 'role', '') = 'admin'
-      or coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '') = 'admin';
+  select coalesce(auth.jwt() -> 'app_metadata' ->> 'role', '') = 'admin';
 $$;
 
 -- Postgres concede EXECUTE a PUBLIC por padrão; o Security Advisor reclama de DEFINER aberto.
@@ -191,3 +192,61 @@ create policy keep_alive_select on public.keep_alive
   using (true);
 
 grant select on table public.keep_alive to anon, authenticated;
+
+-- Trilha de auditoria. A tabela audit_events vem da migração do Prisma (rode
+-- `npm run prisma:migrate` antes deste script). Nenhum papel da Data API lê ou escreve.
+do $$
+begin
+  if to_regclass('public.audit_events') is not null then
+    execute 'alter table public.audit_events enable row level security';
+    execute 'revoke all on table public.audit_events from anon, authenticated';
+  end if;
+end $$;
+
+-- Login e mudança de papel no Auth do Supabase. Falha na auditoria vira warning:
+-- um erro aqui não pode impedir o login.
+create or replace function public.audit_auth_user_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  begin
+    if new.last_sign_in_at is distinct from old.last_sign_in_at then
+      insert into public.audit_events (action, actor, origin, details)
+      values (
+        'auth.login',
+        new.email,
+        'supabase',
+        jsonb_build_object('papel', coalesce(new.raw_app_meta_data ->> 'role', 'user'))
+      );
+    end if;
+    if (new.raw_app_meta_data ->> 'role') is distinct from (old.raw_app_meta_data ->> 'role') then
+      insert into public.audit_events (action, actor, target, origin, details)
+      values (
+        'auth.role_changed',
+        session_user,
+        new.email,
+        'supabase',
+        jsonb_build_object(
+          'de', old.raw_app_meta_data ->> 'role',
+          'para', new.raw_app_meta_data ->> 'role'
+        )
+      );
+    end if;
+  exception when others then
+    raise warning 'audit_auth_user_change: %', sqlerrm;
+  end;
+  return new;
+end;
+$$;
+
+revoke execute on function public.audit_auth_user_change() from public;
+revoke execute on function public.audit_auth_user_change() from anon;
+revoke execute on function public.audit_auth_user_change() from authenticated;
+
+drop trigger if exists auth_user_change_audit on auth.users;
+create trigger auth_user_change_audit
+  after update on auth.users
+  for each row execute function public.audit_auth_user_change();

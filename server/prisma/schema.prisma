@@ -157,3 +157,19 @@ model ImportEvent {
   @@index([kind])
   @@map("import_events")
 }
+
+/// Trilha de auditoria de eventos críticos. Só inserção: sem acesso pela Data API do Supabase.
+model AuditEvent {
+  id         Int      @id @default(autoincrement())
+  occurredAt DateTime @default(now()) @map("occurred_at") @db.Timestamptz(3)
+  action     String
+  actor      String?
+  target     String?
+  origin     String
+  ip         String?
+  details    Json?
+
+  @@index([occurredAt])
+  @@index([action, occurredAt])
+  @@map("audit_events")
+}

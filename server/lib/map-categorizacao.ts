@@ -1,3 +1,5 @@
+import { thumbPublicPath } from './thumbPaths';
+
 export type CategorizacaoRow = Record<string, unknown>;
 
 export type MappedODA = {
@@ -362,6 +364,7 @@ export function mapCategorizacaoRow(
   const macroformato =
     macroformatoRaw || (isAudiovisual && isVideoAulaCodigo(codigoOda) ? 'Vídeo' : null);
   const tipoResolvido = tipoCurto || macroformatoRaw || (isAudiovisual ? 'Vídeo' : null);
+  const marca = cell(row, 'Marca') || null;
 
   return {
     codigoOda,
@@ -370,7 +373,7 @@ export function mapCategorizacaoRow(
     tags: componente ? JSON.stringify([componente]) : null,
     tagColor: TAG_COLORS[componente] || 'bg-gray-600',
     anoSerie: anoSerie || null,
-    imagem: `/thumbs/${codigoOda.replace(/\.(webp|jpg|jpeg|png)$/i, '')}.webp`,
+    imagem: thumbPublicPath(codigoOda, marca),
     linkRepositorio,
     codigoBncc: codigoBncc || null,
     descricaoBncc: descricaoBncc || null,
@@ -378,7 +381,7 @@ export function mapCategorizacaoRow(
     duracao: formatExcelDuration(duracaoMidia || tempoMedio),
     volume: cell(row, 'Volume') || null,
     segmento: deriveSegmento(anoSerie),
-    marca: cell(row, 'Marca') || null,
+    marca,
     tipoConteudo: isAudiovisual ? 'Audiovisual' : 'OED',
     escalaSamr: cell(row, 'Escala SAMR') || null,
     tipoObjeto: tipoResolvido,

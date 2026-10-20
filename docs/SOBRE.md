@@ -13,9 +13,10 @@ descobrir na tentativa se ele ainda funcionava. Não havia como ver a capa do
 recurso, saber quais habilidades da BNCC ele cobre nem separar o que está publicável
 do que está quebrado.
 
-O Acervo Digital transforma essa planilha em produto: a informação editorial
-continua sendo mantida na planilha, mas quem consulta usa uma galeria com busca,
-filtros, capa, ficha pedagógica e acesso direto ao recurso.
+O Acervo Digital transforma essa planilha em produto: a categorização continua sendo
+feita pelo NDE na planilha oficial, no Drive da empresa, mas o dado importado passa a
+morar no banco do Acervo, que é o local oficial dos dados. Quem consulta usa uma
+galeria com busca, filtros, capa, ficha pedagógica e acesso direto ao recurso.
 
 ## Para quem é
 
@@ -112,13 +113,16 @@ está quebrado, restrito ou incompleto, e a planilha nova entra no ar com um com
 
 ## Momento atual
 
-O produto está **no ar e em uso**, hospedado na Vercel com banco e autenticação no
-Supabase. Essa arquitetura foi adotada em agosto de 2026 como resposta à perda de
-acesso à instância AWS, com custo zero.
+O MVP roda num **ambiente de testes** na Vercel, com banco e autenticação no Supabase
+Free. Essa arquitetura foi adotada em agosto de 2026 como resposta à perda de acesso à
+instância AWS, com custo zero.
 
-A infraestrutura anterior — Docker com PostgreSQL, API Express e nginx na EC2 —
-continua inteira no repositório e é o plano de retorno. Trocar de volta é mudar a
-variável `VITE_BACKEND`.
+Em julho de 2026, o Comitê Security by Design da Arco avaliou o projeto, ainda como
+ferramenta de cadastro, e classificou o risco como alto. O rumo combinado depois disso
+é levar o Acervo para um **servidor corporativo da Arco, com SSO JumpCloud**, e o
+código para o GitHub da ArcoTech. Os pedidos de servidor e de repositório estão
+sendo encaminhados à TI. O backend Express em `server/`, que roda em servidor, é o caminho
+para esse ambiente; trocar é mudar a variável `VITE_BACKEND`.
 
 **O ponto de atenção do momento é operacional, não de produto.** A atualização do
 catálogo e a captura de capas dependem de um ambiente Node local configurado. Com a
@@ -150,6 +154,7 @@ operação" é o que mantém o acervo funcionando.
   recursos, divididos entre audiovisual e OED, mas o número exato deve ser lido no
   painel admin, não fixado aqui.
 - `[A VALIDAR]` Quantos usuários reais usam o acervo hoje e com que frequência.
-- `[A VALIDAR]` Se há prazo ou compromisso assumido para o SSO JumpCloud.
+- `[A VALIDAR]` Prazo do SSO JumpCloud. Depende do servidor corporativo, solicitado
+  à TI.
 - `[HIPÓTESE — CONFIRMAR]` O nome "Interações Digitais" é o time responsável;
   confirmar a nomenclatura oficial da área para uso em documentação externa.

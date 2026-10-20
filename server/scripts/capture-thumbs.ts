@@ -4,10 +4,11 @@ import https from 'https';
 import http from 'http';
 import prisma from '../lib/prisma';
 import { catalogVisibleWhere, isVisibleInCatalog } from '../lib/catalogVisibility';
-import { isPlaceholderResourceCode, mapCategorizacaoRow } from './map-categorizacao';
-import { DATA_START_ROW, findWorkbook, loadRows } from './import-categorizacao';
+import { isPlaceholderResourceCode, mapCategorizacaoRow } from '../lib/map-categorizacao';
+import { loadRows } from './import-categorizacao';
+import { findWorkbook, thumbFilePath, thumbsDir } from '../lib/acervoPaths';
+import { DATA_START_ROW } from '../lib/planilhaLayout';
 
-const thumbsDir = path.join(process.cwd(), '..', 'public', 'thumbs');
 // Caminho estável para o servidor local; no Docker, ACERVO_PLAYWRIGHT_BROWSERS_PATH=/ms-playwright.
 process.env.PLAYWRIGHT_BROWSERS_PATH =
   process.env.ACERVO_PLAYWRIGHT_BROWSERS_PATH ||
@@ -22,7 +23,7 @@ const MAX_LOADING_RETRIES = Number(
 );
 const FORCE = process.argv.includes('--force');
 const VALIDATE_EXISTING = process.argv.includes('--validate-existing');
-const FROM_SHEET = process.argv.includes('--da-planilha');
+const FROM_DATABASE = process.argv.includes('--do-banco');
 
 // Assinatura RGB 32x18 da tela "carregando objeto digital" usada pelos ODAs.
 // A baixa resolução torna a comparação tolerante ao tamanho original da captura.
@@ -32,12 +33,12 @@ const LOADING_REFERENCE = Buffer.from(
 );
 const LOADING_VISUAL_THRESHOLD = 0.01;
 
-function thumbFile(codigo: string): string {
-  return path.join(thumbsDir, `${codigo.replace(/\.(webp|jpg|jpeg|png)$/i, '')}.webp`);
+function thumbFile(codigo: string, marca: string | null): string {
+  return thumbFilePath(codigo, marca);
 }
 
-function alreadyExists(codigo: string): boolean {
-  return fs.existsSync(thumbFile(codigo));
+function alreadyExists(codigo: string, marca: string | null): boolean {
+  return fs.existsSync(thumbFile(codigo, marca));
 }
 
 function extractVimeoId(url: string): string | null {
@@ -230,14 +231,20 @@ export type ThumbCaptureResult = {
 export type ThumbCaptureOptions = {
   limit?: number;
   /**
-   * Lê os recursos elegíveis da planilha em public/ em vez do banco. Serve para
-   * capturar capas de recursos que a importação ainda não criou (--somente-com-capa).
+   * Lê os recursos elegíveis da planilha em vez do banco. Inclui os recursos que a
+   * importação ainda não criou (--somente-com-capa). Padrão da linha de comando;
+   * o painel admin e a sincronização leem do banco.
    */
   fromSheet?: boolean;
   onProgress?: (progress: ThumbCaptureResult & { current: number }) => void;
 };
 
-type CaptureCandidate = { codigoOda: string | null; titulo: string; linkRepositorio: string | null };
+type CaptureCandidate = {
+  codigoOda: string | null;
+  titulo: string;
+  marca: string | null;
+  linkRepositorio: string | null;
+};
 
 /** Mesmo critério do banco (Funcionando + link), aplicado às linhas da planilha. */
 async function loadSheetCandidates(): Promise<CaptureCandidate[]> {
@@ -253,6 +260,7 @@ async function loadSheetCandidates(): Promise<CaptureCandidate[]> {
     byCode.set(mapped.codigoOda, {
       codigoOda: mapped.codigoOda,
       titulo: mapped.titulo,
+      marca: mapped.marca,
       linkRepositorio: mapped.linkRepositorio,
     });
   });
@@ -262,8 +270,8 @@ async function loadSheetCandidates(): Promise<CaptureCandidate[]> {
 export async function captureMissingThumbs(
   options: ThumbCaptureOptions = {}
 ): Promise<ThumbCaptureResult> {
-  fs.mkdirSync(thumbsDir, { recursive: true });
-  const fromSheet = options.fromSheet ?? FROM_SHEET;
+  fs.mkdirSync(thumbsDir(), { recursive: true });
+  const fromSheet = options.fromSheet ?? false;
   // Igual ao botão do admin: só catálogo público (Funcionando + link).
   const odas: CaptureCandidate[] = fromSheet
     ? await loadSheetCandidates()
@@ -272,10 +280,10 @@ export async function captureMissingThumbs(
           ativo: true,
           ...catalogVisibleWhere(),
         },
-        select: { codigoOda: true, titulo: true, linkRepositorio: true },
+        select: { codigoOda: true, titulo: true, marca: true, linkRepositorio: true },
         orderBy: { id: 'asc' },
       });
-  console.log(`📋 Origem da lista: ${fromSheet ? 'planilha em public/' : 'banco'}`);
+  console.log(`📋 Origem da lista: ${fromSheet ? 'planilha em data/' : 'banco'}`);
 
   const jobs: Array<(typeof odas)[number] & { replaceExisting: boolean }> = [];
   let invalidExisting = 0;
@@ -286,10 +294,12 @@ export async function captureMissingThumbs(
       withoutCode += 1;
       continue;
     }
-    const exists = alreadyExists(oda.codigoOda);
+    const exists = alreadyExists(oda.codigoOda, oda.marca);
     if (exists && !FORCE) {
       if (!VALIDATE_EXISTING) continue;
-      const invalid = await resemblesLoadingScreen(thumbFile(oda.codigoOda)).catch(() => false);
+      const invalid = await resemblesLoadingScreen(thumbFile(oda.codigoOda, oda.marca)).catch(
+        () => false
+      );
       if (!invalid) continue;
       invalidExisting += 1;
     }
@@ -340,7 +350,7 @@ export async function captureMissingThumbs(
       index += 1;
       const oda = queue[current];
       const codigo = oda.codigoOda!;
-      if (!FORCE && alreadyExists(codigo) && !oda.replaceExisting) {
+      if (!FORCE && alreadyExists(codigo, oda.marca) && !oda.replaceExisting) {
         skip += 1;
         console.log(`⏭️  ${codigo} já existe`);
         options.onProgress?.({
@@ -354,7 +364,8 @@ export async function captureMissingThumbs(
         });
         continue;
       }
-      const dest = thumbFile(codigo);
+      const dest = thumbFile(codigo, oda.marca);
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
       const url = oda.linkRepositorio!;
       const overwrite = FORCE || oda.replaceExisting;
       try {
@@ -398,7 +409,7 @@ export async function captureMissingThumbs(
 }
 
 if (require.main === module) {
-  captureMissingThumbs()
+  captureMissingThumbs({ fromSheet: !FROM_DATABASE })
     .catch((err) => {
       console.error(err);
       process.exit(1);

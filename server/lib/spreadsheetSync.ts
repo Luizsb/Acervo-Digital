@@ -79,6 +79,8 @@ export function beginSpreadsheetImport(
   targetPath: string,
   hooks?: {
     source?: SyncSource;
+    /** E-mail do admin que disparou, para a trilha de auditoria. */
+    actor?: string;
     onSuccess?: (summary: Awaited<ReturnType<typeof importCategorizacao>>) => void;
     onFailure?: () => void;
   }
@@ -100,9 +102,12 @@ export function beginSpreadsheetImport(
   spreadsheetJobs.set(jobId, job);
   activeSpreadsheetJobId = jobId;
 
+  const source = hooks?.source ?? 'upload';
   void importCategorizacao({
     filePath: targetPath,
     log: true,
+    origin: source === 'apps-script' ? 'apps-script' : 'express',
+    actor: hooks?.actor ?? source,
     onProgress: ({ phase, current, total }) => {
       job.phase = phase;
       job.current = current;
@@ -115,7 +120,7 @@ export function beginSpreadsheetImport(
     .then((summary) => {
       lastSync = {
         at: new Date().toISOString(),
-        source: hooks?.source ?? 'upload',
+        source,
         fileName,
         created: summary.created,
         updated: summary.updated,

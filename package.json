@@ -23,10 +23,9 @@
             "server:build": "cd server && npm run build",
             "server:start": "cd server && npm start",
             "prisma:generate": "cd server && npx prisma generate",
-            "prisma:migrate": "cd server && npx prisma migrate deploy",
+            "prisma:migrate": "cd server && npm run prisma:migrate:deploy",
             "prisma:studio": "cd server && npx prisma studio",
             "db:up": "docker compose up -d postgres",
-            "db:down": "docker compose down",
             "db:reset": "docker compose down -v && docker compose up -d postgres",
             "docker:up": "docker compose up --build -d",
             "docker:down": "docker compose down",
@@ -34,10 +33,12 @@
             "setup": "npm run db:up && npm run prisma:generate && npm run prisma:migrate && npm run seed",
             "import:categorizacao": "cd server && npm run import:categorizacao",
             "import:categorizacao:com-capa": "cd server && npm run import:categorizacao:com-capa",
-            "diff:planilha": "cd server && npm run diff:planilha",
+            "diff:planilha": "cd server && npm run diff:planilha --",
+            "planilha:preparar": "cd server && npm run planilha:preparar --",
+            "db:exportar": "cd server && npm run db:exportar",
             "thumbs:setup": "cd server && npm run thumbs:setup",
-            "thumbs:capture": "cd server && npm run thumbs:capture",
-            "thumbs:capture:planilha": "cd server && npm run thumbs:capture:planilha --",
+            "thumbs:capture": "cd server && npm run thumbs:capture --",
+            "thumbs:organizar": "cd server && npm run thumbs:organizar --",
             "test": "vitest run"
       }
 }

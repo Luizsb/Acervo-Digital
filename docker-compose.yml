@@ -53,8 +53,9 @@ services:
     ports:
       - "127.0.0.1:3001:3001"
     volumes:
-      # Uploads da planilha e novas thumbs permanecem no host entre rebuilds.
+      # Novas thumbs e a planilha (fora do Git, em data/) permanecem no host entre rebuilds.
       - ./public:/app/public
+      - ./data:/app/data
     healthcheck:
       test:
         [

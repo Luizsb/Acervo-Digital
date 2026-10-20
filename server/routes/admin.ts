@@ -14,9 +14,9 @@ import {
   REVIEW_GROUP_ORDER,
   type ReviewGroup,
 } from '../lib/catalogVisibility';
-import { findWorkbook } from '../scripts/import-categorizacao';
+import { findWorkbook, thumbFilePath, thumbsDir, writableWorkbookPath } from '../lib/acervoPaths';
 import { captureMissingThumbs } from '../scripts/capture-thumbs';
-import { isPlaceholderResourceCode } from '../scripts/map-categorizacao';
+import { isPlaceholderResourceCode } from '../lib/map-categorizacao';
 import {
   downloadGoogleSheetToWorkbook,
   getGoogleSheetsSource,
@@ -162,13 +162,14 @@ router.post(
         return res.status(400).json({ error: 'Selecione a planilha .xlsx para sincronizar.' });
       }
 
-      const targetPath = findWorkbook();
+      const targetPath = writableWorkbookPath();
       const backupPath = `${targetPath}.bak`;
       if (fs.existsSync(targetPath)) fs.copyFileSync(targetPath, backupPath);
       fs.writeFileSync(targetPath, file.buffer);
 
       const job = beginSpreadsheetImport(file.originalname, targetPath, {
         source: 'upload',
+        actor: req.user?.email,
         onSuccess: () => {
           if (fs.existsSync(backupPath)) fs.unlinkSync(backupPath);
         },
@@ -191,7 +192,7 @@ router.post(
   }
 );
 
-router.post('/spreadsheet/from-google', async (_req, res) => {
+router.post('/spreadsheet/from-google', async (req: AuthRequest, res) => {
   try {
     if (getActiveSpreadsheetJobId()) {
       return res.status(409).json({
@@ -207,7 +208,7 @@ router.post('/spreadsheet/from-google', async (_req, res) => {
       });
     }
 
-    const targetPath = findWorkbook();
+    const targetPath = writableWorkbookPath();
     const backupPath = `${targetPath}.bak`;
     if (fs.existsSync(targetPath)) fs.copyFileSync(targetPath, backupPath);
 
@@ -224,6 +225,7 @@ router.post('/spreadsheet/from-google', async (_req, res) => {
 
     const job = beginSpreadsheetImport(`Google Sheets (${downloaded.sheetId})`, targetPath, {
       source: 'google',
+      actor: req.user?.email,
       onSuccess: () => {
         if (fs.existsSync(backupPath)) fs.unlinkSync(backupPath);
       },
@@ -262,15 +264,14 @@ router.get('/spreadsheet/status', async (_req, res) => {
     const stats = fs.statSync(filePath);
     const activeItems = await prisma.oDA.findMany({
       where: { ativo: true },
-      select: { codigoOda: true, titulo: true, status: true, linkRepositorio: true },
+      select: { codigoOda: true, titulo: true, marca: true, status: true, linkRepositorio: true },
       orderBy: { titulo: 'asc' },
     });
-    const thumbsPath = path.join(path.dirname(filePath), 'thumbs');
+    const thumbsPath = thumbsDir();
     const missingThumbs = activeItems
       .filter((item) => {
-        if (isPlaceholderResourceCode(item.codigoOda)) return false;
-        const code = String(item.codigoOda || '').replace(/\.(webp|jpg|jpeg|png)$/i, '');
-        return Boolean(code) && !fs.existsSync(path.join(thumbsPath, `${code}.webp`));
+        if (!item.codigoOda || isPlaceholderResourceCode(item.codigoOda)) return false;
+        return !fs.existsSync(thumbFilePath(item.codigoOda, item.marca, thumbsPath));
       })
       .map((item) => ({
         codigo: item.codigoOda,

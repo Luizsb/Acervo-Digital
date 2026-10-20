@@ -1,38 +1,23 @@
 /**
- * Compara a planilha atual com a versão do Git (HEAD) e lista códigos sem thumb em disco.
+ * Compara a planilha atual com a última importada com sucesso e lista códigos sem thumb em disco.
  * Não precisa do Postgres.
  *
  * Uso: npx tsx scripts/diff-planilha.ts [caminho-planilha-antiga]
  */
 import fs from 'fs';
 import path from 'path';
-import { execSync } from 'child_process';
 import { createHash } from 'crypto';
 import { readWorksheetMatrix } from '../lib/excel';
-import { mapCategorizacaoRow, type CategorizacaoRow } from './map-categorizacao';
+import { mapCategorizacaoRow, type CategorizacaoRow } from '../lib/map-categorizacao';
 import { isVisibleInCatalog } from '../lib/catalogVisibility';
-
-const SHEET_NAME = 'Recursos Digitais';
-const HEADER_ROW = 1;
-const DATA_START_ROW = 4;
-
-function findWorkbook(): string {
-  const candidates = [
-    path.join(process.cwd(), '..', 'public', 'Categorização_Recursos Digitais_Terceiros.xlsx'),
-    path.join(process.cwd(), 'public', 'Categorização_Recursos Digitais_Terceiros.xlsx'),
-  ];
-  const found = candidates.find((p) => fs.existsSync(p));
-  if (!found) throw new Error('Planilha atual não encontrada em public/');
-  return found;
-}
-
-function thumbsDirFromWorkbook(workbook: string): string {
-  return path.join(path.dirname(workbook), 'thumbs');
-}
-
-function thumbPath(thumbsDir: string, codigo: string): string {
-  return path.join(thumbsDir, `${codigo.replace(/\.(webp|jpg|jpeg|png)$/i, '')}.webp`);
-}
+import {
+  findWorkbook,
+  lastImportedWorkbookPath,
+  metodologiaDir,
+  thumbFilePath,
+  thumbsDir as resolveThumbsDir,
+} from '../lib/acervoPaths';
+import { DATA_START_ROW, HEADER_ROW, SHEET_NAME } from '../lib/planilhaLayout';
 
 function sourceHash(value: unknown): string {
   return createHash('sha256').update(JSON.stringify(value)).digest('hex');
@@ -41,12 +26,13 @@ function sourceHash(value: unknown): string {
 async function loadMapped(filePath: string) {
   const { rows: matrix } = await readWorksheetMatrix(filePath, SHEET_NAME);
   const headers = (matrix[HEADER_ROW] || []).map((h) => String(h).trim());
-  const pdfDir = path.join(path.dirname(filePath), 'metodologia');
+  const pdfDir = metodologiaDir();
   const byCode = new Map<
     string,
     {
       hash: string;
       titulo: string;
+      marca: string | null;
       status: string | null;
       imagem: string | null;
       linkRepositorio: string | null;
@@ -71,6 +57,7 @@ async function loadMapped(filePath: string) {
     byCode.set(mapped.codigoOda, {
       hash: sourceHash(mapped),
       titulo: mapped.titulo,
+      marca: mapped.marca,
       status: mapped.status,
       imagem: mapped.imagem,
       linkRepositorio: mapped.linkRepositorio,
@@ -80,31 +67,21 @@ async function loadMapped(filePath: string) {
   return { byCode, skipped, rows: matrix.length - DATA_START_ROW };
 }
 
-function extractHeadWorkbook(dest: string): boolean {
-  try {
-    const blob = execSync('git show "HEAD:public/Categorização_Recursos Digitais_Terceiros.xlsx"', {
-      maxBuffer: 30 * 1024 * 1024,
-      encoding: 'buffer',
-    }) as Buffer;
-    fs.writeFileSync(dest, blob);
-    return blob.length > 1000;
-  } catch {
-    return false;
-  }
-}
-
 async function main() {
   const current = findWorkbook();
-  const thumbsDir = thumbsDirFromWorkbook(current);
+  const thumbsDir = resolveThumbsDir();
   const oldArg = process.argv[2];
-  const oldPath = oldArg || path.join(process.cwd(), '.tmp-planilha-head.xlsx');
+  const oldPath = oldArg
+    ? path.resolve(process.env.INIT_CWD || process.cwd(), oldArg)
+    : lastImportedWorkbookPath();
 
-  if (!oldArg) {
-    const ok = extractHeadWorkbook(oldPath);
-    if (!ok) {
-      console.error('Não foi possível ler a planilha do HEAD no Git.');
-      process.exit(1);
-    }
+  if (!fs.existsSync(oldPath)) {
+    console.error(
+      `Base de comparação não encontrada: ${oldPath}\n` +
+        'Ela é gravada ao fim de cada importação sem erros. Rode a importação uma vez ' +
+        'ou informe a planilha anterior: npm run diff:planilha -- caminho/da/anterior.xlsx'
+    );
+    process.exit(1);
   }
 
   console.log(`Atual: ${current}`);
@@ -132,7 +109,7 @@ async function main() {
     linkRepositorio: string | null;
   }[] = [];
   for (const [codigo, item] of now.byCode) {
-    const file = thumbPath(thumbsDir, codigo);
+    const file = thumbFilePath(codigo, item.marca, thumbsDir);
     if (!fs.existsSync(file)) {
       missingThumbs.push({
         codigo,
@@ -152,7 +129,7 @@ async function main() {
     statusCounts.set(key, (statusCounts.get(key) || 0) + 1);
   }
 
-  console.log('\n=== Diff planilha (vs HEAD) ===');
+  console.log('\n=== Diff planilha (vs última importada) ===');
   console.log(`Linhas úteis agora: ${now.byCode.size} (puladas: ${now.skipped})`);
   console.log(`Linhas úteis antes: ${before.byCode.size}`);
   console.log(`Novos códigos:      ${created.length}`);
@@ -190,8 +167,6 @@ async function main() {
     missingPublic.slice(0, 40).forEach((m) => console.log(`  ! ${m.codigo} — ${m.titulo}`));
     if (missingPublic.length > 40) console.log(`  ... +${missingPublic.length - 40} mais`);
   }
-
-  if (!oldArg && fs.existsSync(oldPath)) fs.unlinkSync(oldPath);
 }
 
 main().catch((err) => {

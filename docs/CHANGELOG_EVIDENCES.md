@@ -10,6 +10,424 @@ trazem a seção "Impacto observado" com dado medido: nenhuma métrica foi colet
 
 ---
 
+## 2026-10-20 · 10:25 — Recaptura das capas ruins
+
+### Antes
+
+O responsável revisou as capas nas pastas novas e apagou as que estavam com captura
+errada.
+
+### Depois
+
+`npm run thumbs:capture` refez 88 capas em cerca de 15 minutos, quase todas
+`SAE26_..._VA1` e `SAE26_..._OA1`. Falharam os 4 códigos de Inglês de sempre.
+
+### Decisão
+
+A recaptura usa as mesmas esperas de sempre. Três capas continuam ruins por motivo
+que a captura não resolve:
+
+- `SAE25_EI_G4_BL4_UT7_OA1`: o link redireciona para a página inicial do SAE Digital.
+- `IMP/94/CLA11` e `IMP/EM03/LLA29`: a página é um player de vídeo, e a captura pega
+  o quadro preto antes de tocar.
+
+### Evidência
+
+- Log: "Captura concluída: 88 ok, 0 pulados, 4 falhas, 0 sem link".
+- Conferência visual por amostragem:
+  - `SAE26_AF72_CIE_C04_VA1` e `SAE26_AF72_ING_C07_OA1` corretas; o vídeo é vertical
+    e aparece com faixas brancas nas laterais;
+  - as três acima, ruins.
+
+### Impacto observado
+
+`[A VALIDAR]` Só depois do deploy.
+
+### Próximos passos
+
+1. Corrigir o link de `SAE25_EI_G4_BL4_UT7_OA1` na planilha.
+2. Avaliar captura de vídeo que dê play ou use o pôster do vídeo, para páginas com
+   player.
+3. Seguir a publicação: commit e push, importação, `--atualizar-historico`,
+   `--remover-antigas`.
+
+---
+
+## 2026-10-20 · 10:00 — Revisão dos scripts npm
+
+### Antes
+
+- Captura pela linha de comando:
+  - `thumbs:capture` lia do banco;
+  - `thumbs:capture:planilha` lia da planilha, que inclui os recursos adiados pela
+    importação.
+- `db:down` e `docker:down` rodavam o mesmo `docker compose down`.
+- `prisma:migrate` fazia `migrate deploy` na raiz e `migrate dev` no `server/`: mesmo
+  nome, efeitos diferentes.
+- `server/scripts/map-categorizacao.ts` era biblioteca, usada pela rota do admin e
+  por quatro scripts, mas ficava junto dos scripts.
+
+### Depois
+
+- `npm run thumbs:capture` lê da planilha. `-- --do-banco` mantém o comportamento
+  antigo. O botão do admin e a captura depois da sincronização continuam lendo do
+  banco.
+- Saem `thumbs:capture:planilha` e `db:down`. Para parar o Postgres, use
+  `docker:down`.
+- `prisma:migrate` no `server/` vira `prisma:migrate:dev`. Na raiz, `prisma:migrate`
+  continua aplicando as migrações e passa a chamar `prisma:migrate:deploy`.
+- `map-categorizacao.ts` foi para `server/lib/` com `git mv`.
+
+### Decisão
+
+O nome `prisma:migrate` foi mantido na raiz porque é citado no README, no SDD, no
+`rls.sql` e na mensagem de erro do `App.tsx`, sempre como "aplicar migrações". Os
+demais scripts de `server/scripts/` têm função própria e ficam. `organize-thumbs` sai
+depois da migração das capas.
+
+### Evidência
+
+- `npx tsc --noEmit` no `server/` passando.
+- `npm test`: 53 testes passando.
+- `npm run thumbs:capture -- --limit=1`: "Origem da lista: planilha em data/" e
+  "Thumbs a capturar: 1". A execução foi interrompida em seguida.
+- Nenhuma referência aos nomes antigos em Dockerfile, compose, scripts de deploy ou
+  CI. O `docker-entrypoint.sh` chama `prisma migrate deploy` direto.
+
+### Impacto observado
+
+Um comando a menos para lembrar na captura. `[A VALIDAR]` Não há métrica.
+
+### Próximos passos
+
+Remover `organize-thumbs` depois do `--remover-antigas`.
+
+---
+
+## 2026-10-20 · 09:45 — Capas organizadas por pasta de marca
+
+### Antes
+
+As capas ficavam soltas em `public/thumbs/{codigo}.webp`. Os códigos da Conquista
+(`IMP/63/ALA19`) viravam subpastas `IMP/63/`, e os 148 que terminam em `/` geravam um
+arquivo chamado só `.webp`. A regra do caminho estava repetida em sete pontos: captura,
+importação, mapeamento da planilha, `diff:planilha`, auditoria de capas do admin e
+dois pontos do front.
+
+### Depois
+
+- **Estrutura nova:** `public/thumbs/{marca}/{arquivo}.webp`, com pastas `sae/` e
+  `conquista/`. Marca nova ganha pasta sozinha.
+- **Nome do arquivo:** é o código com a barra trocada por `_`, então `IMP/63/ALA19/`
+  vira `conquista/IMP_63_ALA19.webp`.
+- **Regra centralizada:** `server/lib/thumbPaths.ts`, com espelho em
+  `src/utils/thumbPaths.ts`, e `thumbFilePath` em `acervoPaths.ts`. Os sete pontos
+  passam a usá-la.
+- **Script novo `npm run thumbs:organizar`:** simula por padrão e tem as opções
+  `--aplicar`, `--atualizar-historico` e `--remover-antigas`.
+- **Capas copiadas:** 2522 para as pastas novas. A estrutura antiga continua no lugar
+  até o banco apontar para os caminhos novos.
+
+### Decisão
+
+- **Pastas em minúsculas:** o Windows não diferencia caixa e a Vercel diferencia,
+  então "Conquista" e "conquista" na planilha virariam uma pasta aqui e duas no deploy.
+- **Código `IMP/...` com a marca em branco vai para `conquista/`:** decisão do
+  responsável. São 293 linhas.
+- **O código no banco não muda, só o caminho da capa.** Isso substitui a decisão
+  anterior de publicar os arquivos `.webp` sem nome, que deixaram de existir.
+- **Migração em três passos:** copiar, importar e só então apagar. Assim nenhum card
+  fica sem capa entre o deploy e a importação. Copiar não aumenta o repositório,
+  porque o Git guarda conteúdo idêntico uma vez só.
+- **Histórico do admin:** `import_events` também é atualizado
+  (`--atualizar-historico`), por decisão do responsável, para as miniaturas antigas
+  continuarem aparecendo.
+- **Códigos que dividem capa geram aviso, não bloqueio:** os dois pares encontrados
+  são o mesmo recurso repetido na planilha.
+
+### Evidência
+
+- `npm test`: 53 testes passando, 9 deles novos em `src/utils/thumbPaths.test.ts`,
+  incluindo "Conquista", "conquista" e "CONQUISTA" caindo na mesma pasta.
+  Um desses testes compara o front com o servidor.
+- `npx tsc --noEmit` no `server/` e `npm run build` passando. Antes, foi preciso rodar
+  `npx prisma generate`: o cliente local estava sem o model `AuditEvent`.
+- Simulação do `thumbs:organizar`:
+  - 2651 códigos na planilha;
+  - 2522 capas a copiar;
+  - 128 códigos sem capa;
+  - 15 arquivos não referenciados: 14 capas `SAE25_..._ING_...` e `.gitkeep`;
+  - 2 capas compartilhadas: `IMP/24/GLA10` com `IMP/24/GLA10/` e `IMP/61/ILA19` com
+    `IMP/61/ILA19/`, as duas linhas com mesmo título e mesmo link.
+- `--aplicar`: "Copiadas: 2522". Resultado: `sae/` com 1718 arquivos e `conquista/`
+  com 804.
+
+### Impacto observado
+
+`[A VALIDAR]` Ainda não publicado. Depois do deploy e da importação, conferir na
+galeria uma capa SAE e uma Conquista, inclusive um código terminado em `/`.
+
+### Próximos passos
+
+1. O responsável apaga as capas ruins nas pastas novas e roda
+   `npm run thumbs:capture:planilha`.
+2. Commit e push, com as duas estruturas juntas, e esperar o deploy.
+3. Rodar `npm run import:categorizacao:com-capa` e
+   `npm run thumbs:organizar -- --atualizar-historico` contra o Supabase.
+4. Rodar `npm run thumbs:organizar -- --remover-antigas`, depois commit e push.
+
+---
+
+## 2026-10-20 · 09:15 — Captura das capas restantes da planilha nova
+
+### Antes
+
+Cerca de 1050 recursos visíveis da planilha nova estavam sem capa e por isso foram
+adiados pela importação `--somente-com-capa`. Na véspera, 254 capas foram
+capturadas e ficaram sem commit. No início desta rodada, faltavam 757.
+
+### Depois
+
+`npm run thumbs:capture:planilha`, sem limite, capturou 753 capas. Quatro códigos
+continuam sem capa, todos presos na tela de carregamento após 3 tentativas:
+`EF21_9_ING_L2_U4_01_od2`, `EF22_9_ING_L4_U7_01_OD1`, `EF21_8_ING_L3_U6_01_OD1` e
+`EF21_8_ING_L4_U7_02_OD1`. As capas ainda não foram publicadas.
+
+### Decisão
+
+A captura rodou inteira, sem lotes de 100, porque o script pula o que já existe e
+pode ser interrompida e retomada sem perda. Nenhum código foi alterado.
+
+Todos os 753 itens capturados têm código `IMP/...`, que vira subpasta em
+`public/thumbs/`. Isso foi mantido porque captura, importação e front montam o mesmo
+caminho `/thumbs/{codigo}.webp`. Os 151 códigos que terminam em `/` ou em
+`index_.html` vieram assim da planilha e foram registrados como bug conhecido em
+`ROADMAP.md`, sem correção nesta rodada.
+
+### Evidência
+
+- Log da execução: "Captura concluída: 753 ok, 0 pulados, 4 falhas, 0 sem link",
+  em cerca de 1h31 (de 07:42 às 09:13).
+- `public/thumbs/IMP/` com 805 arquivos, sendo 149 chamados `.webp`.
+- Conferência visual por amostragem de `IMP/61/ALA3`, `IMP/63/ALA19/` e
+  `IMP/43/MLA10`: as três mostram o recurso, não a tela de carregamento.
+
+### Impacto observado
+
+Ritmo de cerca de 8 capas por minuto, o dobro da primeira rodada (400 por hora).
+`[A VALIDAR]` A galeria só cresce depois do push das capas e da importação
+`--somente-com-capa`; medir o total antes e depois.
+
+### Próximos passos
+
+1. Publicar as capas (commit e push, feito pelo responsável) e esperar o deploy da
+   Vercel. Decisão do responsável: os códigos `IMP/...` vão como estão.
+2. Rodar `npm run import:categorizacao:com-capa` contra o Supabase.
+3. Abrir na galeria um recurso cujo código termina em `/` (ex.: `IMP/63/ALA19/`) e
+   conferir se a capa aparece. Se não aparecer, corrigir os códigos na planilha.
+4. Investigar os 4 códigos de Inglês que não geram capa.
+
+---
+
+## 2026-10-20 · 08:55 — Resposta ao relatório de segurança: validações, auditoria, privacidade e migração
+
+### Antes
+
+- O CI só rodava testes e build. Não havia SAST, SCA nem análise de IaC. A API tinha 8
+  vulnerabilidades conhecidas nas dependências: 1 crítica, 3 altas e 4 moderadas.
+- Não existia trilha de auditoria de login, mudança de papel ou alteração de dados.
+- Não havia matriz de permissões, inventário de dados pessoais nem aviso de
+  privacidade.
+- Não havia caminho documentado para migrar para outro servidor.
+
+### Depois
+
+- **SCA:** `npm audit --omit=dev --audit-level=high` no CI, no front e na API
+  (reprova o build), e Dependabot semanal para npm e GitHub Actions.
+- **SAST e IaC:** `.github/workflows/seguranca.yml` com CodeQL (`security-extended`)
+  e Trivy em modo de configuração, a cada push e toda segunda-feira, com o resultado
+  enviado à aba *Code scanning*. A Trivy Action está fixada por SHA.
+- **Dependências da API:** `npm audit fix`, chegando a 0 vulnerabilidades.
+- **Trilha de auditoria:** tabela `audit_events` (migração `20261020120000`), com RLS
+  e sem acesso pela Data API.
+  - O Express registra login, falha de login com motivo e IP, importação (inclusive
+    pela linha de comando) e criação, edição e exclusão de recurso.
+  - Um gatilho na tabela `users` registra mudança de papel.
+  - Em `rls.sql`, o gatilho `audit_auth_user_change` registra login e mudança de
+    papel no Supabase.
+- **`SDD.md`, seção nova "Segurança e privacidade":** matriz de permissões, consulta
+  de relatório de usuários, trilha de auditoria e suas limitações, inventário de
+  dados pessoais com retenção proposta, rascunho do aviso de privacidade, MFA como
+  risco aceito, cofre pendente e tabela de validações automáticas.
+- **Migração:** `npm run db:exportar` e runbook "Migrar para o servidor corporativo".
+- **Graphify** instalado como ferramenta local (`uv tool`), com `.graphifyignore`,
+  `graphify-out/` fora do Git e a regra do Cursor local.
+
+### Decisão
+
+- O MFA fica como risco aceito no ambiente de testes e chega com o JumpCloud.
+- O aviso de privacidade terá texto próprio, a aprovar pela DPO.
+- O cofre de senhas depende de resposta da Segurança.
+- Auditoria no próprio Postgres, e não em serviço externo, para migrar junto com o
+  banco e funcionar nos dois backends. A falha de auditoria não bloqueia a operação
+  auditada.
+- A trilha não tem política de leitura para admin: com o botão de admin
+  compartilhado, qualquer visitante a leria.
+
+### Evidência
+
+- `npm audit` da API: 8 vulnerabilidades → 0.
+- PGlite, com Postgres real em WebAssembly e o esquema `auth` simulado: 18
+  verificações passaram.
+  - As 9 migrações em ordem.
+  - Mudança de papel gera um evento; repetir o mesmo papel não gera.
+  - `audit_events` com RLS e sem grants.
+  - `rls.sql` aplicado duas vezes sem erro.
+  - Login e mudança de papel em `auth.users` registrados; `user_metadata` não gera
+    evento.
+  - `is_acervo_admin()` ignora `user_metadata`.
+  - Login funciona com a auditoria indisponível.
+- `prisma validate` ok e `tsc --noEmit` da API sem erro, com o cliente Prisma novo
+  gerado à parte (a captura de capas em andamento travava o cliente padrão).
+- `npm test`: 44 testes passando.
+- Graphify: grafo só de código com 753 nós, 1704 relações e 42 grupos, com
+  `GRAPH_REPORT.md` gerado.
+
+### Impacto observado
+
+`[A VALIDAR]` Depois do primeiro push, conferir os achados de CodeQL e Trivy na aba
+*Security* e decidir quais tratar. Depois de aplicar a migração no Supabase, conferir
+os primeiros eventos em `audit_events`.
+
+### Próximos passos
+
+Estão no `ROADMAP.md`, seção "Resposta ao relatório do Comitê Security by Design":
+aplicar a migração e o `rls.sql`, ativar os alertas do Dependabot, levar o
+inventário à DPO e perguntar à Segurança sobre o cofre e o destino da auditoria.
+
+---
+
+## 2026-10-20 · 08:40 — Planilha preparada só com o necessário e rumo pós-relatório de segurança
+
+### Antes
+
+A planilha baixada do Drive ia inteira para `data/`: 29 abas, 8,2 MB, logs do Apps
+Script com e-mails de quem a operou e a coluna "Avaliador" com nomes de pessoas.
+Nenhum desses dados é usado pelo Acervo. A estrutura da aba (nome, cabeçalho, início
+dos dados) estava repetida em três scripts. Os documentos tratavam a Vercel como
+produção e a planilha como origem genérica.
+
+### Depois
+
+- `npm run planilha:preparar -- "arquivo-baixado.xlsx"`
+  (`server/scripts/preparar-planilha.ts`) grava em `data/` só a aba `Recursos
+  Digitais`, só valores, sem as colunas de `PERSONAL_DATA_COLUMNS` e sem os metadados
+  do arquivo original.
+- `server/lib/planilhaLayout.ts` centraliza a estrutura da aba e a lista de colunas
+  pessoais. Importação, `diff:planilha` e captura de capas usam esse módulo.
+- `diff:planilha` e `planilha:preparar` resolvem caminho relativo a partir da pasta
+  onde o `npm` foi chamado.
+- `SOBRE.md`, `SDD.md` e `ROADMAP.md` registram as decisões abaixo, e o runbook ganhou
+  "Promover ou rebaixar administrador".
+
+### Decisão
+
+Decisões do responsável depois do relatório do Comitê Security by Design:
+
+- A Vercel com o Supabase é ambiente de testes.
+- O destino é um servidor corporativo com JumpCloud; a VPN pode ser dispensada se o
+  comitê aceitar.
+- O repositório continua público até o GitHub da ArcoTech, com migração de histórico
+  limpo.
+- A planilha oficial é do NDE, no Drive.
+- O admin é concedido pelo banco, sem tela, para não criar fluxo de dados pessoais
+  na interface.
+
+Contatos de TI e de Gestão de Acessos ficam fora do repositório, que é público.
+
+### Evidência
+
+- `npm run planilha:preparar` sobre a planilha atual: 1 aba mantida, 28 descartadas,
+  coluna "Avaliador" removida, 8,2 MB → 1,3 MB.
+- O arquivo resultante tem só a aba `Recursos Digitais`, nenhuma célula com e-mail e
+  o criador "Acervo Digital".
+- `npm run diff:planilha` do arquivo preparado contra a planilha completa: 2651 linhas
+  úteis nos dois, 0 novos, 0 alterados, 0 removidos. A preparação não muda nada do
+  que o importador lê.
+- `cd server && npx tsc --noEmit` sem erro.
+
+### Impacto observado
+
+`[A VALIDAR]` Na próxima atualização real do catálogo, confirmar que o fluxo download
+→ preparar → diff → importar funciona para quem opera.
+
+### Próximos passos
+
+Os itens abertos estão no `ROADMAP.md`, seção "Resposta ao relatório do Comitê
+Security by Design".
+
+---
+
+## 2026-10-20 · 07:50 — Contenção de segurança: planilha fora do site e papel admin só pelo servidor
+
+### Antes
+
+A planilha de categorização ficava em `public/` e era versionada no Git. Tudo em
+`public/` é publicado pela Vercel como arquivo estático, então a planilha inteira podia
+ser baixada pela URL do site sem login, inclusive os recursos que não entram na
+galeria. As abas de log do Apps Script trazem e-mails de quem operou a planilha, o que
+é dado pessoal.
+
+No modo Supabase, o papel de administrador era aceito tanto de `app_metadata` quanto de
+`user_metadata`, em `is_acervo_admin()` e em `roleFromUser`. O `user_metadata` é
+editável pelo próprio usuário.
+
+### Depois
+
+- A planilha mora em `data/`, fora de `public/` e ignorada pelo Git (`/data/` e
+  `public/**/*.xlsx` no `.gitignore`). `ACERVO_DATA_DIR` permite outro diretório.
+- `server/lib/acervoPaths.ts` centraliza os caminhos de planilha, capas e metodologia.
+  Importação, captura de capas, `diff:planilha` e as rotas de upload do Express usam
+  esse módulo.
+- O `diff:planilha` compara com `data/ultima-importada.xlsx`, gravada ao fim de cada
+  importação sem erros, em vez de ler a versão do Git.
+- O seed (`npm run setup` e Docker) pula o catálogo com aviso quando a planilha não
+  está em `data/`, em vez de derrubar o container.
+- `docker-compose.yml` monta `./data:/app/data` na API.
+- `vite.config.ts` deixou de tratar `.xlsx` como asset.
+- Papel de administrador lido só de `app_metadata`, no SQL e no front.
+
+### Decisão
+
+Contenção aprovada pelo responsável depois da leitura do relatório do Comitê Security
+by Design. O código continua no repositório pessoal e a hospedagem continua em Vercel
+e Supabase Free durante o MVP, porque ainda não há acesso ao GitHub da Arco nem
+destino de hospedagem definido.
+
+### Evidência
+
+- `npm test`: 8 arquivos, 44 testes passando, incluindo `src/utils/supabaseApi.test.ts`
+  (papel em `user_metadata` é ignorado).
+- `npm run build` sem erro e nenhum `.xlsx` em `dist/`.
+- `cd server && npx tsc --noEmit` sem erro.
+- `npm run diff:planilha` lendo a planilha de `data/` e a base `ultima-importada.xlsx`.
+
+### Impacto observado
+
+`[A VALIDAR]` Depois do deploy, confirmar que a URL antiga da planilha no domínio da
+Vercel responde 404.
+
+### Próximos passos
+
+1. Aplicar `scripts/supabase/rls.sql` no *SQL Editor* do Supabase. Antes, confirmar que
+   os administradores reais têm `role: admin` em `app_metadata`.
+2. Fazer o deploy e conferir o 404 da planilha.
+3. A planilha continua no histórico do Git. Decidir entre tornar o repositório privado
+   ou reescrever o histórico.
+4. Alinhar com o responsável o restante do plano de resposta ao relatório.
+
+---
+
 ## 2026-10-19 · 16:25 — ODAs abrem em nova guia
 
 ### Antes

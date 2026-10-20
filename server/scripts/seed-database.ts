@@ -4,6 +4,7 @@ import BetterSqlite3 from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
 import { importCategorizacao } from './import-categorizacao';
+import { workbookPath } from '../lib/acervoPaths';
 
 const prisma = new PrismaClient();
 const DEMO_EMAIL = 'demo@acervo.local';
@@ -137,6 +138,14 @@ async function seedDemoUser() {
 }
 
 async function seedCatalog() {
+  const planilha = workbookPath();
+  if (!fs.existsSync(planilha)) {
+    console.warn(
+      `⚠️  Planilha não encontrada em ${planilha}. Catálogo não importado.\n` +
+        '   Salve a planilha oficial nesse caminho e rode npm run import:categorizacao.'
+    );
+    return;
+  }
   console.log('Importando planilha de categorização...');
   await importCategorizacao();
 }

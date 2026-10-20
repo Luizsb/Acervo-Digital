@@ -1,7 +1,7 @@
 import fs from 'fs';
 import express from 'express';
 import multer from 'multer';
-import { findWorkbook } from '../scripts/import-categorizacao';
+import { writableWorkbookPath } from '../lib/acervoPaths';
 import { captureMissingThumbs } from '../scripts/capture-thumbs';
 import {
   beginSpreadsheetImport,
@@ -98,7 +98,7 @@ router.post(
         });
       }
 
-      const targetPath = findWorkbook();
+      const targetPath = writableWorkbookPath();
       const backupPath = `${targetPath}.bak`;
       if (fs.existsSync(targetPath)) fs.copyFileSync(targetPath, backupPath);
       fs.writeFileSync(targetPath, file.buffer);

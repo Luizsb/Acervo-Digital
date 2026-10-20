@@ -7,8 +7,9 @@ rascunhos de trabalho e não substituem o que está aqui.
 
 ## Status geral
 
-**Em produção e em uso**, hospedado na Vercel com banco e autenticação no Supabase.
-O Lançamento 1 está entregue. O projeto entra em setembro de 2026 num período de
+**MVP em ambiente de testes**, na Vercel com banco e autenticação no Supabase Free.
+O destino é um servidor corporativo da Arco com SSO JumpCloud. O Lançamento 1 está
+entregue. O projeto entra em setembro de 2026 num período de
 **transferência de responsabilidade**, com o mantenedor original em férias.
 
 A prioridade neste momento não é funcionalidade nova: é garantir que a operação do
@@ -76,16 +77,91 @@ Resposta à perda de acesso à EC2, com custo zero.
 - ✅ Importação por fases (`import:categorizacao:com-capa`) e planilha nova versionada
 - ✅ Corrigir o limite de 1000 linhas do catálogo no modo Supabase (paginação em
   `supabaseFetchOdas`)
-- ✅ Captura de capas a partir da planilha (`thumbs:capture:planilha`)
+- ✅ Captura de capas a partir da planilha (hoje o padrão de `thumbs:capture`)
 - ✅ Importar a planilha nova no Supabase só com os recursos que já têm capa (galeria
   de 997 para 1459 recursos)
 - ✅ ODAs abrem em nova guia; só o audiovisual continua no modal
-- 🔄 Capturar as capas restantes em lotes: cerca de 1050 recursos visíveis da
-  planilha nova sem capa, com `npm run thumbs:capture:planilha -- --limit=100`,
-  repetindo a importação a cada lote
-- ⬜ Investigar `EF21_9_ING_L2_U4_01_od2` e `EF22_9_ING_L4_U7_01_OD1`, presos na tela
-  de carregamento na captura
+- ✅ Capturar as capas restantes da planilha nova: 753 capturadas em 20/10, só 4
+  códigos ficaram sem capa
+- ✅ Capas organizadas por marca (`public/thumbs/sae/`, `conquista/`...), com a regra
+  do caminho centralizada em `thumbPaths.ts` e o script `thumbs:organizar`. Cópia
+  local feita em 20/10: 2522 capas
+- ✅ Revisão dos scripts: `thumbs:capture` lê da planilha por padrão (sai o
+  `thumbs:capture:planilha`), sai o `db:down` duplicado, `prisma:migrate` do
+  `server/` vira `prisma:migrate:dev` e `map-categorizacao` vai para `server/lib/`
+- ✅ Recapturar as capas que saíram ruins: 88 refeitas em 20/10
+- ⬜ Corrigir na planilha o link de `SAE25_EI_G4_BL4_UT7_OA1`, que cai na página
+  inicial do SAE Digital
+- ⬜ Captura de páginas com player de vídeo (`IMP/94/CLA11`, `IMP/EM03/LLA29`): hoje
+  sai o quadro preto; avaliar dar play ou usar o pôster do vídeo
+- ⬜ Publicar as capas (commit e push, com caminho antigo e novo juntos), rodar
+  `npm run import:categorizacao:com-capa` e `thumbs:organizar --atualizar-historico`
+  contra o Supabase e, por fim, `thumbs:organizar --remover-antigas` com novo push
+- ⬜ Remover `server/scripts/organize-thumbs.ts` e o comando `thumbs:organizar`
+  depois do `--remover-antigas`
+- ⬜ Investigar `EF21_9_ING_L2_U4_01_od2`, `EF22_9_ING_L4_U7_01_OD1`,
+  `EF21_8_ING_L3_U6_01_OD1` e `EF21_8_ING_L4_U7_02_OD1`, presos na tela de
+  carregamento na captura
+- ⬜ Decidir o destino das 14 capas `SAE25_..._ING_...` que saíram da planilha e
+  continuam soltas em `public/thumbs/`
 
+### Resposta ao relatório do Comitê Security by Design 🔄 Em andamento
+
+Relatório recebido com risco geral **alto**, avaliado quando o Acervo ainda era uma
+ferramenta de cadastro.
+
+**Decisões do responsável (2026-10-20):**
+
+- A Vercel com o Supabase é o **ambiente de testes** do MVP.
+- O destino é um **servidor corporativo da Arco** com **SSO JumpCloud**. A
+  integração é feita quando o servidor existir. O pedido de servidor segue o caminho
+  TI → Requisição → Infraestrutura → Configuração em servidores; o contato de
+  JumpCloud está com o responsável.
+- Com JumpCloud e MFA, a hipótese é dispensar a VPN. `[A VALIDAR]` Depende de aceite
+  formal do comitê.
+- O repositório continua público até haver um repositório no GitHub da ArcoTech.
+  Tudo deve estar pronto para a migração, que leva histórico limpo.
+- A planilha oficial é do **NDE, no Drive da empresa**. Ela não é lida
+  automaticamente porque a TI bloqueia; entra por download manual e passa pelo
+  `planilha:preparar`. O banco é o local oficial dos dados.
+- Gestão de administradores **pelo banco**, sem tela, restrita a e-mails
+  `@arcoeducacao.com.br` dos times de Interações Digitais e Acervo.
+- O acesso à planilha no Drive, inclusive de terceiros, é responsabilidade do NDE, que
+  já conhece o apontamento da Gestão de Acessos.
+
+**Itens:**
+
+- ✅ Contenção: planilha fora de `public/` e do Git; papel de administrador lido só de
+  `app_metadata`
+- ✅ `npm run planilha:preparar`: só a aba Recursos Digitais, só valores, sem a coluna
+  Avaliador
+- ✅ Procedimento de promover e rebaixar admin documentado no runbook do `SDD.md`
+- ✅ SAST, SCA e IaC: CodeQL, `npm audit` no CI, Dependabot e Trivy. Vulnerabilidades
+  da API zeradas (eram 1 crítica, 3 altas e 4 moderadas)
+- ✅ Trilha de auditoria `audit_events` nos dois backends: login, falha de login
+  (Express), mudança de papel, importação e alteração de recurso
+- ✅ Matriz de permissões e consulta de relatório de usuários e perfis (`SDD.md`)
+- ✅ Inventário de dados pessoais, retenção proposta e rascunho do aviso de
+  privacidade, para a DPO (`SDD.md`)
+- ✅ `npm run db:exportar` e runbook de migração para o servidor corporativo
+- ✅ Graphify como ferramenta local de mapa do código
+- ✅ MFA: risco aceito no ambiente de testes; vem com o JumpCloud
+- ⬜ Aplicar no Supabase: `npm run prisma:migrate` (cria `audit_events`) e depois
+  `scripts/supabase/rls.sql`, depois de confirmar que a conta do botão admin
+  (`admin@acervo.local`) tem o papel em `app_metadata`
+- ⬜ Deploy e conferência de que a URL antiga da planilha responde 404
+- ⬜ Ativar no GitHub *Dependabot alerts* e conferir a aba *Security → Code scanning*
+  depois do primeiro push
+- ⬜ Levar à DPO: inventário, base legal, prazos de retenção, aviso e canal do titular
+- ⬜ Exibir o aviso de privacidade na tela de login, depois da aprovação da DPO
+- ⬜ Rotina de descarte (visualizações e auditoria), depois da aprovação dos prazos
+- ⬜ Perguntar à Segurança qual é o cofre corporativo e para onde enviar a auditoria
+- ⬜ Comando de restauração a partir do export, quando o destino estiver definido
+- ⬜ Abrir o chamado do servidor corporativo
+- ⬜ Solicitar o repositório no GitHub da ArcoTech e migrar com histórico limpo
+- ⬜ Integrar o JumpCloud no backend Express e remover os botões de acesso rápido
+- ⬜ Pedir ao comitê o aceite de JumpCloud com MFA no lugar da VPN e enviar a
+  atualização de escopo (cadastro → vitrine de consulta)
 ### Fase 6 — Reduzir a dependência de máquina local ⬜ Planejada
 
 O objetivo é que atualizar o catálogo deixe de exigir um ambiente Node configurado.
@@ -100,8 +176,10 @@ O objetivo é que atualizar o catálogo deixe de exigir um ambiente Node configu
 
 ### Fase 7 — Identidade e acesso ⬜ Planejada
 
-- SSO JumpCloud no lugar do login com senha
-- Definir papéis além de `admin`, se necessário
+- SSO JumpCloud no lugar do login com senha, implementado no backend Express para o
+  servidor corporativo
+- Definir papéis além de `admin`, se necessário. Hoje o admin é concedido pelo
+  banco
 - Reativar a proteção contra senha vazada no Supabase Auth quando houver base real
   de usuários
 
@@ -112,7 +190,7 @@ O objetivo é que atualizar o catálogo deixe de exigir um ambiente Node configu
 | Prioridade | Item | Por quê |
 |---|---|---|
 | 1 | Repassar acessos por mensagem direta a quem assume | Sem isso o catálogo congela |
-| 2 | Decidir entre consolidar no Supabase ou voltar para a EC2 | O débito dos dois backends só cresce enquanto não há decisão |
+| 2 | Abrir o chamado do servidor corporativo e solicitar o GitHub da ArcoTech | Destrava o JumpCloud e a maior parte do relatório de segurança |
 | 3 | Excluir o projeto Supabase `adungjmhuibxvgiqrume` | Decidido: elimina a ambiguidade sobre qual é a produção |
 | 4 | Cadastrar os secrets do workflow de ping e remover o gatilho de push | Hoje funciona com valor embutido |
 | 5 | Corrigir os 20 códigos repetidos na planilha | Hoje a última linha sobrescreve a anterior e a importação nunca estabiliza |
@@ -131,6 +209,17 @@ O objetivo é que atualizar o catálogo deixe de exigir um ambiente Node configu
   "alterados" que não mudaram de verdade. Correção editorial: manter uma linha por
   código. Lista completa obtida com `loadRows` + `mapCategorizacaoRow` agrupando por
   código.
+- **Códigos `IMP/...` com cara de caminho na planilha.** Os códigos da Conquista vêm
+  como `IMP/63/ALA19`; 148 terminam em `/` e 3 em `index_.html`. A capa já não
+  depende disso: o nome do arquivo troca a barra por `_` (`IMP_63_ALA19.webp`). Fica o
+  dado inconsistente na planilha, inclusive duas linhas repetidas do mesmo recurso
+  que só diferem pela barra final: `IMP/24/GLA10` e `IMP/24/GLA10/`, `IMP/61/ILA19` e
+  `IMP/61/ILA19/`. Elas dividem a capa. Correção editorial: um código por recurso,
+  sem barra no fim.
+- **Marca em branco na planilha.** 296 linhas estão sem Marca, 293 delas com código
+  `IMP/...`. A capa vai para `conquista/` pela regra do prefixo, mas o filtro de
+  marca da galeria não mostra esses recursos como Conquista. Correção editorial:
+  preencher a coluna.
 - **`ERR_NAME_NOT_RESOLVED` no domínio do Supabase dentro da rede corporativa.**
   Ocorreu em setembro de 2026 e foi diagnosticado inicialmente como pausa do
   projeto; era o DNS da rede. `[HIPÓTESE — CONFIRMAR]` se acontece de forma
@@ -206,4 +295,6 @@ Na ordem, para quem assume o projeto:
 - `[PERGUNTA AO RESPONSÁVEL]` Existe demanda editorial em espera que dependa do
   acervo e não esteja neste arquivo?
 - `[A VALIDAR]` Se a recuperação do acesso à EC2 ainda é tentativa em curso ou foi
-  abandonada. A resposta muda a prioridade 2 do backlog.
+  abandonada em favor do servidor corporativo.
+- `[PERGUNTA AO RESPONSÁVEL]` No servidor corporativo, os dados ficam no Postgres de
+  lá ou continuam no Supabase?

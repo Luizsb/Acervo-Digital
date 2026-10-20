@@ -2,6 +2,7 @@ import express from 'express';
 import rateLimit from 'express-rate-limit';
 import bcrypt from 'bcrypt';
 import prisma from '../lib/prisma';
+import { recordAuditEvent } from '../lib/audit';
 import { authMiddleware, signToken, AuthRequest } from '../middleware/auth';
 
 const router = express.Router();
@@ -76,13 +77,34 @@ router.post('/login', authLimiter, async (req, res) => {
     const user = await prisma.user.findUnique({ where: { email: emailTrim } });
     if (!user) {
       console.warn(`Login recusado: e-mail não encontrado (${emailTrim}) ip=${clientIp}`);
+      await recordAuditEvent({
+        action: 'auth.login_failed',
+        origin: 'express',
+        actor: emailTrim,
+        ip: clientIp,
+        details: { motivo: 'email_desconhecido' },
+      });
       return res.status(401).json({ error: 'E-mail ou senha incorretos.' });
     }
     const valid = await bcrypt.compare(password, user.passwordHash);
     if (!valid) {
       console.warn(`Login recusado: senha inválida (${emailTrim}) ip=${clientIp}`);
+      await recordAuditEvent({
+        action: 'auth.login_failed',
+        origin: 'express',
+        actor: emailTrim,
+        ip: clientIp,
+        details: { motivo: 'senha_invalida' },
+      });
       return res.status(401).json({ error: 'E-mail ou senha incorretos.' });
     }
+    await recordAuditEvent({
+      action: 'auth.login',
+      origin: 'express',
+      actor: user.email,
+      ip: clientIp,
+      details: { papel: user.role },
+    });
     const token = signToken({ userId: user.id, email: user.email, role: user.role });
     res.json({
       token,
