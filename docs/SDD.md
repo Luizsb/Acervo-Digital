@@ -171,7 +171,7 @@ server/
                   odaViews, prisma
   prisma/         schema.prisma e 8 migrações
   scripts/        import-categorizacao, capture-thumbs, diff-planilha, preparar-planilha,
-                  exportar-banco, seed, setup-playwright, organize-thumbs (temporário)
+                  exportar-banco, seed, setup-playwright
 public/
   thumbs/         capas .webp versionadas, uma pasta por marca (sae/, conquista/...)
   bncc.db
@@ -527,34 +527,14 @@ Quando a capa está ruim por outro motivo (cortada, no meio de uma animação), 
 arquivo na pasta da marca e rode `npm run thumbs:capture`: a captura refaz o que
 estiver faltando.
 
-### Organizar as capas por marca
+### Mudar a regra do caminho das capas
 
-`npm run thumbs:organizar` lê a planilha e compara o caminho de cada capa com a regra
-de `thumbPaths.ts`. Sem opção, só simula e informa o que copiaria, o que já está no
-lugar, os arquivos que a planilha não referencia (que ficam onde estão) e os códigos
-que dividem a mesma capa. Para trocar a estrutura em produção sem deixar a galeria
-sem capa:
-
-```bash
-# 1. Copie as capas para as pastas novas (o caminho antigo continua valendo):
-npm run thumbs:organizar -- --aplicar
-# 2. Commit, push e espere o deploy da Vercel.
-# 3. Aponte o banco e o histórico do admin para os caminhos novos:
-npm run import:categorizacao:com-capa
-npm run thumbs:organizar -- --atualizar-historico
-# 4. Apague as cópias antigas, faça commit e push:
-npm run thumbs:organizar -- --remover-antigas
-```
-
-A importação do passo 3 marca todos os recursos como "alterados" uma vez, porque o
-caminho da capa faz parte do que ela compara. Não há SQL manual nem migração: a
-coluna `imagem` é a mesma, só o valor muda. Os dois comandos do passo 3 gravam no
-banco apontado por `DATABASE_URL` em `server/.env`; para o Postgres local do modo
-Express, rode-os de novo apontando para ele.
-
-O `thumbs:organizar` existe para esta migração e será removido depois do passo 4.
-Uma mudança de marca na planilha depois disso só gera a capa na pasta nova; a antiga
-fica órfã.
+A migração para pastas por marca foi feita em 20/10/2026 com um script temporário,
+já removido; ele está no histórico do Git (`server/scripts/organize-thumbs.ts`).
+Se a regra de `thumbPaths.ts` mudar de novo, a ordem que evita card sem capa é:
+copiar as capas para o caminho novo, publicar, rodar a importação (que regrava
+`odas.imagem`), atualizar `import_events.imagem` e só então apagar o caminho antigo.
+Não há SQL manual nem migração: a coluna é a mesma, só o valor muda.
 
 ### Conferir se o site está no ar
 

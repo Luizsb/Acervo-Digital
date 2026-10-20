@@ -10,6 +10,58 @@ trazem a seção "Impacto observado" com dado medido: nenhuma métrica foi colet
 
 ---
 
+## 2026-10-20 · 11:00 — Migração das capas concluída e versão 2.0
+
+### Antes
+
+O banco e o histórico do admin apontavam para os caminhos antigos das capas. As duas
+estruturas de pastas conviviam em `public/thumbs/`. O rodapé do login mostrava `v1.1`
+escrito direto no código, e o `package.json` dizia `0.1.0`.
+
+### Depois
+
+- **Banco:** `import:categorizacao:com-capa` contra o Supabase deixou 2649 recursos
+  ativos, todos com `imagem` em `/thumbs/{marca}/...`. Antes eram 1602 ativos.
+- **Histórico do admin:** 741 eventos de `import_events` passaram para os caminhos
+  novos.
+- **Estrutura antiga removida:** 2519 cópias, mais 4 capas antigas de recursos
+  `Quebrado` que o responsável já tinha apagado nas pastas novas. A pasta `IMP/` deixou
+  de existir. Restam `sae/` (1714), `conquista/` (804) e as 14 capas `SAE25_..._ING_...`
+  que saíram da planilha.
+- **Script temporário removido:** `thumbs:organizar`.
+- **Versão:** `package.json` em `2.0.0`, injetada pelo Vite como `__APP_VERSION__`.
+  O login mostra `v2.0`.
+
+### Decisão
+
+- **Versão:** o rodapé lê a versão do `package.json`, para não haver dois lugares a
+  atualizar.
+- **Ordem da migração:** publicar, importar, atualizar o histórico e só então apagar.
+  Nenhum card ficou sem capa.
+
+### Evidência
+
+- Consulta ao Supabase depois da importação: `{"ativo | novo": 2649}`. Última
+  importação registrada às 10:35.
+- Log do histórico: "Histórico de importação atualizado: 741 eventos".
+- Log da remoção: "Removidas: 2519".
+- `npm test` (53), `npm run build` e `npx tsc --noEmit` passando; `"2.0.0"` presente no
+  bundle.
+- A tabela `audit_events` não existe no Supabase. A importação registrou o aviso e
+  seguiu.
+
+### Impacto observado
+
+Galeria e admin com as capas nos caminhos novos. `[A VALIDAR]` Conferir no site uma
+capa SAE, uma Conquista e o histórico do admin depois do deploy deste commit.
+
+### Próximos passos
+
+1. Aplicar a migração `audit_events` no Supabase.
+2. Decidir o destino das 14 capas órfãs.
+
+---
+
 ## 2026-10-20 · 10:25 — Recaptura das capas ruins
 
 ### Antes

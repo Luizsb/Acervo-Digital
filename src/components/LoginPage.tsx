@@ -9,6 +9,9 @@ const DEMO_PASSWORD = 'demo1234';
 const ADMIN_EMAIL = 'admin@acervo.local';
 const ADMIN_PASSWORD = 'admin1234';
 
+/** Rodapé mostra só major.minor: 2.0.0 vira v2.0. */
+const APP_VERSION_LABEL = __APP_VERSION__.split('.').slice(0, 2).join('.');
+
 interface LoginPageProps {
   onBack?: () => void;
   onLoginSuccess: () => void;
@@ -94,7 +97,7 @@ export function LoginPage({ onBack, onLoginSuccess, login }: LoginPageProps) {
 
       <p className="login-footer">
         Desenvolvido pelo time de Interações Digitais
-        <span className="login-footer-version">v1.1</span>
+        <span className="login-footer-version">v{APP_VERSION_LABEL}</span>
       </p>
     </div>
   );

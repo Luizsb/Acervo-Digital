@@ -445,7 +445,6 @@ Atualização de **conteúdo** não precisa de deploy: o gatilho diário do Apps
 | `npm run db:exportar` | Exporta o banco em JSON para `data/export-*` (migração e backup; contém dado pessoal) |
 | `npm run thumbs:setup` | Instala o Chromium para captura local |
 | `npm run thumbs:capture` | Captura as capas que faltam, lendo a lista da planilha. Opções: `-- --limit=100`, `-- --do-banco` |
-| `npm run thumbs:organizar` | Confere se as capas estão na pasta da marca; só simula sem opção (ver `docs/SDD.md`) |
 | `npm run test` | Vitest |
 
 ---

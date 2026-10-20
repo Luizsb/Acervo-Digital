@@ -1,6 +1,6 @@
 {
       "name": "Acervo Digital",
-      "version": "0.1.0",
+      "version": "2.0.0",
       "private": true,
       "dependencies": {
             "@supabase/supabase-js": "^2.112.3",
@@ -38,7 +38,6 @@
             "db:exportar": "cd server && npm run db:exportar",
             "thumbs:setup": "cd server && npm run thumbs:setup",
             "thumbs:capture": "cd server && npm run thumbs:capture --",
-            "thumbs:organizar": "cd server && npm run thumbs:organizar --",
             "test": "vitest run"
       }
 }

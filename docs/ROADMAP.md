@@ -84,8 +84,8 @@ Resposta à perda de acesso à EC2, com custo zero.
 - ✅ Capturar as capas restantes da planilha nova: 753 capturadas em 20/10, só 4
   códigos ficaram sem capa
 - ✅ Capas organizadas por marca (`public/thumbs/sae/`, `conquista/`...), com a regra
-  do caminho centralizada em `thumbPaths.ts` e o script `thumbs:organizar`. Cópia
-  local feita em 20/10: 2522 capas
+  do caminho centralizada em `thumbPaths.ts`. Migração concluída em 20/10: banco,
+  histórico do admin e arquivos nos caminhos novos; estrutura antiga removida
 - ✅ Revisão dos scripts: `thumbs:capture` lê da planilha por padrão (sai o
   `thumbs:capture:planilha`), sai o `db:down` duplicado, `prisma:migrate` do
   `server/` vira `prisma:migrate:dev` e `map-categorizacao` vai para `server/lib/`
@@ -94,11 +94,9 @@ Resposta à perda de acesso à EC2, com custo zero.
   inicial do SAE Digital
 - ⬜ Captura de páginas com player de vídeo (`IMP/94/CLA11`, `IMP/EM03/LLA29`): hoje
   sai o quadro preto; avaliar dar play ou usar o pôster do vídeo
-- ⬜ Publicar as capas (commit e push, com caminho antigo e novo juntos), rodar
-  `npm run import:categorizacao:com-capa` e `thumbs:organizar --atualizar-historico`
-  contra o Supabase e, por fim, `thumbs:organizar --remover-antigas` com novo push
-- ⬜ Remover `server/scripts/organize-thumbs.ts` e o comando `thumbs:organizar`
-  depois do `--remover-antigas`
+- ✅ Publicar as capas, importar no Supabase (2649 recursos ativos, todos no caminho
+  novo), atualizar o histórico do admin (741 eventos) e remover a estrutura antiga
+- ✅ Remover o script temporário `thumbs:organizar`
 - ⬜ Investigar `EF21_9_ING_L2_U4_01_od2`, `EF22_9_ING_L4_U7_01_OD1`,
   `EF21_8_ING_L3_U6_01_OD1` e `EF21_8_ING_L4_U7_02_OD1`, presos na tela de
   carregamento na captura
@@ -148,7 +146,8 @@ ferramenta de cadastro.
 - ✅ MFA: risco aceito no ambiente de testes; vem com o JumpCloud
 - ⬜ Aplicar no Supabase: `npm run prisma:migrate` (cria `audit_events`) e depois
   `scripts/supabase/rls.sql`, depois de confirmar que a conta do botão admin
-  (`admin@acervo.local`) tem o papel em `app_metadata`
+  (`admin@acervo.local`) tem o papel em `app_metadata`. Confirmado em 20/10 que a
+  tabela não existe no Supabase: a importação daquele dia rodou sem gravar auditoria
 - ⬜ Deploy e conferência de que a URL antiga da planilha responde 404
 - ⬜ Ativar no GitHub *Dependabot alerts* e conferir a aba *Security → Code scanning*
   depois do primeiro push

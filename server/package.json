@@ -15,7 +15,6 @@
     "db:exportar": "tsx scripts/exportar-banco.ts",
     "thumbs:setup": "tsx scripts/setup-playwright.ts",
     "thumbs:capture": "tsx scripts/capture-thumbs.ts",
-    "thumbs:organizar": "tsx scripts/organize-thumbs.ts",
     "seed": "tsx scripts/seed-database.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate:dev": "prisma migrate dev",
