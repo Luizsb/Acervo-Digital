@@ -1,8 +1,11 @@
+import { isPlaceholderResourceCode } from './map-categorizacao';
+
 /**
  * Visibilidade no acervo público (galeria).
  * Só entra quem tem Status do link = Funcionando E link do recurso preenchido.
- * Em branco, quebrado, incorreto, demais status e cards sem destino ficam no
- * banco para o painel admin.
+ * Desde 2026-10-20 a importação só cadastra esses recursos (isImportableResource);
+ * o que deixa de passar é desativado. A fila de revisão do admin mostra os ativos
+ * que ainda não passam, como registros anteriores ao critério.
  */
 export const CATALOG_VISIBLE_STATUS = 'Funcionando';
 
@@ -36,6 +39,21 @@ export function isVisibleInCatalog(
   linkRepositorio: string | null | undefined
 ): boolean {
   return hasCatalogStatus(status) && hasResourceLink(linkRepositorio);
+}
+
+/**
+ * Linha da planilha que a importação cadastra: a que entraria na galeria e tem código
+ * real. Quebrado, incorreto, sem link ou sem código fica na planilha, com o NDE.
+ */
+export function isImportableResource(item: {
+  codigoOda: string;
+  status: string | null | undefined;
+  linkRepositorio: string | null | undefined;
+}): boolean {
+  return (
+    !isPlaceholderResourceCode(item.codigoOda) &&
+    isVisibleInCatalog(item.status, item.linkRepositorio)
+  );
 }
 
 /** Cláusula Prisma: status Funcionando e link preenchido. */

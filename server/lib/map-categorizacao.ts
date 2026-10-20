@@ -91,6 +91,23 @@ export function isPlaceholderResourceCode(codigo?: string | null): boolean {
   return /^PLANILHA_L\d+$/i.test((codigo || '').trim());
 }
 
+export type RepeatedCode = { codigo: string; linhas: number[] };
+
+/**
+ * Códigos que aparecem em mais de uma linha. Na importação a última linha vence, então
+ * cada repetição é uma correção editorial pendente. Código provisório não conta.
+ */
+export function findRepeatedCodes(rows: { codigo: string; linha: number }[]): RepeatedCode[] {
+  const byCode = new Map<string, number[]>();
+  for (const { codigo, linha } of rows) {
+    if (isPlaceholderResourceCode(codigo)) continue;
+    byCode.set(codigo, [...(byCode.get(codigo) ?? []), linha]);
+  }
+  return [...byCode.entries()]
+    .filter(([, linhas]) => linhas.length > 1)
+    .map(([codigo, linhas]) => ({ codigo, linhas }));
+}
+
 function normalizeResourceCode(value: string): string {
   const trimmed = value.trim();
   if (!/^https?:\/\//i.test(trimmed)) return trimmed;

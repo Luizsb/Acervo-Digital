@@ -5,9 +5,14 @@ import { createHash } from 'crypto';
 import prisma from '../lib/prisma';
 import { recordAuditEvent, type AuditOrigin } from '../lib/audit';
 import { readWorksheetMatrix } from '../lib/excel';
-import { isPlaceholderResourceCode, mapCategorizacaoRow, type CategorizacaoRow } from '../lib/map-categorizacao';
+import {
+  findRepeatedCodes,
+  mapCategorizacaoRow,
+  type CategorizacaoRow,
+  type RepeatedCode,
+} from '../lib/map-categorizacao';
 import { completeBnccText, completeObjectiveList } from '../lib/completeBnccText';
-import { isVisibleInCatalog } from '../lib/catalogVisibility';
+import { isImportableResource, isVisibleInCatalog } from '../lib/catalogVisibility';
 import {
   findWorkbook,
   lastImportedWorkbookPath,
@@ -29,6 +34,9 @@ export type ImportSummary = {
   reactivated: number;
   deactivated: number;
   skipped: number;
+  /** Linhas fora do critério de isImportableResource: não são cadastradas. */
+  notImportable: number;
+  repeatedCodes: RepeatedCode[];
   errors: number;
   totalActive: number;
   totalAudiovisual: number;
@@ -131,9 +139,16 @@ function printSummary(summary: ImportSummary) {
   console.log(`   alterados: ${summary.updated}`);
   console.log(`   sem alteração: ${summary.unchanged}`);
   console.log(`   reativados: ${summary.reactivated}`);
-  console.log(`   desativados por ausência na planilha: ${summary.deactivated}`);
+  console.log(`   desativados (fora da planilha ou não funcionais): ${summary.deactivated}`);
   console.log(`   pulados (linha vazia): ${summary.skipped}`);
+  console.log(`   não cadastrados (sem Funcionando, link ou código): ${summary.notImportable}`);
   console.log(`   erros: ${summary.errors}`);
+  if (summary.repeatedCodes.length > 0) {
+    console.log(`   ⚠️  códigos repetidos na planilha (a última linha vence): ${summary.repeatedCodes.length}`);
+    summary.repeatedCodes.forEach(({ codigo, linhas }) =>
+      console.log(`     ! ${codigo} — linhas ${linhas.join(', ')}`)
+    );
+  }
   if (summary.deferredWithoutThumb > 0) {
     console.log(`   adiados por falta de capa (--somente-com-capa): ${summary.deferredWithoutThumb}`);
   }
@@ -175,6 +190,8 @@ export async function importCategorizacao(options: ImportOptions = {}): Promise<
         atualizados: summary.updated,
         reativados: summary.reactivated,
         desativados: summary.deactivated,
+        naoCadastrados: summary.notImportable,
+        codigosRepetidos: summary.repeatedCodes.length,
         erros: summary.errors,
         adiadosSemCapa: summary.deferredWithoutThumb,
         totalAtivos: summary.totalActive,
@@ -215,20 +232,29 @@ async function runImport(options: ImportOptions): Promise<ImportSummary> {
   let unchanged = 0;
   let reactivated = 0;
   let skipped = 0;
+  let notImportable = 0;
   let errors = 0;
   let deferredWithoutThumb = 0;
   const seenCodes: string[] = [];
+  const rowCodes: { codigo: string; linha: number }[] = [];
   const thumbCandidates: ImportSummary['missingThumbs'] = [];
   const changes: ChangedItem[] = [];
   const synchronizedAt = new Date();
 
   for (let i = 0; i < rows.length; i++) {
+    const sheetRow = i + DATA_START_ROW + 1;
     const mapped = mapCategorizacaoRow(rows[i], {
       metodologiaExists: (codigo) => fs.existsSync(path.join(pdfDir, `${codigo}.pdf`)),
-      sheetRow: i + DATA_START_ROW + 1,
+      sheetRow,
     });
     if (!mapped) {
       skipped += 1;
+      options.onProgress?.({ phase: 'importing', current: i + 1, total: rows.length });
+      continue;
+    }
+    rowCodes.push({ codigo: mapped.codigoOda, linha: sheetRow });
+    if (!isImportableResource(mapped)) {
+      notImportable += 1;
       options.onProgress?.({ phase: 'importing', current: i + 1, total: rows.length });
       continue;
     }
@@ -245,15 +271,13 @@ async function runImport(options: ImportOptions): Promise<ImportSummary> {
 
     try {
       seenCodes.push(mapped.codigoOda);
-      if (!isPlaceholderResourceCode(mapped.codigoOda)) {
-        thumbCandidates.push({
-          codigo: mapped.codigoOda,
-          titulo: mapped.titulo,
-          marca: mapped.marca,
-          status: mapped.status,
-          linkRepositorio: mapped.linkRepositorio,
-        });
-      }
+      thumbCandidates.push({
+        codigo: mapped.codigoOda,
+        titulo: mapped.titulo,
+        marca: mapped.marca,
+        status: mapped.status,
+        linkRepositorio: mapped.linkRepositorio,
+      });
       const hashFonte = sourceHash(mapped);
       const existing = await prisma.oDA.findUnique({
         where: { codigoOda: mapped.codigoOda },
@@ -263,7 +287,6 @@ async function runImport(options: ImportOptions): Promise<ImportSummary> {
       if (
         onlyWithThumb &&
         !existing &&
-        isVisibleInCatalog(mapped.status, mapped.linkRepositorio) &&
         !fs.existsSync(thumbFilePath(mapped.codigoOda, mapped.marca, thumbsRoot))
       ) {
         deferredWithoutThumb += 1;
@@ -430,6 +453,8 @@ async function runImport(options: ImportOptions): Promise<ImportSummary> {
     reactivated,
     deactivated,
     skipped,
+    notImportable,
+    repeatedCodes: findRepeatedCodes(rowCodes),
     errors,
     totalActive,
     totalAudiovisual,
