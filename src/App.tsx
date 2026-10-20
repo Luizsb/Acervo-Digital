@@ -32,6 +32,9 @@ import {
 } from "./utils/hashRouting";
 import { startOnboardingIfNeeded } from "./utils/onboarding";
 import { isAdminRole } from "./utils/catalogVisibility";
+import { classifyCatalogLoadError, type CatalogLoadErrorKind } from "./utils/catalogLoadError";
+import { isSupabaseBackend } from "./config/backend";
+import { CatalogLoadError } from "./components/CatalogLoadError";
 
 // Lazy load de páginas pesadas para reduzir bundle inicial
 const ProjectDetailsPage = lazy(() =>
@@ -45,6 +48,9 @@ const FavoritesPage = lazy(() =>
 );
 const LoginPage = lazy(() =>
   import("./components/LoginPage").then((m) => ({ default: m.LoginPage }))
+);
+const NotFoundPage = lazy(() =>
+  import("./components/NotFoundPage").then((m) => ({ default: m.NotFoundPage }))
 );
 const ForgotPasswordPage = lazy(() =>
   import("./components/ForgotPasswordPage").then((m) => ({ default: m.ForgotPasswordPage }))
@@ -85,6 +91,8 @@ export default function App() {
   const [pendingResourceCode, setPendingResourceCode] = useState<string | null>(
     getResourceCodeFromHash
   );
+  // Link de recurso que o catálogo carregado não tem: vira a página 404.
+  const [missingResourceCode, setMissingResourceCode] = useState<string | null>(null);
 
   const setCurrentPage = (page: PageKey) => {
     setCurrentPageState(page);
@@ -97,6 +105,7 @@ export default function App() {
   // Ao carregar/atualizar a página, restaurar a rota a partir do hash (ex.: F5 ou link compartilhado)
   useEffect(() => {
     const onLocationChange = () => {
+      setMissingResourceCode(null);
       setCurrentPageState(getInitialPageFromHash());
       const code = getResourceCodeFromHash();
       if (code) {
@@ -118,7 +127,8 @@ export default function App() {
   const [favorites, setFavorites] = useState<number[]>([]);
   const [odasFromExcel, setOdasFromExcel] = useState<ODAFromExcel[]>([]);
   const [loadingODAs, setLoadingODAs] = useState(true);
-  const [serverConnectionError, setServerConnectionError] = useState<string | null>(null);
+  const [catalogError, setCatalogError] = useState<CatalogLoadErrorKind | null>(null);
+  const [catalogReloadKey, setCatalogReloadKey] = useState(0);
   const projectsLoading = loadingODAs;
 
   // Carregar recursos via API somente com sessão autenticada
@@ -127,43 +137,27 @@ export default function App() {
     if (!user) {
       setOdasFromExcel([]);
       setLoadingODAs(false);
-      setServerConnectionError(null);
+      setCatalogError(null);
       return;
     }
 
     const loadODAs = async () => {
       try {
         setLoadingODAs(true);
-        setServerConnectionError(null);
+        setCatalogError(null);
         const odas = await loadODAsFromDatabase();
         setOdasFromExcel(odas);
         console.log(`✅ ${odas.length} recursos carregados do banco (L1)`);
-      } catch (error: any) {
+      } catch (error) {
         console.error('Erro ao carregar ODAs do banco de dados:', error);
         setOdasFromExcel([]);
-        const message = String(error?.message ?? '');
-        if (
-          message.includes('Failed to fetch') ||
-          message.includes('ConnectionError') ||
-          message.includes('ERR_CONNECTION_REFUSED') ||
-          error?.name === 'TypeError'
-        ) {
-          setServerConnectionError(
-            'Servidor backend não está rodando. Por favor, inicie o servidor em um terminal separado.'
-          );
-        } else if (message.includes('401') || message.includes('Não autorizado')) {
-          setServerConnectionError('Sessão expirada. Saia e entre novamente.');
-        } else {
-          setServerConnectionError(
-            'Não foi possível carregar o catálogo. Se o banco local estiver desatualizado, rode npm run prisma:migrate e recarregue a página.'
-          );
-        }
+        setCatalogError(classifyCatalogLoadError(error));
       } finally {
         setLoadingODAs(false);
       }
     };
     void loadODAs();
-  }, [authLoading, user]);
+  }, [authLoading, user, catalogReloadKey]);
 
   // Fonte única: tabela odas (Macroformato Vídeo = Audiovisual)
   const projects = odasFromExcel;
@@ -202,6 +196,9 @@ export default function App() {
     if (found) {
       setSelectedProject(found);
       setCurrentPageState("gallery");
+    } else {
+      setMissingResourceCode(pendingResourceCode.trim());
+      setCurrentPageState("notFound");
     }
     // Resolvido ou inexistente: em ambos os casos a URL deixa de ficar pendente.
     setPendingResourceCode(null);
@@ -428,7 +425,7 @@ export default function App() {
   }, [authLoading, user, currentPage, selectedProject]);
 
   // Enquanto restaura sessão (localStorage), evita flash ou tela em branco.
-  if (authLoading && !["login", "register", "forgot", "reset"].includes(currentPage)) {
+  if (authLoading && !["login", "register", "forgot", "reset", "notFound"].includes(currentPage)) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <p className="text-primary font-semibold">Carregando...</p>
@@ -471,6 +468,21 @@ export default function App() {
         <ResetPasswordPage
           onBack={() => setCurrentPage("login")}
           onSuccess={() => setCurrentPage("login")}
+        />
+      </Suspense>
+    );
+  }
+
+  if (currentPage === "notFound") {
+    return (
+      <Suspense fallback={<PageLoader />}>
+        <NotFoundPage
+          missingResourceCode={missingResourceCode}
+          onGoToGallery={() => {
+            setMissingResourceCode(null);
+            setSelectedProject(null);
+            setCurrentPage("gallery");
+          }}
         />
       </Suspense>
     );
@@ -586,41 +598,13 @@ export default function App() {
       />
       </div>
 
-      {/* Server Connection Error Alert */}
-      {serverConnectionError && (
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 mx-4 mt-4 rounded-md">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="ml-3 flex-1">
-              <h3 className="text-sm font-medium text-red-800">
-                Erro de Conexão com o Servidor
-              </h3>
-              <div className="mt-2 text-sm text-red-700">
-                <p>{serverConnectionError}</p>
-                <div className="mt-3">
-                  <p className="font-semibold">Para iniciar o servidor:</p>
-                  <ol className="list-decimal list-inside mt-1 space-y-1">
-                    <li>Abra um novo terminal</li>
-                    <li>Execute: <code className="bg-red-100 px-2 py-1 rounded">npm run server:dev</code></li>
-                    <li>Ou: <code className="bg-red-100 px-2 py-1 rounded">cd server && npm run dev</code></li>
-                  </ol>
-                </div>
-              </div>
-              <div className="mt-4">
-                <button
-                  onClick={() => setServerConnectionError(null)}
-                  className="text-sm font-medium text-red-800 hover:text-red-900 underline"
-                >
-                  Fechar
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
+      {catalogError && (
+        <CatalogLoadError
+          kind={catalogError}
+          isLocalBackend={!isSupabaseBackend()}
+          onRetry={() => setCatalogReloadKey((key) => key + 1)}
+          onDismiss={() => setCatalogError(null)}
+        />
       )}
 
       {/* Mobile Active Filters Display */}

@@ -62,6 +62,71 @@ capa SAE, uma Conquista e o histórico do admin depois do deploy deste commit.
 
 ---
 
+## 2026-10-20 · 11:15 — Migração das capas concluída, versão 2.0, falha de JWT e página 404
+
+### Antes
+
+- O banco e o histórico do admin ainda apontavam para o caminho antigo das capas.
+- O rodapé do login mostrava `v1.1`, escrito à mão, e o `package.json` dizia `0.1.0`.
+- Ao recarregar a página, o catálogo às vezes falhava com 401 "JWT issued at
+  future". O aviso exibido era de desenvolvimento ("rode `npm run server:dev`").
+- Rota interna desconhecida caía no login sem avisar. Link de recurso inexistente
+  era ignorado. Endereço inexistente mostrava a 404 genérica da Vercel.
+
+### Depois
+
+- **Migração das capas concluída:**
+  - importação no Supabase: 2649 recursos ativos, todos com caminho novo;
+  - histórico do admin: 741 eventos atualizados;
+  - estrutura antiga removida: 2519 cópias e a pasta `IMP/`;
+  - script `thumbs:organizar` removido.
+- **Versão 2.0:** `package.json` em `2.0.0`, injetada pelo Vite como
+  `__APP_VERSION__`. O login mostra `v2.0`.
+- **Erro de JWT:**
+  - o cliente do Supabase repete a chamada depois de 1 s e de 2 s quando recebe
+    esse 401 (`jwtRetryFetch.ts`);
+  - o aviso novo, `CatalogLoadError`, tem botão "Tentar novamente";
+  - as instruções de desenvolvimento só aparecem no modo Express.
+- **Página 404:**
+  - `NotFoundPage` para rota interna desconhecida e para link de recurso inexistente;
+  - `public/404.html` para endereço inexistente fora do hash.
+
+### Decisão
+
+- A nova tentativa fica no `fetch` do cliente do Supabase, e não em cada consulta:
+  assim vale para todas as chamadas.
+- A 404 do link de recurso só aparece depois que o catálogo carregou. Antes disso
+  não dá para saber se o código existe.
+
+### Evidência
+
+- Consulta ao Supabase depois da importação: `{"ativo | novo": 2649}`.
+- `--atualizar-historico`: "Histórico de importação atualizado: 741 eventos".
+- `--remover-antigas`: "Removidas: 2519". Antes, foram apagadas à mão as cópias
+  antigas de 4 recursos `Quebrado` cujas capas o responsável tinha removido das
+  pastas novas.
+- `npm test`: 61 testes, com os novos `jwtRetryFetch.test.ts`,
+  `catalogLoadError.test.ts` e os casos `notFound` de `hashRouting.test.ts`.
+- `npm run build` passando, com `dist/404.html` gerado e `"2.0.0"` no código final.
+- A tabela `audit_events` não existe no Supabase, então a importação rodou sem gravar
+  auditoria (ver `ROADMAP.md`).
+
+### Impacto observado
+
+`[A VALIDAR]` Depois do deploy:
+
+- ver se o erro de JWT some ao recarregar a página várias vezes;
+- ver se a Vercel serve o `404.html` em `/xyz`;
+- conferir capas SAE e Conquista na galeria.
+
+### Próximos passos
+
+1. Validar os três pontos acima em produção.
+2. Decidir a configuração do Dependabot (ver `ROADMAP.md`).
+3. Aplicar a migração `audit_events` no Supabase.
+
+---
+
 ## 2026-10-20 · 10:25 — Recaptura das capas ruins
 
 ### Antes

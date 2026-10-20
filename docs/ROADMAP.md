@@ -97,6 +97,16 @@ Resposta à perda de acesso à EC2, com custo zero.
 - ✅ Publicar as capas, importar no Supabase (2649 recursos ativos, todos no caminho
   novo), atualizar o histórico do admin (741 eventos) e remover a estrutura antiga
 - ✅ Remover o script temporário `thumbs:organizar`
+- ✅ Versão 2.0: lida do `package.json` e exibida no rodapé do login
+- ✅ Nova tentativa automática para o 401 "JWT issued at future" e aviso de falha do
+  catálogo com "Tentar novamente", sem instruções de desenvolvimento em produção
+- ✅ Página 404: rota interna desconhecida, link de recurso inexistente e endereço
+  inexistente na Vercel (`public/404.html`)
+- ⬜ `[A VALIDAR]` Conferir em produção se a Vercel serve o `404.html` em `/xyz`
+- ⬜ Dependabot: agrupar atualizações menores num PR por semana, tratar as versões
+  maiores à mão e desligar o deploy de pré-visualização da Vercel nas branches
+  `dependabot/*`. Hoje há 12 PRs abertos, um deploy cada; o do vitest 5 falha por
+  conflito com `@types/node` 20
 - ⬜ Investigar `EF21_9_ING_L2_U4_01_od2`, `EF22_9_ING_L4_U7_01_OD1`,
   `EF21_8_ING_L3_U6_01_OD1` e `EF21_8_ING_L4_U7_02_OD1`, presos na tela de
   carregamento na captura

@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { getSupabasePublicConfig } from '../config/backend';
+import { createJwtRetryFetch } from '../utils/jwtRetryFetch';
 
 let client: ReturnType<typeof createClient> | null = null;
 
@@ -12,6 +13,7 @@ export function getSupabaseClient() {
         autoRefreshToken: true,
         detectSessionInUrl: false,
       },
+      global: { fetch: createJwtRetryFetch() },
     });
   }
   return client;

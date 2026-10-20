@@ -1,0 +1,97 @@
+.catalog-load-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  margin: 1rem 1rem 0;
+  padding: 1rem 1.25rem;
+  border: 1px solid #fecaca;
+  border-left: 4px solid var(--secondary, #f05039);
+  border-radius: 0.75rem;
+  background: #fff7f5;
+  color: #012451;
+  font-family: Nunito, sans-serif;
+}
+
+.catalog-load-error-icon {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: 0.1rem;
+  color: var(--secondary, #f05039);
+}
+
+.catalog-load-error-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.catalog-load-error-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.catalog-load-error-text,
+.catalog-load-error-dev {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  color: #475569;
+}
+
+.catalog-load-error-dev code {
+  padding: 0.05rem 0.35rem;
+  border-radius: 0.3rem;
+  background: #fde2dc;
+  font-size: 0.8rem;
+}
+
+.catalog-load-error-retry {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+  padding: 0.45rem 0.9rem;
+  border: none;
+  border-radius: 999px;
+  background: #012451;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.catalog-load-error-retry:hover {
+  background: #0a3470;
+}
+
+.catalog-load-error-retry svg {
+  width: 0.95rem;
+  height: 0.95rem;
+}
+
+.catalog-load-error-close {
+  flex-shrink: 0;
+  display: inline-flex;
+  padding: 0.25rem;
+  border: none;
+  border-radius: 0.4rem;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
+}
+
+.catalog-load-error-close:hover {
+  background: #fde2dc;
+  color: #012451;
+}
+
+.catalog-load-error-close svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.catalog-load-error-retry:focus-visible,
+.catalog-load-error-close:focus-visible {
+  outline: 2px solid #40c4b4;
+  outline-offset: 2px;
+}

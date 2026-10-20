@@ -1,0 +1,90 @@
+.not-found-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 1.5rem;
+  background: #f7f5f2;
+  font-family: Nunito, sans-serif;
+  color: #012451;
+}
+
+.not-found-card {
+  width: 100%;
+  max-width: 28rem;
+  padding: 2.5rem 2rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 1.25rem;
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(1, 36, 81, 0.08);
+  text-align: center;
+}
+
+.not-found-brand {
+  width: 3rem;
+  height: 3rem;
+  margin: 0 auto;
+}
+
+.not-found-code {
+  margin: 1.25rem 0 0;
+  font-size: 3.5rem;
+  font-weight: 800;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--secondary, #f05039);
+}
+
+.not-found-title {
+  margin: 0.75rem 0 0;
+  font-size: 1.35rem;
+  font-weight: 800;
+}
+
+.not-found-text {
+  margin: 0.5rem 0 0;
+  font-size: 0.95rem;
+  color: #64748b;
+}
+
+.not-found-resource {
+  display: inline-block;
+  max-width: 100%;
+  margin: 0.75rem 0 0;
+  padding: 0.25rem 0.6rem;
+  border-radius: 0.4rem;
+  background: #f1f5f9;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.8rem;
+  color: #334155;
+  overflow-wrap: anywhere;
+}
+
+.not-found-action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1.75rem;
+  padding: 0.65rem 1.25rem;
+  border: none;
+  border-radius: 999px;
+  background: #012451;
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.not-found-action:hover {
+  background: #0a3470;
+}
+
+.not-found-action:focus-visible {
+  outline: 2px solid #40c4b4;
+  outline-offset: 2px;
+}
+
+.not-found-action svg {
+  width: 1rem;
+  height: 1rem;
+}

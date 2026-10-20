@@ -129,6 +129,25 @@ admin provisório. Quem tem a URL do ambiente de testes entra como admin.
 No modo Express, o login valida a senha com bcrypt e emite um JWT próprio com
 `role` no payload. A rota `/api/admin/*` exige `role = admin`.
 
+### Falhas de carregamento e endereço inexistente
+
+- **Token "emitido no futuro":** logo após renovar a sessão, a Data API do Supabase
+  pode recusar o token com 401 "JWT issued at future", por diferença de relógio entre
+  o Auth e a API `[HIPÓTESE — CONFIRMAR]`. O cliente do Supabase
+  (`src/lib/supabaseClient.ts`) usa `createJwtRetryFetch`
+  (`src/utils/jwtRetryFetch.ts`): repete a chamada depois de 1 s e de 2 s, e só
+  nesse erro.
+- **Aviso de falha do catálogo:** `CatalogLoadError` classifica a falha
+  (`src/utils/catalogLoadError.ts`) e oferece "Tentar novamente". As instruções de
+  desenvolvimento (`server:dev`, `prisma:migrate`) só aparecem no modo Express.
+- **Página 404:**
+  - Rota interna desconhecida (`#/xyz`) e link de recurso que o catálogo não tem
+    (`#/recurso/<codigo>`) abrem `NotFoundPage`. O link de recurso mostra o código
+    pedido.
+  - Endereço inexistente fora do hash (`/xyz`) recebe `public/404.html`, página
+    estática servida pela Vercel. `#/home`, da versão anterior, continua levando ao
+    login.
+
 ### Fluxo de visualização
 
 O front chama a RPC `record_oda_view()` (Supabase) ou `POST /api/odas/:id/views`

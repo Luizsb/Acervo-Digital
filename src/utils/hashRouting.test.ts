@@ -36,8 +36,10 @@ describe('hashRouting', () => {
       expect(getInitialPageFromHash('#/redefinir-senha?token=abc123')).toBe('reset');
     });
 
-    it('retorna "login" para hash desconhecido', () => {
-      expect(getInitialPageFromHash('#/pagina-inexistente')).toBe('login');
+    it('retorna "notFound" para hash desconhecido', () => {
+      expect(getInitialPageFromHash('#/pagina-inexistente')).toBe('notFound');
+      expect(getInitialPageFromHash('#/acervo-antigo/x')).toBe('notFound');
+      expect(getInitialPageFromHash('#/nao-encontrado')).toBe('notFound');
     });
 
     it('trata a rota de recurso como galeria', () => {
@@ -84,6 +86,7 @@ describe('hashRouting', () => {
       { page: 'register', expected: '#/registro' },
       { page: 'forgot', expected: '#/esqueci-senha' },
       { page: 'reset', expected: '#/redefinir-senha' },
+      { page: 'notFound', expected: '#/nao-encontrado' },
     ];
 
     it('retorna hash correto para cada página', () => {
@@ -95,7 +98,17 @@ describe('hashRouting', () => {
 
   describe('round-trip', () => {
     it('getHashFromPage + getInitialPageFromHash restaura a página', () => {
-      const pages: PageKey[] = ['gallery', 'settings', 'favorites', 'review', 'login', 'register', 'forgot', 'reset'];
+      const pages: PageKey[] = [
+        'gallery',
+        'settings',
+        'favorites',
+        'review',
+        'login',
+        'register',
+        'forgot',
+        'reset',
+        'notFound',
+      ];
       pages.forEach((page) => {
         const hash = getHashFromPage(page);
         const restored = getInitialPageFromHash(hash);

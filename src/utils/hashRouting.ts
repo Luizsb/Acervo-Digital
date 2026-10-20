@@ -2,9 +2,20 @@
  * Rotas por hash usadas na navegação da aplicação.
  * Exportado para permitir testes unitários.
  */
-export type PageKey = "gallery" | "settings" | "favorites" | "review" | "login" | "register" | "forgot" | "reset";
+export type PageKey =
+  | "gallery"
+  | "settings"
+  | "favorites"
+  | "review"
+  | "login"
+  | "register"
+  | "forgot"
+  | "reset"
+  | "notFound";
 
 const HASH_TO_PAGE: Record<string, PageKey> = {
+  // Landing antiga: links salvos continuam levando ao login.
+  home: "login",
   acervo: "gallery",
   conta: "settings",
   favoritos: "favorites",
@@ -13,6 +24,7 @@ const HASH_TO_PAGE: Record<string, PageKey> = {
   registro: "register",
   "esqueci-senha": "forgot",
   "redefinir-senha": "reset",
+  "nao-encontrado": "notFound",
 };
 
 const PAGE_TO_PATH: Record<PageKey, string> = {
@@ -24,6 +36,7 @@ const PAGE_TO_PATH: Record<PageKey, string> = {
   register: "/registro",
   forgot: "/esqueci-senha",
   reset: "/redefinir-senha",
+  notFound: "/nao-encontrado",
 };
 
 /** Prefixo das URLs compartilháveis de um recurso: #/recurso/<codigo>. */
@@ -51,7 +64,7 @@ export function getInitialPageFromHash(hashOverride?: string): PageKey {
   const [segment] = raw.split("/");
   // Um recurso é aberto sobre a galeria, então a página de fundo continua sendo o acervo.
   if (segment === RESOURCE_SEGMENT) return "gallery";
-  return HASH_TO_PAGE[segment] ?? "login";
+  return HASH_TO_PAGE[segment] ?? "notFound";
 }
 
 /** Código do recurso quando a URL aponta para #/recurso/<codigo>. */
