@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { X, BookOpen, Clock, Check, Eye, Sparkles, Play, Book, FileText, ArrowLeft, Heart, Copy, Maximize2, Settings, Download, Layers, GitBranch, ExternalLink } from 'lucide-react';
 import { ProjectCard } from './ProjectCard';
-import { getCurriculumColor, getComponentFullName, getSegmentFullName, getMarcaFullName } from '../utils/curriculumColors';
+import { getCurriculumColor, getComponentFullName, getSegmentFullName } from '../utils/curriculumColors';
 import { ScrollToTop } from './ScrollToTop';
 import { VideoThumbnail } from './VideoThumbnail';
 import { getVimeoEmbedUrl, resolveVideoEmbedUrl } from '../utils/videoThumbnails';
 import type { Project } from '../types/project';
 import { formatDuration } from '../utils/formatters';
 import { MacroformatoBadge } from './MacroformatoBadge';
+import { MarcaBadge } from './MarcaBadge';
 import { apiRecordOdaView } from '../utils/api';
 import { copyTextToClipboard } from '../utils/clipboard';
 import './ProjectDetailsPage.css';
@@ -332,19 +333,7 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
                       {getComponentFullName(project.tag)}
                     </div>
                   )}
-                  {project.marca && (
-                    <div 
-                      className={`detail-meta-badge text-xs font-semibold border shadow-sm cursor-pointer ${
-                        project.marca === 'SPE' ? 'bg-secondary/10 text-secondary border-secondary/20' :
-                        project.marca === 'SAE' ? 'bg-purple-100 text-purple-700 border-purple-200' :
-                        project.marca === 'CQT' ? 'bg-pink-100 text-pink-700 border-pink-200' :
-                        'bg-indigo-100 text-indigo-700 border-indigo-200'
-                      }`}
-                      title="Marca"
-                    >
-                      {project.marca}
-                    </div>
-                  )}
+                  <MarcaBadge marca={project.marca} className="detail-meta-badge shadow-sm cursor-pointer" />
                   {project.macroformato ? (
                     <MacroformatoBadge value={project.macroformato} className="detail-meta-badge cursor-pointer" />
                   ) : project.category ? (
@@ -450,14 +439,14 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
                 };
 
                 return (
-                  <div className="bg-amber-50 border border-amber-200 p-4 rounded-[20px] shadow-sm">
+                  <div className="catalog-samr-panel p-4 rounded-[20px] shadow-sm">
                     <div className="flex items-start gap-3">
-                      <Sparkles className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                      <Sparkles className="catalog-samr-panel-icon w-4 h-4 flex-shrink-0 mt-0.5" />
                       <div className="flex-1">
-                        <p className="font-semibold text-amber-900 mb-1 text-sm">
+                        <p className="catalog-samr-panel-title font-semibold mb-1 text-sm">
                           Escala SAMR: {project.samr}
                         </p>
-                        <p className="text-xs text-amber-700 leading-relaxed">
+                        <p className="catalog-samr-panel-text text-xs leading-relaxed">
                           {getSamrDescription(project.samr)}
                         </p>
                       </div>

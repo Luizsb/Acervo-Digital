@@ -3,6 +3,7 @@ import { looksLikeAudiovisual, isVideoAulaCodigo } from './contentType';
 import type { Project } from '../types/project';
 import { extractBnccCode, extractBnccDescription, formatDuration } from './formatters';
 import { isSupabaseBackend } from '../config/backend';
+import { brandFromCode } from './thumbPaths';
 import {
   supabaseLogin,
   supabaseAuthMe,
@@ -505,7 +506,7 @@ export function apiODAToFrontend(oda: ODA): Project {
     volume: oda.volume || undefined,
     segmento: oda.segmento || undefined,
     pagina: oda.pagina || undefined,
-    marca: oda.marca || undefined,
+    marca: oda.marca?.trim() || brandFromCode(oda.codigoOda) || undefined,
     contentType: looksLikeAudiovisual({
       macroformato: oda.macroformato,
       tipoPrincipal: oda.tipoObjeto || oda.categoria,

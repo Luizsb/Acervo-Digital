@@ -123,7 +123,7 @@ export function getComponentFullName(component: string): string {
 }
 
 // Mapeamento de cores para componentes curriculares
-// Cores diferentes das marcas (SPE: laranja, SAE: roxo, CQT: rosa)
+// Cores diferentes das marcas (ver getMarcaColor)
 
 function stripAccents(value: string): string {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
@@ -295,4 +295,21 @@ export function getMarcaFullName(marca: string): string {
   
   // Buscar no mapeamento
   return marcaNameMap[normalized] || marca;
+}
+
+/** Cor oficial de cada marca, indexada pelo nome completo sem acento e em minúsculas. */
+const marcaColorMap: Record<string, string> = {
+  'conquista': '#e40657',
+  'sae digital': '#591d64',
+  'sistema positivo': '#e94c26',
+  'coc': '#00963c',
+  'geekie': '#fd1747',
+  'sas': '#032066',
+  'nave': '#ee377d',
+};
+
+/** Cor da marca, aceitando sigla ou nome completo; undefined para marca sem cor definida. */
+export function getMarcaColor(marca: string | null | undefined): string | undefined {
+  if (!marca?.trim()) return undefined;
+  return marcaColorMap[stripAccents(getMarcaFullName(marca.trim()))];
 }

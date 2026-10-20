@@ -6,8 +6,8 @@ export const THUMBS_PUBLIC_PREFIX = '/thumbs';
 export const THUMB_FOLDER_WITHOUT_BRAND = 'sem-marca';
 
 /** Códigos da Conquista começam com IMP/; na planilha, parte deles vem com a marca em branco. */
-const BRAND_BY_CODE_PREFIX: { pattern: RegExp; folder: string }[] = [
-  { pattern: /^IMP\//i, folder: 'conquista' },
+const BRAND_BY_CODE_PREFIX: { pattern: RegExp; brand: string }[] = [
+  { pattern: /^IMP\//i, brand: 'Conquista' },
 ];
 
 function slug(value: string): string {
@@ -19,15 +19,18 @@ function slug(value: string): string {
     .replace(/^-+|-+$/g, '');
 }
 
+/** Marca deduzida do código, para as linhas da planilha com a coluna Marca em branco. */
+export function brandFromCode(codigo: string | null | undefined): string | undefined {
+  const value = (codigo || '').trim();
+  return BRAND_BY_CODE_PREFIX.find(({ pattern }) => pattern.test(value))?.brand;
+}
+
 /**
  * Pasta da marca, sempre em minúsculas: o Windows não diferencia caixa e a Vercel
  * diferencia, então "Conquista" e "conquista" precisam cair na mesma pasta.
  */
 export function thumbBrandFolder(marca: string | null | undefined, codigo: string): string {
-  const fromBrand = slug(marca || '');
-  if (fromBrand) return fromBrand;
-  const byPrefix = BRAND_BY_CODE_PREFIX.find(({ pattern }) => pattern.test(codigo.trim()));
-  return byPrefix?.folder ?? THUMB_FOLDER_WITHOUT_BRAND;
+  return slug(marca || '') || slug(brandFromCode(codigo) || '') || THUMB_FOLDER_WITHOUT_BRAND;
 }
 
 /**

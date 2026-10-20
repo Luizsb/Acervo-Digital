@@ -657,8 +657,7 @@ export default function App() {
                       badgeColor =
                         "bg-indigo-100 text-indigo-700 border-indigo-300";
                     else if (category === "macroformatos")
-                      badgeColor =
-                        "bg-teal-100 text-teal-700 border-teal-300";
+                      badgeColor = "catalog-neutral";
                     else if (category === "colecoes")
                       badgeColor =
                         "bg-sky-100 text-sky-700 border-sky-300";
@@ -684,8 +683,7 @@ export default function App() {
                       badgeColor =
                         "bg-cyan-100 text-cyan-700 border-cyan-300";
                     else if (category === "samr")
-                      badgeColor =
-                        "bg-amber-100 text-amber-700 border-amber-300";
+                      badgeColor = "catalog-neutral";
                     else if (category === "volumes")
                       badgeColor =
                         "bg-rose-100 text-rose-700 border-rose-300";

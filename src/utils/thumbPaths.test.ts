@@ -2,7 +2,20 @@ import { describe, expect, it } from 'vitest';
 import * as front from './thumbPaths';
 import * as server from '../../server/lib/thumbPaths';
 
-const { thumbBrandFolder, thumbFileName, thumbPublicPath, thumbRelativePath } = front;
+const { brandFromCode, thumbBrandFolder, thumbFileName, thumbPublicPath, thumbRelativePath } = front;
+
+describe('brandFromCode', () => {
+  it('código IMP é da Conquista, com ou sem barra no fim', () => {
+    expect(brandFromCode('IMP/63/ALA19')).toBe('Conquista');
+    expect(brandFromCode(' imp/63/ALA19/ ')).toBe('Conquista');
+  });
+
+  it('sem prefixo conhecido não deduz marca', () => {
+    expect(brandFromCode('EF21_8_MAT_L1_U1_01_OD1')).toBeUndefined();
+    expect(brandFromCode(null)).toBeUndefined();
+    expect(brandFromCode('')).toBeUndefined();
+  });
+});
 
 describe('thumbBrandFolder', () => {
   it('usa a marca em minúsculas, sem acento e sem espaço', () => {
@@ -68,6 +81,7 @@ describe('espelho do servidor', () => {
     ];
     for (const [codigo, marca] of casos) {
       expect(server.thumbPublicPath(codigo, marca)).toBe(front.thumbPublicPath(codigo, marca));
+      expect(server.brandFromCode(codigo)).toBe(front.brandFromCode(codigo));
     }
     expect(server.THUMB_FOLDER_WITHOUT_BRAND).toBe(front.THUMB_FOLDER_WITHOUT_BRAND);
   });

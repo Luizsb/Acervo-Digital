@@ -33,6 +33,17 @@
   border-color: #fcd34d;
 }
 
+/*
+ * Cor é reservada para componente curricular, campo de experiência e marca.
+ * Macroformato e SAMR usam o selo neutro, para nunca repetir a cor de outro selo;
+ * o ícone diferencia o tipo.
+ */
+.catalog-neutral {
+  background: #ffffff;
+  color: #334155;
+  border: 1px solid #cbd5e1;
+}
+
 .catalog-macro {
   display: inline-flex;
   align-items: center;
@@ -41,66 +52,25 @@
   border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 600;
-  border: 1px solid;
   line-height: 1.2;
+  background: #ffffff;
+  color: #334155;
+  border: 1px solid #cbd5e1;
 }
 
-.catalog-macro-video {
-  background: #fee2e2;
-  color: #b91c1c;
-  border-color: #fca5a5;
+.catalog-samr-panel {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
 }
 
-.catalog-macro-oda {
-  background: #dbeafe;
-  color: #1d4ed8;
-  border-color: #93c5fd;
+.catalog-samr-panel-icon {
+  color: #475569;
 }
 
-.catalog-macro-interactive {
-  background: #d1fae5;
-  color: #047857;
-  border-color: #6ee7b7;
+.catalog-samr-panel-title {
+  color: #0f172a;
 }
 
-.catalog-macro-sim {
-  background: #ede9fe;
-  color: #6d28d9;
-  border-color: #c4b5fd;
-}
-
-.catalog-macro-playlist {
-  background: #ffedd5;
-  color: #c2410c;
-  border-color: #fdba74;
-}
-
-.catalog-macro-audio {
-  background: #fce7f3;
-  color: #be185d;
-  border-color: #f9a8d4;
-}
-
-.catalog-macro-ra {
-  background: #e0e7ff;
-  color: #3730a3;
-  border-color: #a5b4fc;
-}
-
-.catalog-macro-slide {
-  background: #f3f4f6;
-  color: #374151;
-  border-color: #d1d5db;
-}
-
-.catalog-macro-tool {
-  background: #ecfeff;
-  color: #0e7490;
-  border-color: #67e8f9;
-}
-
-.catalog-macro-support {
-  background: #fef9c3;
-  color: #a16207;
-  border-color: #fde047;
+.catalog-samr-panel-text {
+  color: #475569;
 }

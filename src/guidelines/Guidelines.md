@@ -66,10 +66,20 @@
   - Arte: Violeta (bg-violet-100 text-violet-700 border-violet-200)
   - Inglês: Índigo (bg-indigo-100 text-indigo-700 border-indigo-200)
   - Educação Física: Lima (bg-lime-100 text-lime-700 border-lime-200)
-- Cores de marca (diferentes dos componentes curriculares):
-  - SPE: Laranja/Secundária (bg-secondary/10 text-secondary border-secondary/20)
-  - SAE: Roxo (bg-purple-100 text-purple-700 border-purple-200)
-  - CQT: Rosa (bg-pink-100 text-pink-700 border-pink-200)
+- Cores de marca (diferentes dos componentes curriculares): selo sólido, fundo na cor
+  oficial e texto branco, pelo componente `MarcaBadge`. A tabela fica em
+  `getMarcaColor` (`src/utils/curriculumColors.ts`); marca sem cor definida fica cinza.
+  - Conquista: #e40657
+  - SAE Digital: #591d64
+  - Sistema Positivo: #e94c26
+  - COC: #00963c
+  - Geekie: #fd1747
+  - SAS: #032066
+  - Nave: #ee377d
+- Cor é reservada para componente curricular, campo de experiência e marca. Macroformato
+  e escala SAMR usam o selo neutro (`catalog-neutral` e `catalog-macro`, em
+  `src/components/catalogBadges.css`: fundo branco, texto #334155, borda #cbd5e1), para
+  que selos de tipos diferentes nunca repitam a cor; o ícone diferencia o macroformato.
 
 ### Barra Lateral de Filtros
 
@@ -109,7 +119,7 @@
 - Badge de volume no canto superior direito
 - Botão de favorito no canto superior esquerdo
 - Tags limitadas a no máximo 3 (do array de tags)
-- Badge de marca exibido após as tags com gradiente índigo/violeta e borda
+- Badge de marca exibido após as tags, na cor oficial da marca (`MarcaBadge`)
 - Badge de categoria com texto em gradiente
 - Badges de ano/série na parte inferior
 - Badge de duração apenas para Vídeo Aula (contentType === 'Audiovisual' e category/videoCategory === 'Vídeo Aula')

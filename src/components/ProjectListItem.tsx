@@ -2,10 +2,11 @@ import React, { useState, useRef, useEffect } from 'react';
 import { BookOpen, Heart, Clock, Video, Gamepad2, MapPin } from 'lucide-react';
 import { getCurriculumColor, getComponentFullName } from '../utils/curriculumColors';
 import { formatDuration } from '../utils/formatters';
-import { resolveMacroformato } from '../utils/macroformato';
 import { resourceTypeLabel } from '../utils/contentType';
 import type { Project } from '../types/project';
 import { ProjectContextMenu } from './ProjectContextMenu';
+import { MarcaBadge } from './MarcaBadge';
+import { MacroformatoBadge } from './MacroformatoBadge';
 
 interface ProjectListItemProps {
   project: Project;
@@ -18,7 +19,6 @@ export function ProjectListItem({ project, onClick, isFavorite = false, onToggle
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number } | null>(null);
   const itemRef = useRef<HTMLDivElement>(null);
   const durationLabel = formatDuration(project.duration);
-  const macro = resolveMacroformato(project.macroformato);
   const typeLabel = resourceTypeLabel(project);
 
   const handleContextMenu = (e: React.MouseEvent) => {
@@ -113,26 +113,9 @@ export function ProjectListItem({ project, onClick, isFavorite = false, onToggle
               </div>
             )}
 
-            {/* Marca badge - manter sigla, tooltip com nome completo */}
-            {project.marca && (
-              <div 
-                className={`inline-flex items-center px-2 py-0.5 rounded-[12px] text-xs font-semibold border ${
-                  project.marca === 'SPE' ? 'bg-secondary/10 text-secondary border-secondary/20' :
-                  project.marca === 'SAE' ? 'bg-purple-100 text-purple-700 border-purple-200' :
-                  project.marca === 'CQT' ? 'bg-pink-100 text-pink-700 border-pink-200' :
-                  'bg-purple-100 text-purple-700 border-purple-200'
-                }`}
-                title="Marca"
-              >
-                {project.marca}
-              </div>
-            )}
+            <MarcaBadge marca={project.marca} className="px-2 py-0.5 rounded-[12px]" />
 
-            {macro && (
-              <div title="Macroformato" className={macro.className}>
-                {macro.label}
-              </div>
-            )}
+            <MacroformatoBadge value={project.macroformato} />
 
           </div>
 

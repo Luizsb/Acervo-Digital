@@ -6,6 +6,7 @@ import { resolveMacroformato, type MacroformatoKind } from '../utils/macroformat
 import { resourceTypeLabel } from '../utils/contentType';
 import type { Project } from '../types/project';
 import { ProjectContextMenu } from './ProjectContextMenu';
+import { MarcaBadge } from './MarcaBadge';
 
 function MacroIcon({ kind, className }: { kind: MacroformatoKind; className?: string }) {
   const props = { className: className || 'w-3.5 h-3.5' };
@@ -160,26 +161,13 @@ export function ProjectCard({ project, onClick, isFavorite = false, onToggleFavo
               </div>
             )}
 
-            {/* Marca badge - manter sigla, tooltip com nome completo */}
-            {project.marca && (
-              <div 
-                className={`inline-flex items-center px-2.5 py-1 rounded-[20px] text-xs font-semibold border ${
-                  project.marca === 'SPE' ? 'bg-secondary/10 text-secondary border-secondary/20' :
-                  project.marca === 'SAE' ? 'bg-purple-100 text-purple-700 border-purple-200' :
-                  project.marca === 'CQT' ? 'bg-pink-100 text-pink-700 border-pink-200' :
-                  'bg-purple-100 text-purple-700 border-purple-200'
-                }`}
-                title="Marca"
-              >
-                {project.marca}
-              </div>
-            )}
+            <MarcaBadge marca={project.marca} className="px-2.5 py-1 rounded-[20px]" />
 
             {/* SAMR Badge */}
             {project.samr && (
               <div
                 title="Escala SAMR"
-                className="inline-flex items-center px-2.5 py-1 rounded-[20px] text-xs font-semibold bg-amber-100 text-amber-700 border border-amber-200"
+                className="catalog-neutral inline-flex items-center px-2.5 py-1 rounded-[20px] text-xs font-semibold"
               >
                 {project.samr}
               </div>

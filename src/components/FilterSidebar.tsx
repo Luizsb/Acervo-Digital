@@ -151,6 +151,7 @@ export function FilterSidebar({
         entries.push({ category, value, label: format ? format(value) : value });
       });
     };
+    push('marcas', selectedFilters.marcas, getMarcaFullName);
     push('colecoes', selectedFilters.colecoes);
     push('livros', selectedFilters.livros);
     push('blocos', selectedFilters.blocos);
@@ -160,7 +161,6 @@ export function FilterSidebar({
     push('anos', selectedFilters.anos);
     push('tags', selectedFilters.tags, getComponentFullName);
     push('macroformatos', selectedFilters.macroformatos);
-    push('marcas', selectedFilters.marcas, getMarcaFullName);
     push('bnccCodes', selectedFilters.bnccCodes);
     push('videoCategory', selectedFilters.videoCategory);
     push('tipoObjeto', selectedFilters.tipoObjeto);
@@ -286,6 +286,14 @@ export function FilterSidebar({
       label: 'Localização',
       items: [
         {
+          key: 'marcas',
+          title: 'Marca',
+          icon: <Tag className={iconCls} />,
+          options: filters.marcas,
+          selected: selectedFilters.marcas,
+          formatLabel: getMarcaFullName,
+        },
+        {
           key: 'volumes',
           title: 'Volume',
           icon: <Layers className={iconCls} />,
@@ -395,14 +403,6 @@ export function FilterSidebar({
           icon: <FileText className={iconCls} />,
           options: filters.tipoObjeto,
           selected: selectedFilters.tipoObjeto,
-        },
-        {
-          key: 'marcas',
-          title: 'Marca',
-          icon: <Tag className={iconCls} />,
-          options: filters.marcas,
-          selected: selectedFilters.marcas,
-          formatLabel: getMarcaFullName,
         },
         {
           key: 'usuariosPrincipais',
