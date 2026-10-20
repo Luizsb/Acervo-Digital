@@ -30,9 +30,10 @@ galeria com busca, filtros, capa, ficha pedagógica e acesso direto ao recurso.
 ## O que faz hoje
 
 Entrada por login. Depois de autenticado, o usuário cai numa galeria de recursos
-ordenada pelos mais visualizados, com busca por texto e filtros em duas famílias:
-localização editorial (coleção, livro, bloco/capítulo, envio à escola, volume) e
-currículo (segmento, ano/série, componente, habilidade BNCC).
+ordenada pelos mais visualizados, com busca por texto e filtros em duas famílias
+principais: localização editorial (marca, volume, bloco/capítulo, livro, coleção,
+envio à escola) e currículo (componente, ano/série, segmento). Características do
+recurso, como macroformato, BNCC e tipo de objeto, ficam num terceiro grupo.
 
 Cada recurso tem ficha própria com capa, requisitos técnicos normalizados,
 habilidades BNCC com o texto completo e recomendações relacionadas. Vídeos abrem em
@@ -40,8 +41,9 @@ um modal em tela ampliada, dentro do Acervo; ODAs e demais recursos abrem em nov
 guia, porque embarcados parte deles cortava o conteúdo ou não carregava. O histórico
 dessa decisão está no `ROADMAP.md`.
 
-Administradores têm um painel próprio com a fila de revisão (tudo que não entra na
-galeria e por quê), o status da última sincronização da planilha, o histórico de
+Administradores têm um painel próprio com a fila de revisão (o que estiver ativo
+fora da galeria, e por quê; desde outubro de 2026 só recursos funcionais são
+cadastrados, então ela tende a ficar vazia), o status da última sincronização da planilha, o histórico de
 recursos novos e atualizados com as capas, o ranking de acessos e a captura de capas
 faltantes.
 

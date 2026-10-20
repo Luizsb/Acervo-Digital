@@ -260,32 +260,56 @@ aparece na galeria somente se:
    maiúsculas), **e**
 3. o link do recurso está preenchido.
 
-Todo o resto continua no banco e vai para a **fila de revisão** do admin, agrupado
-em: sem link, quebrado, incorreto, acesso restrito, dúvida para revisão, não
-avaliado, em cadastro, outro. O caso "sem link" é o recurso marcado como
-`Funcionando` mas sem endereço — a planilha diz que está pronto e não está.
+**Desde 2026-10-20, só esse recurso é cadastrado.** A importação usa o mesmo critério
+(`isImportableResource`, em `server/lib/catalogVisibility.ts`), acrescido de código
+real: quebrado, incorreto, não avaliado, acesso restrito, sem link e linha sem código
+ficam na planilha, sob a curadoria do NDE. O que já estava no banco e deixa de passar
+é desativado, como um código que saiu da planilha.
+
+A **fila de revisão** do admin continua existindo e mostra o que estiver ativo fora
+da regra, agrupado em: sem link, quebrado, incorreto, acesso restrito, dúvida para
+revisão, não avaliado, em cadastro, outro. Com o critério de importação, ela tende a
+ficar vazia.
 
 ### Sincronização pelo código do recurso
 
 | Situação na planilha | Efeito no banco |
 |---|---|
+| Linha fora do critério (não `Funcionando`, sem link ou sem código) | Não cadastra; se já existia, **desativa** |
 | Código novo | Cria o recurso |
 | Código existente com campo alterado | Atualiza |
 | Código existente sem alteração | Só marca a data de sincronização |
 | Código que saiu da planilha | **Desativa** (`ativo = false`) e sai da galeria |
-| Código que voltou | Reativa |
+| Código que voltou, ou que voltou a `Funcionando` | Reativa |
 
 Nada é apagado. O `--clear` existe no script e **não deve ser usado na rotina**.
 
-Linha sem código recebe o identificador provisório `PLANILHA_L{número da linha}`.
-Esses registros nunca entram na galeria e nunca geram captura de capa: aparecem na
-fila de revisão como cadastro incompleto.
+Linha sem código recebe o identificador provisório `PLANILHA_L{número da linha}` e não
+é cadastrada.
+
+**Códigos repetidos.** O resumo da importação lista cada código que aparece em mais de
+uma linha, com os números das linhas (`findRepeatedCodes`). Entre as linhas do critério,
+a última vence; uma linha repetida fora do critério é ignorada, então o recurso
+`Funcionando` não é mais escondido por uma cópia `Não avaliado` mais abaixo. Códigos
+que só diferem pela barra final (`IMP/24/GLA10` e `IMP/24/GLA10/`) contam como
+recursos diferentes: a correção é editorial.
 
 ### Classificação do recurso
 
 Macroformato `Vídeo`, `Playlist` ou `Áudio` vira **Audiovisual** na interface. Os
 demais macroformatos viram **OED**. Código terminando em `_VA` seguido de número
 identifica vídeo-aula, que ganha o selo de duração no card.
+
+### Marca do recurso
+
+A marca vem da coluna Marca da planilha. Quando ela está em branco, a marca é deduzida
+pelo prefixo do código: `IMP/...` é **Conquista**. A regra está em `brandFromCode`
+(`thumbPaths.ts`, nos dois espelhos) e serve à pasta da capa e ao recurso exibido na
+interface, aplicada em `apiODAToFrontend` (`src/utils/api.ts`), por onde passam os
+dois backends. Assim, filtro, selo do card e busca concordam com a pasta da capa. O
+banco continua guardando a marca como veio da planilha.
+
+Na galeria, o filtro de Marca é o primeiro do grupo Localização.
 
 ### Contagem de visualizações
 
@@ -354,7 +378,8 @@ select email, role as papel, created_at from users order by role, email;
 
 Tabela `audit_events`, criada pela migração do Prisma, com RLS ligada e **sem acesso
 pela Data API**: nenhum perfil da aplicação lê nem grava nela diretamente. Só a lê
-quem opera o banco. Como fica no Postgres, migra junto com ele.
+quem opera o banco. Como fica no Postgres, migra junto com ele. Em produção no Supabase
+desde 2026-10-20.
 
 | Evento (`action`) | Modo Express | Modo Supabase |
 |---|---|---|
@@ -729,10 +754,9 @@ tiver esse ambiente, o catálogo congela. É o maior risco do projeto hoje.
 **O plano Free do Supabase pausa por inatividade.** Existe mitigação, mas ela mora
 num workflow do GitHub que o próprio GitHub desativa se o repositório ficar parado.
 
-**Há dois projetos Supabase na conta, e apenas um vale.** A produção é
-`iezvzcrmzdfljvbbdneu`. O outro, `adungjmhuibxvgiqrume` ("Acervo Digital - Arco"),
-está sem uso e **foi decidido excluí-lo** — enquanto isso não acontecer, confira
-sempre o identificador do projeto antes de mexer em qualquer configuração.
+**Um único projeto Supabase.** Desde 2026-10-20, só o `iezvzcrmzdfljvbbdneu` está em
+uso; o antigo `adungjmhuibxvgiqrume` ("Acervo Digital - Arco") saiu de uso. Se ele ainda
+aparecer na conta, ignore: a configuração vale só no `iezvzcrmzdfljvbbdneu`.
 
 **A senha do banco Supabase circulou em conversa de chat** durante a migração. Ficou
 decidido **não rotacioná-la**: a conversa foi interna e o risco foi avaliado e aceito

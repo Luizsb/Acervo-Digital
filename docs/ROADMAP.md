@@ -72,7 +72,8 @@ Resposta à perda de acesso à EC2, com custo zero.
 - ✅ Decidir sobre a senha do banco: **não será rotacionada.** O risco foi avaliado e
   aceito pelo responsável
 - 🔄 Repassar acessos por mensagem direta: Supabase, Vercel, GitHub e a senha do banco
-- ⬜ Excluir o projeto Supabase `adungjmhuibxvgiqrume` no painel
+- ✅ Supabase único: o projeto `adungjmhuibxvgiqrume` saiu de uso e só o
+  `iezvzcrmzdfljvbbdneu` está ativo (confirmado pelo responsável em 2026-10-20)
 - ✅ Etiqueta "Admin" no botão de perfil para identificar o acesso administrador
 - ✅ Importação por fases (`import:categorizacao:com-capa`) e planilha nova versionada
 - ✅ Corrigir o limite de 1000 linhas do catálogo no modo Supabase (paginação em
@@ -102,7 +103,8 @@ Resposta à perda de acesso à EC2, com custo zero.
   catálogo com "Tentar novamente", sem instruções de desenvolvimento em produção
 - ✅ Página 404: rota interna desconhecida, link de recurso inexistente e endereço
   inexistente na Vercel (`public/404.html`)
-- ⬜ `[A VALIDAR]` Conferir em produção se a Vercel serve o `404.html` em `/xyz`
+- ✅ Vercel serve o `404.html` em endereço inexistente (conferido pelo responsável em
+  2026-10-20)
 - ⬜ Dependabot: agrupar atualizações menores num PR por semana, tratar as versões
   maiores à mão e desligar o deploy de pré-visualização da Vercel nas branches
   `dependabot/*`. Hoje há 12 PRs abertos, um deploy cada; o do vitest 5 falha por
@@ -110,8 +112,27 @@ Resposta à perda de acesso à EC2, com custo zero.
 - ⬜ Investigar `EF21_9_ING_L2_U4_01_od2`, `EF22_9_ING_L4_U7_01_OD1`,
   `EF21_8_ING_L3_U6_01_OD1` e `EF21_8_ING_L4_U7_02_OD1`, presos na tela de
   carregamento na captura
-- ⬜ Decidir o destino das 14 capas `SAE25_..._ING_...` que saíram da planilha e
-  continuam soltas em `public/thumbs/`
+- ✅ 14 capas `SAE25_AF61/AF62_ING_...` soltas na raiz de `public/thumbs/` apagadas:
+  os códigos não existem na planilha nem no banco (a planilha passou a ter os
+  `SAE26_AF71/AF72_ING_...`). Ficam no histórico do Git
+- ✅ Selos sem cor repetida: macroformato e SAMR passam ao selo neutro; cor só para
+  componente, campo de experiência e marca
+- ✅ Filtro de Marca promovido a primeiro item do grupo Localização; recurso `IMP/...`
+  sem marca na planilha passa a contar como Conquista no filtro, no selo e na busca
+  (Conquista na galeria: de 518 para 805)
+- ✅ Importação só de recursos funcionais (`Funcionando`, link e código real); o resto
+  fica na planilha e o que já estava no banco é desativado. A importação lista os
+  códigos repetidos
+- ✅ Importação com o critério novo, em 2026-10-20, sobre a planilha recebida nesse dia
+  (conteúdo igual ao da versão de 19/10 no `diff:planilha`): 2519 recursos ativos, 132
+  desativados, 147 linhas não cadastradas, 20 códigos repetidos listados, 0 erros.
+  Galeria de 2506 para 2519
+- ✅ Selos de marca nas cores oficiais (Conquista, SAE, e já prontas Positivo, COC,
+  Geekie, SAS e Nave), num componente único `MarcaBadge`. Conquista deixou de sair
+  roxa como o SAE
+- ⬜ `[A VALIDAR]` Contraste do texto branco nos selos de Geekie (`#fd1747`), Positivo
+  (`#e94c26`) e Nave (`#ee377d`), abaixo de 4,5:1 para texto pequeno, quando essas
+  marcas entrarem no catálogo
 
 ### Resposta ao relatório do Comitê Security by Design 🔄 Em andamento
 
@@ -154,13 +175,14 @@ ferramenta de cadastro.
 - ✅ `npm run db:exportar` e runbook de migração para o servidor corporativo
 - ✅ Graphify como ferramenta local de mapa do código
 - ✅ MFA: risco aceito no ambiente de testes; vem com o JumpCloud
-- ⬜ Aplicar no Supabase: `npm run prisma:migrate` (cria `audit_events`) e depois
-  `scripts/supabase/rls.sql`, depois de confirmar que a conta do botão admin
-  (`admin@acervo.local`) tem o papel em `app_metadata`. Confirmado em 20/10 que a
-  tabela não existe no Supabase: a importação daquele dia rodou sem gravar auditoria
+- ✅ Aplicado no Supabase em 2026-10-20: `rls.sql` (pelo responsável, no SQL Editor) e
+  a migração `audit_events` (`npm run prisma:migrate`). RLS ligada, nenhuma permissão
+  para `anon` e `authenticated`, gatilho de login gravando (`auth.login` de
+  `demo@acervo.local` às 14:35). `admin@acervo.local` com `role = admin` em
+  `app_metadata`. A importação das 14:26 rodou antes da tabela e não tem evento
 - ⬜ Deploy e conferência de que a URL antiga da planilha responde 404
-- ⬜ Ativar no GitHub *Dependabot alerts* e conferir a aba *Security → Code scanning*
-  depois do primeiro push
+- ⬜ Ativar no GitHub *Dependabot alerts* (*Settings → Advanced Security → Dependabot
+  alerts → Enable*) e conferir a aba *Security → Code scanning* depois do push
 - ⬜ Levar à DPO: inventário, base legal, prazos de retenção, aviso e canal do titular
 - ⬜ Exibir o aviso de privacidade na tela de login, depois da aprovação da DPO
 - ⬜ Rotina de descarte (visualizações e auditoria), depois da aprovação dos prazos
@@ -199,25 +221,38 @@ O objetivo é que atualizar o catálogo deixe de exigir um ambiente Node configu
 | Prioridade | Item | Por quê |
 |---|---|---|
 | 1 | Repassar acessos por mensagem direta a quem assume | Sem isso o catálogo congela |
-| 2 | Abrir o chamado do servidor corporativo e solicitar o GitHub da ArcoTech | Destrava o JumpCloud e a maior parte do relatório de segurança |
-| 3 | Excluir o projeto Supabase `adungjmhuibxvgiqrume` | Decidido: elimina a ambiguidade sobre qual é a produção |
-| 4 | Cadastrar os secrets do workflow de ping e remover o gatilho de push | Hoje funciona com valor embutido |
-| 5 | Corrigir os 20 códigos repetidos na planilha | Hoje a última linha sobrescreve a anterior e a importação nunca estabiliza |
-| 6 | SSO JumpCloud | Tira o login com senha manual |
-| 7 | Teste end-to-end do fluxo de login e galeria | Única forma de detectar quebra dos dois backends |
-| 8 | Reduzir o bundle inicial | Aviso do Vite, sem impacto relatado por usuário |
-| 9 | Revisar `src/guidelines/Guidelines.md` | Pode estar descrevendo estilo que não se aplica mais |
+| 2 | Abrir o chamado do servidor corporativo e solicitar o GitHub da ArcoTech | Pendente, sem data. Destrava o JumpCloud e a maior parte do relatório de segurança |
+| 3 | Cadastrar os secrets do workflow de ping e remover o gatilho de push | Hoje funciona com valor embutido |
+| 4 | Corrigir os 20 códigos repetidos na planilha (lista em "Bugs conhecidos") | A última linha vence; um deles junta dois recursos diferentes |
+| 5 | SSO JumpCloud | Tira o login com senha manual |
+| 6 | Teste end-to-end do fluxo de login e galeria | Única forma de detectar quebra dos dois backends |
+| 7 | Reduzir o bundle inicial | Aviso do Vite, sem impacto relatado por usuário |
+| 8 | Revisar `src/guidelines/Guidelines.md` | Pode estar descrevendo estilo que não se aplica mais |
 
 ---
 
 ## Bugs conhecidos
 
-- **Códigos repetidos na planilha.** 20 códigos aparecem em duas linhas cada, às vezes
-  com status diferentes (ex.: `EF21_8_POR_L1_U1_02_OD1` como `Funcionando` e
-  `Não avaliado`). A última linha vence e cada importação registra cerca de 28
-  "alterados" que não mudaram de verdade. Correção editorial: manter uma linha por
-  código. Lista completa obtida com `loadRows` + `mapCategorizacaoRow` agrupando por
-  código.
+- **Códigos repetidos na planilha.** 20 códigos aparecem em duas linhas cada (planilha
+  de 2026-10-19). Desde 2026-10-20 a importação lista todos no resumo. Correção
+  editorial: manter uma linha por código. Na planilha:
+  - **Funcionando seguido de uma cópia `Não avaliado`** (o título é o próprio código):
+    11 códigos, linhas 1951–1961 contra 2027–2039: `EF21_8_POR_L1_U1_02_OD1`,
+    `_U1_02_OD2`, `_U2_01_OD1`, `_U2_01_OD2`, `_U2_02_OD1`, `_U2_02_OD2`, `_U2_03_OD1`,
+    `_U2_03_OD2` e `EF21_8_CIE_L1_U1_01_OD1`, `_U1_02_OD1`, `_U1_03_OD1`. A cópia
+    vencia e escondia o recurso; com o critério de importação, ele volta à galeria.
+  - **Dois recursos diferentes com o mesmo código:** `EF21_8_ART_L1_U1_02_OD1`, linhas
+    1979 ("Walt Disney, o Midas dos desenhos") e 1980 ("Noções de desenho do rosto de
+    personagens"). Só um entra; o outro precisa de código próprio.
+  - **Linha duplicada idêntica ou quase:** `EF21_8_HIS_L1_U1_02_OD1` (1933/2041),
+    `EF21_8_HIS_L1_U2_01_OD1` (1936/2044), `IMP/23/GLA3` (2522/2657) e `IMP/33/GLA3`
+    (2524/2659), todos `Funcionando`; `EF21_8_HIS_L1_U1_03_OD1`, `_U1_04_OD1` e
+    `_U2_02_OD1` (1934–1937/2042–2045), todos `Quebrado`.
+  - **`Incorreto` seguido de `Funcionando`:** `EF21_5_EDF_L2_U1_02_od1` (1656/1657).
+- **Códigos que só diferem pela barra final, no banco.** `IMP/24/GLA10` e
+  `IMP/24/GLA10/` estão os dois `Funcionando`: o card "Jogo do trânsito" aparece duas
+  vezes na galeria. `IMP/61/ILA19/` é `Incorreto` e sai com o critério de importação.
+  Decisão do responsável: correção editorial, sem normalizar o código na importação.
 - **Códigos `IMP/...` com cara de caminho na planilha.** Os códigos da Conquista vêm
   como `IMP/63/ALA19`; 148 terminam em `/` e 3 em `index_.html`. A capa já não
   depende disso: o nome do arquivo troca a barra por `_` (`IMP_63_ALA19.webp`). Fica o
@@ -226,9 +261,14 @@ O objetivo é que atualizar o catálogo deixe de exigir um ambiente Node configu
   `IMP/61/ILA19/`. Elas dividem a capa. Correção editorial: um código por recurso,
   sem barra no fim.
 - **Marca em branco na planilha.** 296 linhas estão sem Marca, 293 delas com código
-  `IMP/...`. A capa vai para `conquista/` pela regra do prefixo, mas o filtro de
-  marca da galeria não mostra esses recursos como Conquista. Correção editorial:
-  preencher a coluna.
+  `IMP/...`; no banco são 294 recursos, provavelmente porque códigos repetidos viram
+  um só `[A VALIDAR]`. Desde 2026-10-20, a interface deduz Conquista pelo prefixo, como
+  já fazia a capa. As 3 restantes são linhas **sem código do recurso**, todas
+  `Quebrado` e fora da galeria: `PLANILHA_L2274` (sem título nem link),
+  `PLANILHA_L2314` (Estrutura interna do osso) e `PLANILHA_L2316` (Circulação do corpo
+  humano). As duas últimas apontam para PDFs de realidade aumentada na pasta `SPE` do
+  SharePoint `[HIPÓTESE — CONFIRMAR]` Sistema Positivo. Correção editorial: preencher
+  a coluna e dar código a essas linhas, ou removê-las.
 - **`ERR_NAME_NOT_RESOLVED` no domínio do Supabase dentro da rede corporativa.**
   Ocorreu em setembro de 2026 e foi diagnosticado inicialmente como pausa do
   projeto; era o DNS da rede. `[HIPÓTESE — CONFIRMAR]` se acontece de forma
@@ -294,8 +334,7 @@ Na ordem, para quem assume o projeto:
    são repassados por mensagem direta, nunca pelo repositório.
 3. Executar um ciclo completo de atualização do catálogo, mesmo sem planilha nova,
    usando `npm run diff:planilha` para confirmar que o ambiente responde.
-4. Excluir o projeto Supabase `adungjmhuibxvgiqrume`, já decidido.
-5. Conferir na aba Actions do GitHub se o workflow de ping continua ativo.
+4. Conferir na aba Actions do GitHub se o workflow de ping continua ativo.
 
 ## Pontos a complementar
 

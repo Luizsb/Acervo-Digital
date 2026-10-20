@@ -10,6 +10,293 @@ trazem a seção "Impacto observado" com dado medido: nenhuma métrica foi colet
 
 ---
 
+## 2026-10-20 · 14:40 — Auditoria ativa no Supabase e Vite estável durante a importação
+
+### Antes
+
+- O responsável rodou o `rls.sql`, mas a migração `20261020120000_add_audit_events`
+  estava pendente (`prisma migrate status`). A tabela não existia, e o gatilho de
+  login só gerava aviso.
+- O servidor de desenvolvimento caía com `EBUSY` quando a importação gravava
+  `data/ultima-importada.xlsx`: o Vite vigiava a pasta `data/`.
+- As planilhas baixadas, com todas as abas e dados pessoais, estavam na pasta
+  Downloads.
+
+### Depois
+
+- `npm run prisma:migrate` aplicou a migração no Supabase. A migração já liga a RLS e
+  retira o acesso de `anon` e `authenticated`.
+- `vite.config.ts`: `server.watch.ignored` para `data/` e `server/`. Afeta só o
+  desenvolvimento local.
+- As duas planilhas da pasta Downloads foram apagadas, a pedido do responsável.
+- O 404 da Vercel foi conferido pelo responsável.
+
+### Decisão
+
+Rodar o `rls.sql` de novo não foi necessário: a migração já aplica a RLS e a revogação
+na tabela, e o gatilho `auth_user_change_audit` já existia.
+
+### Evidência
+
+- `prisma migrate status`: "Database schema is up to date!".
+- Consulta ao banco: `relrowsecurity = true`, nenhuma permissão para `anon` e
+  `authenticated`, gatilhos `auth_user_change_audit` e `users_role_change_audit`
+  presentes.
+- Login de teste: evento `auth.login`, `demo@acervo.local`, origem `supabase`,
+  2026-10-20T17:35:40Z.
+- `auth.users`: `admin@acervo.local` com `role = admin`; `demo@acervo.local` sem papel.
+
+### Impacto observado
+
+A trilha de auditoria passa a registrar login, mudança de papel e importação no
+ambiente de testes.
+
+### Próximos passos
+
+1. Ativar os alertas do Dependabot no GitHub.
+2. Conferir a resposta 404 da URL antiga da planilha depois do deploy.
+
+---
+
+## 2026-10-20 · 14:30 — Importação aplicada, selos sem cor repetida e capas soltas removidas
+
+### Antes
+
+- O critério de importação estava no código, mas o banco ainda tinha 2649 ativos, e a
+  galeria tinha 2506.
+- O SAMR era sempre âmbar e repetia a cor do campo "Espaços, tempos, quantidades…" e
+  de História. Os macroformatos repetiam componentes: ODA e Matemática azuis, Vídeo e
+  Física vermelhos, Playlist e Química laranja, Ferramenta e Geografia ciano, RA e
+  Inglês índigo.
+- 14 capas `SAE25_AF61/AF62_ING_...` estavam soltas na raiz de `public/thumbs/`.
+
+### Depois
+
+- **Importação** da planilha recebida em 2026-10-20, preparada com
+  `planilha:preparar` (só a aba Recursos Digitais, 3016 linhas, 28 abas e a coluna
+  Avaliador descartadas): 2524 processados, 2 novos, 21 alterados, 132 desativados,
+  147 não cadastrados, 20 códigos repetidos listados, 0 erros. **2519 ativos**, todos
+  na galeria.
+- **Selos:** macroformato e SAMR com o selo neutro (`catalog-neutral` e
+  `catalog-macro` em `catalogBadges.css`), também no quadro SAMR da ficha e na etiqueta
+  de filtro ativo. O item de lista passou a usar `MacroformatoBadge`, com ícone. A cor
+  fica para componente, campo de experiência e marca.
+- **Capas:** as 14 soltas foram apagadas com `git rm`.
+
+### Decisão
+
+- **Cor só para o que informa**, por decisão do responsável: não há cores para todos
+  os valores serem únicos (13 componentes, 5 campos, 10 macroformatos e o SAMR), então
+  os tipos secundários ficam neutros e o ícone diferencia.
+- **Apagar as capas soltas:** os códigos não estão na planilha nem no banco, e a
+  planilha passou a ter os `SAE26_AF71/AF72_ING_...`.
+
+### Evidência
+
+- `diff:planilha` contra a versão de 19/10: 0 novos, 0 alterados, 0 removidos.
+- Resumo da importação acima. A simulação previa os mesmos 2524 cadastráveis e 2519
+  ativos.
+- Galeria local contra o Supabase: "2519 resultados encontrados"; a busca "Tipos de
+  Narrador", antes escondida por uma cópia `Não avaliado`, encontra o recurso.
+- Selo SAMR no Jogo Tangram: fundo `rgb(255, 255, 255)`, texto `rgb(51, 65, 85)`.
+- `npm test` (72) e `npm run build` passando.
+- A auditoria da importação **não foi gravada**: `public.audit_events` não existe no
+  Supabase (erro P2021, registrado como aviso, como previsto).
+
+### Impacto observado
+
+O catálogo de produção já está com 2519 recursos, porque o banco é compartilhado. Os
+selos e a remoção das capas só chegam ao site depois do commit e do deploy.
+
+### Próximos passos
+
+1. Commit e push das mudanças do dia.
+2. Aplicar `audit_events` e o `rls.sql` no Supabase.
+3. Apagar as planilhas baixadas na pasta Downloads, que têm dados pessoais.
+
+---
+
+## 2026-10-20 · 14:10 — Importação só de recursos funcionais e aviso de códigos repetidos
+
+### Antes
+
+A importação cadastrava toda linha da planilha. O banco tinha 2649 recursos ativos,
+2506 na galeria e 143 na fila de revisão: 92 Quebrado, 31 Incorreto, 17 Não avaliado,
+1 Acesso restrito, 1 sem status e 1 Funcionando sem link, incluindo as 37 linhas sem
+código (`PLANILHA_L…`). Códigos repetidos na planilha passavam em silêncio, e a última
+linha vencia.
+
+### Depois
+
+- `isImportableResource` (`server/lib/catalogVisibility.ts`): a linha só é cadastrada
+  se entraria na galeria (`isVisibleInCatalog`) e tem código real.
+- `import-categorizacao.ts` pula as linhas fora do critério. Elas não entram em
+  `seenCodes`, então o que já estava no banco é desativado pela regra existente de
+  "saiu da planilha". Nada é apagado. O resumo e a auditoria mostram os não
+  cadastrados.
+- `findRepeatedCodes` (`server/lib/map-categorizacao.ts`): o resumo da importação lista
+  os códigos repetidos com as linhas.
+- Vale para os dois backends: a importação roda pelo Prisma nos dois.
+
+### Decisão
+
+- **Só sobe o que é funcional**, por decisão do responsável. A curadoria do que está
+  quebrado fica na planilha do NDE. Isso rompe a regra anterior do `SDD` ("todo o resto
+  continua no banco e vai para a fila de revisão"), e a quebra foi apresentada e
+  aprovada antes da implementação.
+- **Desativar em vez de apagar**, para manter favoritos, contadores e a reativação
+  automática.
+- **Barra final do código:** sem normalizar; a correção é editorial.
+
+### Evidência
+
+- Simulação sobre a planilha de 2026-10-19, a última versionada, recuperada do
+  histórico do Git num arquivo temporário já apagado, sem gravar no banco: 2671 linhas
+  com dado, **2524 cadastráveis** e 147 fora (79 Quebrado, 37 sem código, 17 Não
+  avaliado, 11 Incorreto, 1 Acesso restrito, 1 sem status, 1 Funcionando sem link).
+- 20 códigos repetidos encontrados e listados no `ROADMAP.md`. Em 11 deles o recurso
+  `Funcionando` estava escondido por uma cópia `Não avaliado` mais abaixo.
+- Consulta ao banco: duas colisões pela barra final (`IMP/24/GLA10`, `IMP/61/ILA19`).
+- `npm test` (72 testes, com 5 novos de `isImportableResource` e `findRepeatedCodes`)
+  e `npx tsc --noEmit` no `server/` passando.
+
+### Impacto observado
+
+Aplicado ao banco em 2026-10-20 · 14:30 (ver a entrada correspondente): 2519 ativos.
+
+### Próximos passos
+
+1. Preparar a planilha em `data/`, rodar `diff:planilha` e `import:categorizacao`.
+2. NDE corrigir os 20 códigos repetidos e as barras finais.
+
+---
+
+## 2026-10-20 · 14:00 — Supabase único e servidor corporativo como pendência
+
+### Antes
+
+O `ROADMAP` e o `SDD` tratavam a exclusão do projeto Supabase `adungjmhuibxvgiqrume`
+como ação em aberto, e o risco "dois projetos Supabase" seguia listado.
+
+### Depois
+
+- `ROADMAP.md`: exclusão marcada como concluída, removida do backlog e das próximas
+  ações; o servidor corporativo segue no backlog como pendente, sem data.
+- `SDD.md`: o risco passa a registrar um único projeto em uso, `iezvzcrmzdfljvbbdneu`.
+
+### Decisão
+
+O responsável confirmou que o banco está num Supabase único, em uso. O servidor
+corporativo continua pendente e não bloqueia o ambiente de testes.
+
+### Evidência
+
+Confirmação do responsável no chat, em 2026-10-20.
+
+### Impacto observado
+
+Sem impacto no sistema; só documentação.
+
+### Próximos passos
+
+Nenhum.
+
+---
+
+## 2026-10-20 · 13:50 — Selos de marca nas cores oficiais
+
+### Antes
+
+Os selos comparavam a marca com as siglas `SAE`, `CQT` e `SPE`. O banco guarda
+"Conquista" por extenso, então a Conquista caía no caso padrão e saía roxa, igual ao
+SAE. A lógica estava copiada no card, no item de lista e na ficha, com cores padrão
+diferentes em cada um.
+
+### Depois
+
+- `getMarcaColor` (`src/utils/curriculumColors.ts`) guarda a cor oficial de cada
+  marca, indexada pelo nome completo: sigla e nome dão a mesma cor.
+- Componente `MarcaBadge` (com `MarcaBadge.css`) usado nos três lugares: selo sólido,
+  fundo na cor da marca e texto branco. Marca sem cor definida fica cinza.
+- Cores: Conquista `#e40657`, SAE `#591d64`, e já prontas para quando entrarem no
+  catálogo: Positivo `#e94c26`, COC `#00963c`, Geekie `#fd1747`, SAS `#032066` e Nave
+  `#ee377d`.
+
+### Decisão
+
+- **Selo sólido**, escolhido pelo responsável, para a cor ficar fiel à marca.
+- **Cor por variável CSS** (`--marca-color`), porque o Tailwind de `src/index.css` é
+  congelado e não tem essas cores.
+
+### Evidência
+
+- No navegador, ambiente local: SAE com fundo `rgb(89, 29, 100)` e Conquista com
+  `rgb(228, 6, 87)`, texto branco, no card, na lista, na ficha e nos relacionados.
+- `npm test` (67 testes, com 4 novos de `getMarcaColor`) e `npm run build` passando.
+
+### Impacto observado
+
+`[A VALIDAR]` Conferir na Vercel depois do deploy.
+
+### Próximos passos
+
+1. Revisar o contraste do texto branco em Geekie, Positivo e Nave quando essas marcas
+   entrarem no catálogo.
+
+---
+
+## 2026-10-20 · 13:45 — Filtro de Marca entre os principais e Conquista deduzida pelo código
+
+### Antes
+
+- O filtro de Marca era o 7º item do grupo "Detalhes", no fim da barra lateral, e só
+  aparecia depois de rolar.
+- 293 linhas da planilha com código `IMP/...` têm a coluna Marca em branco. A capa já
+  ia para `conquista/` pela regra do prefixo, mas o filtro, o selo do card e a busca
+  não tratavam esses recursos como Conquista.
+
+### Depois
+
+- Marca é o primeiro item do grupo **Localização**, e a etiqueta do filtro ativo
+  aparece primeiro no cabeçalho.
+- `brandFromCode` (`src/utils/thumbPaths.ts` e o espelho `server/lib/thumbPaths.ts`)
+  expõe a regra do prefixo, que antes só devolvia a pasta. `thumbBrandFolder` passa a
+  usá-la, com o mesmo resultado.
+- `apiODAToFrontend` (`src/utils/api.ts`) usa a marca da planilha e, se ela estiver em
+  branco, a marca deduzida do código. Vale para os dois backends.
+
+### Decisão
+
+- **Marca entre os filtros principais**, a pedido do responsável: é o recorte mais
+  amplo do catálogo.
+- **Deduzir a marca pelo código**, por decisão do responsável. Com o filtro em
+  destaque, a ausência dos recursos sem marca ficaria mais visível. A dedução fica na
+  interface; o banco continua com o valor da planilha, para que a correção editorial
+  continue aparecendo como pendência.
+
+### Evidência
+
+- No ambiente local, com o filtro Conquista marcado: **518** resultados antes e
+  **805** depois, sobre o mesmo banco.
+- Opções do filtro de Marca: "Conquista" e "SAE Digital".
+- Ordem da barra lateral conferida no navegador: Localização → Marca, Volume,
+  Bloco/Capítulo, Livro, Coleção, Envio à escola.
+- `npm test` (63 testes, com os novos de `brandFromCode` e do espelho do servidor),
+  `npm run build` e `npx tsc --noEmit` no `server/` passando. O `tsc` do servidor
+  exigiu `npx prisma generate` antes: o cliente local não tinha `auditEvent`.
+
+### Impacto observado
+
+`[A VALIDAR]` Conferir na Vercel, depois do deploy, o filtro Conquista com o mesmo
+número do ambiente local.
+
+### Próximos passos
+
+1. NDE preencher a coluna Marca nas 296 linhas em branco. Três delas não têm prefixo
+   conhecido e seguem fora do filtro.
+
+---
+
 ## 2026-10-20 · 11:00 — Migração das capas concluída e versão 2.0
 
 ### Antes

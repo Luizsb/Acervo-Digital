@@ -27,6 +27,10 @@ export default defineConfig({
   server: {
     port: 3000,
     open: true,
+    watch: {
+      // A importação grava planilhas em data/ e server/; vigiá-las derruba o Vite no Windows (EBUSY).
+      ignored: ['**/data/**', '**/server/**'],
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:3001',
