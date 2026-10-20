@@ -121,6 +121,16 @@
   gap: 4px;
 }
 
+.catalog-filter-pending {
+  display: flex;
+  min-height: 42px;
+  align-items: center;
+  gap: 11px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  opacity: 0.45;
+}
+
 .catalog-filter-trigger {
   display: flex;
   width: 100%;

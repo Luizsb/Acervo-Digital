@@ -103,6 +103,18 @@ Resposta à perda de acesso à EC2, com custo zero.
 - ✅ Versão 2.0: lida do `package.json` e exibida no rodapé do login
 - ✅ Nova tentativa automática para o 401 "JWT issued at future" e aviso de falha do
   catálogo com "Tentar novamente", sem instruções de desenvolvimento em produção
+- ✅ Falha de banco no ambiente de testes explica o erro e pede contato com o time
+  de Interações Digitais, inclusive quando o plano gratuito pausa o projeto
+- ✅ `api.ts` dividido em `src/utils/api/` (auth, favorites, catalog, admin, types,
+  http, odaToProject), sem mudar o que os componentes importam
+- ✅ Admin: status da planilha voltou a carregar na aba principal (a condição de
+  aba estava no efeito errado)
+- ⬜ Reorganização: `App.tsx` (978 linhas), depois `AdminReviewPage.tsx` e
+  `ProjectDetailsPage.tsx`
+- ✅ Checagem de tipos do front: `tsconfig.json` em modo estrito, `npm run typecheck`
+  no CI, zero erros
+- ⬜ Tipos gerados das tabelas do Supabase (`supabase gen types`), para o
+  TypeScript conferir nomes de coluna em `supabaseApi.ts`
 - ✅ Página 404: rota interna desconhecida, link de recurso inexistente e endereço
   inexistente na Vercel (`public/404.html`)
 - ✅ Vercel serve o `404.html` em endereço inexistente (conferido pelo responsável em
@@ -349,5 +361,5 @@ Na ordem, para quem assume o projeto:
 - `[PERGUNTA AO RESPONSÁVEL]` Existe demanda editorial em espera que dependa do
   acervo e não esteja neste arquivo?
 - ✅ Recuperação da EC2 abandonada em 2026-10-20. O destino é o servidor corporativo.
-- `[PERGUNTA AO RESPONSÁVEL]` No servidor corporativo, os dados ficam no Postgres de
-  lá ou continuam no Supabase?
+- ✅ Onde ficam os dados (responsável, 2026-10-20): hoje a base oficial é o
+  Supabase; no futuro, a infraestrutura da Arco.

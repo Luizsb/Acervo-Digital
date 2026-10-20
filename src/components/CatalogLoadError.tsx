@@ -1,6 +1,6 @@
 import React from 'react';
 import { AlertTriangle, RefreshCw, X } from 'lucide-react';
-import type { CatalogLoadErrorKind } from '../utils/catalogLoadError';
+import { catalogLoadMessage, type CatalogLoadErrorKind } from '../utils/catalogLoadError';
 import './CatalogLoadError.css';
 
 interface CatalogLoadErrorProps {
@@ -11,23 +11,8 @@ interface CatalogLoadErrorProps {
   onDismiss: () => void;
 }
 
-const MESSAGES: Record<CatalogLoadErrorKind, { title: string; text: string }> = {
-  'backend-offline': {
-    title: 'Não foi possível conectar ao acervo',
-    text: 'Verifique sua conexão com a internet e tente novamente.',
-  },
-  session: {
-    title: 'Sua sessão expirou',
-    text: 'Saia e entre novamente para continuar consultando o acervo.',
-  },
-  unavailable: {
-    title: 'Não foi possível carregar o acervo agora',
-    text: 'Pode ser uma instabilidade passageira. Tente novamente em alguns segundos.',
-  },
-};
-
 export function CatalogLoadError({ kind, isLocalBackend, onRetry, onDismiss }: CatalogLoadErrorProps) {
-  const { title, text } = MESSAGES[kind];
+  const { title, text } = catalogLoadMessage(kind, isLocalBackend);
   return (
     <div className="catalog-load-error" role="alert">
       <AlertTriangle className="catalog-load-error-icon" aria-hidden="true" />

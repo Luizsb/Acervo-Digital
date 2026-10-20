@@ -3,6 +3,7 @@ import { Navigation } from "./components/Navigation";
 import { ProjectGrid } from "./components/ProjectGrid";
 import { useAuth } from "./contexts/AuthContext";
 import { FilterSidebar } from "./components/FilterSidebar";
+import "./components/AcervoLoading.css";
 import { MobileFilterDrawer } from "./components/MobileFilterDrawer";
 import {
   SearchX,
@@ -16,7 +17,7 @@ import {
   List,
 } from "lucide-react";
 import { BookOpen, Video, Gamepad2 } from "lucide-react";
-import type { ODAFromExcel } from "./types/project";
+import type { ODAFromExcel, Project } from "./types/project";
 import { loadODAsFromDatabase } from "./utils/loadODAs";
 import { apiFavoritesGet, apiFavoriteAdd, apiFavoriteRemove } from "./utils/api";
 import { Pagination } from "./components/Pagination";
@@ -84,7 +85,7 @@ const COMPONENTES_CURRICULARES = [
 
 export default function App() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedProject, setSelectedProject] = useState<ODAFromExcel | null>(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [currentPage, setCurrentPageState] = useState<PageKey>(getInitialPageFromHash);
 
   // Código do recurso pedido pela URL (#/recurso/<codigo>) aguardando o catálogo carregar.
@@ -298,7 +299,7 @@ export default function App() {
     }
   }, [currentPageNumber, totalPages]);
 
-  const handleProjectClick = (project) => {
+  const handleProjectClick = (project: Project) => {
     setSelectedProject(project);
     setCurrentPageState("gallery");
     setPendingResourceCode(null);
@@ -733,6 +734,7 @@ export default function App() {
             onFilterChange={handleFilterChange}
             onClearFilters={handleClearFilters}
             contentType={contentTypeFilter}
+            loading={projectsLoading}
           />
         </div>
 
@@ -743,6 +745,7 @@ export default function App() {
           onFilterChange={handleFilterChange}
           onClearFilters={handleClearFilters}
           contentType={contentTypeFilter}
+          loading={projectsLoading}
           isOpen={isMobileFilterOpen}
           onClose={() => setIsMobileFilterOpen(false)}
         />
@@ -866,10 +869,10 @@ export default function App() {
 
             {/* Loading acervo ou resultados */}
             {projectsLoading ? (
-              <div className="flex flex-col items-center justify-center min-h-[50vh] py-12">
-                <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
-                <p className="text-primary font-semibold">Carregando acervo...</p>
-                <p className="text-sm text-muted-foreground mt-1">Buscando ODAs e videoaulas</p>
+              <div className="acervo-loading" role="status">
+                <span className="acervo-loading-spinner" aria-hidden="true" />
+                <p className="acervo-loading-title">Carregando acervo...</p>
+                <p className="acervo-loading-hint">Buscando ODAs e videoaulas</p>
               </div>
             ) : (
             <div id="acervo-project-grid">

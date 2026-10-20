@@ -10,6 +10,7 @@ interface MobileFilterDrawerProps {
   onFilterChange: (category: string, value: string) => void;
   onClearFilters: () => void;
   contentType: 'Todos' | 'Audiovisual' | 'OED';
+  loading?: boolean;
 }
 
 export function MobileFilterDrawer({
@@ -19,7 +20,8 @@ export function MobileFilterDrawer({
   selectedFilters,
   onFilterChange,
   onClearFilters,
-  contentType
+  contentType,
+  loading = false,
 }: MobileFilterDrawerProps) {
   if (!isOpen) return null;
 
@@ -49,6 +51,7 @@ export function MobileFilterDrawer({
             onFilterChange={onFilterChange}
             onClearFilters={onClearFilters}
             contentType={contentType}
+            loading={loading}
           />
         </div>
       </div>

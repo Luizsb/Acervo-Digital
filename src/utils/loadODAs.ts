@@ -28,20 +28,3 @@ export async function loadODAsFromDatabase(): Promise<ODAFromExcel[]> {
   }
 }
 
-/**
- * Carrega ODAs da API por tipo de conteúdo
- */
-export async function loadODAsByContentType(
-  contentType: 'Audiovisual' | 'OED' | 'Todos'
-): Promise<ODAFromExcel[]> {
-  try {
-    const odas = await fetchAllODAs({ tipoConteudo: contentType });
-    return odas
-      .map(apiODAToFrontend)
-      .filter((oda) => isVisibleInCatalog(oda.status, oda.videoUrl));
-  } catch (error) {
-    console.error('Erro ao carregar ODAs por tipo:', error);
-    return [];
-  }
-}
-

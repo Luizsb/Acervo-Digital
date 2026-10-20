@@ -77,7 +77,8 @@ evidência precisa ser coletada.
 **Dois backends convivem.** `VITE_BACKEND=supabase` é a produção na Vercel;
 `VITE_BACKEND=ec2` é o Express em `server/`, usado no desenvolvimento local e
 guardado como plano de retorno para a instância AWS. Toda alteração de API precisa
-ser pensada nos dois caminhos: `src/utils/api.ts` faz o desvio e
+ser pensada nos dois caminhos: `src/utils/api/` faz o desvio, um arquivo por
+assunto (auth, favorites, catalog, admin), e
 `src/utils/supabaseApi.ts` implementa o lado Supabase. Não remova `server/` nem o
 Postgres local do `docker-compose.yml`. A hospedagem na EC2 (imagens, nginx, Caddy
 e scripts de deploy) foi retirada em 2026-10-20, por decisão do responsável.

@@ -10,7 +10,7 @@ import type {
   ViewRankingResponse,
   SpreadsheetStatusResponse,
   SyncChangeKind,
-} from './api';
+} from './api/types';
 
 const LOCAL_JOB =
   'No Vercel isso roda na sua máquina: npm run import:categorizacao ou npm run thumbs:capture.';
@@ -25,8 +25,13 @@ export function roleFromUser(user: { app_metadata?: Record<string, unknown> }): 
   return user.app_metadata?.role === 'admin' ? 'admin' : 'user';
 }
 
-function throwIfError(error: { message?: string } | null, fallback: string): void {
-  if (error) throw new Error(error.message || fallback);
+function throwIfError(
+  error: { message?: string; code?: string; details?: string } | null,
+  fallback: string,
+): void {
+  if (!error) return;
+  const text = [error.message || fallback, error.code, error.details].filter(Boolean).join(' ');
+  throw new Error(text);
 }
 
 function fromSnakeOda(row: Record<string, unknown>): ODA {
@@ -48,7 +53,7 @@ function fromSnakeOda(row: Record<string, unknown>): ODA {
     segmento: (row.segmento as string) ?? null,
     pagina: (row.pagina as string) ?? null,
     marca: (row.marca as string) ?? null,
-    tipoConteudo: String(row.tipo_conteudo ?? ''),
+    tipoConteudo: row.tipo_conteudo === 'Audiovisual' ? 'Audiovisual' : 'OED',
     categoriaVideo: (row.categoria_video as string) ?? null,
     escalaSamr: (row.escala_samr as string) ?? null,
     tipoObjeto: (row.tipo_objeto as string) ?? null,
@@ -142,13 +147,6 @@ export async function supabaseFetchOdas(): Promise<ODA[]> {
     from += page.length;
   }
   return [...byId.values()];
-}
-
-export async function supabaseFetchOdaById(id: number): Promise<ODA | null> {
-  const supabase = getSupabaseClient();
-  const { data, error } = await supabase.from('odas').select('*').eq('id', id).maybeSingle();
-  if (error) throw new Error(error.message);
-  return data ? fromSnakeOda(data as Record<string, unknown>) : null;
 }
 
 export async function supabaseFavoritesGet(): Promise<number[]> {

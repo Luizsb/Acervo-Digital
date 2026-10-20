@@ -69,6 +69,8 @@ interface FilterSidebarProps {
   onFilterChange: (category: string, value: string) => void;
   onClearFilters: () => void;
   contentType: 'Todos' | 'Audiovisual' | 'OED';
+  /** Enquanto o catálogo carrega, os grupos aparecem mesmo sem opções. */
+  loading?: boolean;
 }
 
 type FilterItem = {
@@ -89,6 +91,7 @@ export function FilterSidebar({
   onFilterChange,
   onClearFilters,
   contentType,
+  loading = false,
 }: FilterSidebarProps) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [bnccSearchQuery, setBnccSearchQuery] = useState('');
@@ -217,6 +220,13 @@ export function FilterSidebar({
       </div>
     );
   };
+
+  const renderPending = (item: FilterItem) => (
+    <div key={item.key} className="catalog-filter-pending" aria-hidden="true">
+      <span className="catalog-filter-icon">{item.icon}</span>
+      <span className="catalog-filter-title">{item.title}</span>
+    </div>
+  );
 
   const renderItem = (item: FilterItem) => {
     if (!item.options.length) return null;
@@ -433,6 +443,7 @@ export function FilterSidebar({
     <aside
       id="acervo-filters"
       className="relative flex h-full min-h-0 w-full flex-col bg-white font-sans"
+      aria-busy={loading}
     >
       <div className="shrink-0 border-b border-gray-100 px-5 py-4">
         <div className="flex items-center justify-between gap-2">
@@ -483,7 +494,7 @@ export function FilterSidebar({
         >
           <div className="catalog-filter-scroll-inner">
         {groups.map((group) => {
-          const visible = group.items.filter((item) => item.options.length > 0);
+          const visible = group.items.filter((item) => item.options.length > 0 || loading);
           if (visible.length === 0) return null;
           const open = groupOpen[group.label] !== false;
           const selectedInGroup = visible.reduce((acc, item) => acc + item.selected.length, 0);
@@ -503,7 +514,9 @@ export function FilterSidebar({
               </button>
               {open && (
                 <div className="catalog-filter-group-items">
-                  {visible.map((item) => renderItem(item))}
+                  {visible.map((item) =>
+                    item.options.length > 0 ? renderItem(item) : renderPending(item)
+                  )}
                 </div>
               )}
             </section>

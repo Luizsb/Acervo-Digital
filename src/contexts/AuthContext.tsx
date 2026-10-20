@@ -8,6 +8,8 @@ import {
   apiAuthMe,
   type AuthUserResponse,
 } from '../utils/api';
+import { isSupabaseBackend } from '../config/backend';
+import { loginConnectionMessage } from '../utils/catalogLoadError';
 
 const AUTH_USER_KEY = 'acervo_user';
 
@@ -38,11 +40,11 @@ function toAuthUser(u: AuthUserResponse): AuthUser {
   };
 }
 
-function toFriendlyError(err: any, fallback: string): string {
-  const msg = err?.message?.toString() || '';
-  if (msg.includes('Failed to fetch') || msg.includes('ConnectionRefused') || msg.includes('ERR_CONNECTION_REFUSED') || msg.includes('NetworkError')) {
-    return 'Não foi possível conectar ao servidor. Verifique se o backend está rodando (ex.: npm run server:dev em outro terminal).';
-  }
+function toFriendlyError(err: unknown, fallback: string): string {
+  const connection = loginConnectionMessage(err, !isSupabaseBackend());
+  if (connection) return connection;
+  const msg = err instanceof Error ? err.message : '';
+  if (/invalid login|invalid credentials/i.test(msg)) return 'E-mail ou senha incorretos.';
   return msg || fallback;
 }
 

@@ -27,6 +27,9 @@ jobs:
       - name: Audita dependências do frontend (SCA)
         run: npm audit --omit=dev --audit-level=high
 
+      - name: Verifica os tipos do frontend
+        run: npm run typecheck
+
       - name: Roda os testes
         run: npm test
 

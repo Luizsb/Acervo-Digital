@@ -19,13 +19,14 @@ ambiente**.
 
 | Modo | O que é | Onde roda hoje |
 |------|---------|----------------|
-| `VITE_BACKEND=supabase` | Supabase Auth + Data API (PostgREST) falando direto com o Postgres, protegido por RLS | **Ambiente de testes**, na Vercel com Supabase Free |
+| `VITE_BACKEND=supabase` | Supabase Auth + Data API (PostgREST) falando direto com o Postgres, protegido por RLS | **Base oficial atual** do acervo, na Vercel com Supabase Free (MVP) |
 | `VITE_BACKEND=ec2` | API Express + Prisma em `server/`, com JWT próprio | Desenvolvimento local e **caminho para o ambiente corporativo** |
 
-Isso não é acidente nem sobra de migração. Desde outubro de 2026, a Vercel com o
-Supabase é tratada como ambiente de testes do MVP. O destino é um servidor
-corporativo da Arco, com o SSO JumpCloud, e o backend que roda num servidor é o
-Express. `src/utils/api.ts` é o ponto único de desvio entre os dois.
+Isso não é acidente nem sobra de migração. Hoje, o Supabase é a base oficial: é
+dele que o acervo exibe os recursos, e a planilha alimenta esse banco pela
+importação. O MVP ainda roda como ambiente de testes, na Vercel. O futuro é a
+infraestrutura da Arco, com o SSO JumpCloud, e o backend que roda num servidor é o
+Express. `src/utils/api/` é o ponto único de desvio entre os dois.
 
 ## Escopo atual
 
@@ -138,8 +139,14 @@ No modo Express, o login valida a senha com bcrypt e emite um JWT próprio com
   (`src/utils/jwtRetryFetch.ts`): repete a chamada depois de 1 s e de 2 s, e só
   nesse erro.
 - **Aviso de falha do catálogo:** `CatalogLoadError` classifica a falha
-  (`src/utils/catalogLoadError.ts`) e oferece "Tentar novamente". As instruções de
-  desenvolvimento (`server:dev`, `prisma:migrate`) só aparecem no modo Express.
+  (`src/utils/catalogLoadError.ts`) e oferece "Tentar novamente". No modo Supabase
+  o texto explica a falha e pede para avisar o time de Interações Digitais. Quando
+  a resposta traz pausa do projeto (mensagem `paused` ou código `540`), o aviso
+  diz que o plano gratuito inativou o banco. Uma queda de rede no mesmo modo
+  também cita essa pausa, porque o navegador muitas vezes esconde o corpo do
+  erro e só mostra falha de conexão. As instruções de desenvolvimento
+  (`server:dev`, `prisma:migrate`) só aparecem no modo Express. O login e a fila
+  do admin usam o mesmo texto quando o banco não responde.
 - **Página 404:**
   - Rota interna desconhecida (`#/xyz`) e link de recurso que o catálogo não tem
     (`#/recurso/<codigo>`) abrem `NotFoundPage`. O link de recurso mostra o código
@@ -182,7 +189,9 @@ src/
   config/         backend.ts decide entre Express e Supabase
   contexts/       AuthContext
   hooks/          filtros da galeria, tamanho de página
-  utils/          api.ts (desvio), supabaseApi.ts, catalogVisibility.ts, galleryLayout.ts
+  utils/          api/ (desvio), supabaseApi.ts, catalogVisibility.ts, galleryLayout.ts
+    api/          index.ts (entrada), auth, favorites, catalog, admin, types, http
+                  (chamadas ao Express) e odaToProject (registro do banco → card)
   guidelines/     diretrizes de interface
 server/
   routes/         odas, auth, admin, favorites, bncc, sync
@@ -303,7 +312,7 @@ identifica vídeo-aula, que ganha o selo de duração no card.
 A marca vem da coluna Marca da planilha. Quando ela está em branco, a marca é deduzida
 pelo prefixo do código: `IMP/...` é **Conquista**. A regra está em `brandFromCode`
 (`thumbPaths.ts`, nos dois espelhos) e serve à pasta da capa e ao recurso exibido na
-interface, aplicada em `apiODAToFrontend` (`src/utils/api.ts`), por onde passam os
+interface, aplicada em `apiODAToFrontend` (`src/utils/api/odaToProject.ts`), por onde passam os
 dois backends. Assim, filtro, selo do card e busca concordam com a pasta da capa. O
 banco continua guardando a marca como veio da planilha.
 
@@ -724,7 +733,8 @@ O servidor corporativo, quando existir, ganha o empacotamento na hora.
 
 - `npm run test` (Vitest) passa. A cobertura é de utilitários: filtros, ordenação,
   visibilidade do catálogo e normalizações.
-- `npm run build` conclui sem erro de tipo.
+- `npm run typecheck` conclui sem erro (`tsconfig.json` da raiz, modo estrito). O
+  `npm run build` do Vite não confere tipos; o CI roda os dois.
 - `cd server && npx tsc --noEmit` conclui sem erro.
 - Regra de visibilidade do catálogo alterada apenas nos arquivos
   `catalogVisibility.ts`, nunca replicada em condicional solta.
@@ -789,8 +799,10 @@ limpo**, sem esse arquivo.
 ## Débitos estruturais
 
 - **Dois backends dobram o custo de cada mudança de API.** É uma escolha
-  deliberada, com prazo indefinido. Enquanto durar, `src/utils/api.ts` precisa ser
-  tratado como fronteira arquitetural, não como arquivo utilitário.
+  deliberada, com prazo indefinido. Enquanto durar, `src/utils/api/` precisa ser
+  tratado como fronteira arquitetural, não como pasta utilitária. Na migração para
+  o servidor corporativo, a troca fica concentrada ali e em `supabaseApi.ts`;
+  componentes importam de `utils/api` e não mudam.
 - **Duas identidades de usuário sem ponte.** Favoritos e histórico de visualização
   não migram entre os modos.
 - **Documentação de infraestrutura dividida.** O `README.md` tem o detalhe de EC2,
@@ -815,10 +827,11 @@ limpo**, sem esse arquivo.
 
 ## Pontos a complementar
 
-- `[PERGUNTA AO RESPONSÁVEL]` No servidor corporativo, o banco oficial passa a ser o
-  Postgres desse servidor ou o Supabase continua? Em outubro de 2026 ficou decidido
-  que a Vercel com o Supabase é o ambiente de testes e que o destino é um servidor
-  da Arco com JumpCloud; falta definir onde ficam os dados.
+- ✅ Onde ficam os dados: respondido pelo responsável em 2026-10-20. Hoje a base
+  oficial é o Supabase; no futuro, os dados vão para a infraestrutura da Arco.
+- `[A VALIDAR]` Backup automático no plano Free do Supabase. Conferir no painel
+  (*Database → Backups*) se há cópia disponível; enquanto não houver, a proteção é
+  o `npm run db:exportar` manual.
 - `[A VALIDAR]` Se o comitê aceita JumpCloud com MFA no lugar da VPN. É hipótese do
   responsável, não decisão do comitê.
 - `[A VALIDAR]` Se algum vídeo do catálogo está hospedado fora do Vimeo/YouTube e

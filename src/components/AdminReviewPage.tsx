@@ -31,9 +31,20 @@ import {
   type ViewRankingPeriod,
   type OdaViewKind,
 } from '../utils/api';
+import { isSupabaseBackend } from '../config/backend';
+import { catalogLoadMessage, classifyCatalogLoadError } from '../utils/catalogLoadError';
 import { REVIEW_GROUP_LABELS, REVIEW_GROUP_ORDER } from '../utils/catalogVisibility';
 import { thumbPublicPath } from '../utils/thumbPaths';
 import './AdminReviewPage.css';
+
+function databaseFailureText(error: unknown, fallback: string): string {
+  const kind = classifyCatalogLoadError(error);
+  if (kind === 'paused' || kind === 'backend-offline') {
+    return catalogLoadMessage(kind, !isSupabaseBackend()).text;
+  }
+  const message = error instanceof Error ? error.message : '';
+  return message || fallback;
+}
 
 interface AdminReviewPageProps {
   onBack: () => void;
@@ -127,8 +138,6 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
   const [viewRankingError, setViewRankingError] = useState('');
 
   useEffect(() => {
-    if (activeTab !== 'views') return;
-
     let cancelled = false;
     const loadStatus = async () => {
       try {
@@ -159,7 +168,7 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
         setCounts(response.counts);
         setTotalReview(response.totalReview);
       } catch (err: any) {
-        if (!cancelled) setError(err?.message || 'Não foi possível carregar a fila.');
+        if (!cancelled) setError(databaseFailureText(err, 'Não foi possível carregar a fila.'));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -172,6 +181,8 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
   }, [group, search, reloadKey]);
 
   useEffect(() => {
+    if (activeTab !== 'views') return;
+
     let cancelled = false;
     const loadRanking = async () => {
       setViewRankingLoading(true);
@@ -182,7 +193,7 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
       } catch (err: any) {
         if (!cancelled) {
           setViewRanking([]);
-          setViewRankingError(err?.message || 'Não foi possível carregar o ranking.');
+          setViewRankingError(databaseFailureText(err, 'Não foi possível carregar o ranking.'));
         }
       } finally {
         if (!cancelled) setViewRankingLoading(false);

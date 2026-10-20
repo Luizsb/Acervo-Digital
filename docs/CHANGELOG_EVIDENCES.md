@@ -10,6 +10,200 @@ trazem a seção "Impacto observado" com dado medido: nenhuma métrica foi colet
 
 ---
 
+## 2026-10-20 · 16:00 — Checagem de tipos no front e Supabase como base atual
+
+### Antes
+
+- O front não tinha `tsconfig.json`, `typescript` nem os tipos do React. O Vite
+  compila sem conferir tipos, então erro de tipo nunca barrava o deploy. O SDD dizia
+  que `npm run build` concluía "sem erro de tipo", o que não era verificado.
+- A medição avulsa das 15:50 contou 54 erros. Com a configuração certa, 33 eram
+  efeito da medição (sem tipos do React e sem `vite-env.d.ts`). Sobravam 23 reais.
+- 20 deles vinham de `src/lib/supabaseClient.ts`: a variável do cliente era
+  declarada como `ReturnType<typeof createClient>`, o que apaga o esquema e faz o
+  TypeScript tratar as linhas das tabelas como `never`.
+- A documentação deixava em aberto onde ficam os dados no futuro.
+
+### Depois
+
+- `tsconfig.json` na raiz, modo estrito, só `src/`. `typescript`, `@types/react` e
+  `@types/react-dom` como dependências de desenvolvimento.
+- `npm run typecheck` e um passo "Verifica os tipos do frontend" no CI, antes dos
+  testes.
+- Cliente declarado como `SupabaseClient`. `tipoConteudo` do Supabase normalizado
+  para `Audiovisual` ou `OED`. `apiODAToFrontend` devolve `ODAFromExcel`, o tipo
+  que a galeria usa. `handleProjectClick` ganhou tipo.
+- SDD e ROADMAP: hoje a base oficial é o Supabase, alimentado pela planilha; no
+  futuro, a infraestrutura da Arco. Os avisos de falha não falam mais em "ambiente
+  de testes".
+
+### Decisão
+
+Modo estrito desde o início, porque com a configuração certa só restavam 23 erros.
+Os tipos gerados das tabelas (`supabase gen types`) ficam para depois: exigem o
+CLI do Supabase e manutenção a cada migração.
+
+### Evidência
+
+- `npm run typecheck`: zero erros.
+- `npm test`: 77 testes passando. `npm run build` passando.
+- `npm audit --omit=dev --audit-level=high`: 0 vulnerabilidades. O `npm install`
+  apontou 4 achados em dependências de desenvolvimento, que já existiam e não
+  entram no portão do CI.
+
+### Impacto observado
+
+Nenhum na tela: as mudanças são de tipo. A única de valor é `tipoConteudo`, que
+antes passava qualquer texto e agora vira `OED` se não for `Audiovisual`; o banco
+só tem esses dois valores (1064 e 1455 na importação de 20/10).
+
+### Próximos passos
+
+1. Conferir no painel do Supabase se o plano Free tem backup disponível.
+2. `App.tsx` é o próximo da reorganização.
+
+---
+
+## 2026-10-20 · 15:50 — `api.ts` dividido por assunto
+
+### Antes
+
+`src/utils/api.ts` tinha 742 linhas: token, login, favoritos, catálogo, admin, tipos
+e a conversão do registro em card. Cada chamada ao Express repetia o mesmo bloco de
+`fetch`, leitura do JSON e mensagem de erro. Havia uma segunda definição de
+`ReviewGroup`, sem o grupo `sem-link`, diferente da de `catalogVisibility.ts`. Seis
+funções não eram chamadas por ninguém (`createODA`, `updateODA`, `deleteODA`,
+`countODAs`, `fetchODAById` e `loadODAsByContentType`), e o catálogo no modo
+Supabase passava pelo tratamento de "servidor na porta 3001" do Express.
+
+Na aba principal do admin, o status da planilha nunca carregava: a condição "só na
+aba Acessos" estava no efeito do status, e não no do ranking.
+
+### Depois
+
+- `src/utils/api/`: `index.ts` (entrada), `auth.ts`, `favorites.ts`, `catalog.ts`,
+  `admin.ts`, `types.ts`, `http.ts` (base, token e `requestJson`) e
+  `odaToProject.ts`.
+- Componentes continuam importando de `utils/api`; nenhum import de tela mudou.
+- `ReviewGroup` vem de `catalogVisibility.ts`. `supabaseApi.ts` importa os tipos de
+  `api/types`, sem ciclo com a entrada.
+- Funções sem uso removidas, junto com `supabaseFetchOdaById`. As rotas do Express
+  continuam no `server/`.
+- O aviso de log em desenvolvimento para cada recurso sem SAMR saiu.
+- No modo Supabase, falha de rede do catálogo chega ao aviso como queda de conexão.
+  No Express, o erro `ConnectionError` também é reconhecido.
+- Admin: a condição de aba passou para o efeito do ranking.
+
+### Decisão
+
+Dividir por assunto, não por backend: quem migrar para o servidor corporativo mexe
+em `catalog.ts` ou `auth.ts` sem abrir o resto. Recuperação de senha
+(`apiForgotPassword`, `apiResetPassword`) fica, porque ainda depende de decisão.
+
+### Evidência
+
+- `npm test`: 14 arquivos, 77 testes passando, incluindo o novo
+  `src/utils/api/odaToProject.test.ts` (marca deduzida por `IMP/`, listas em JSON,
+  videoaula, contadores).
+- `npm run build` passando.
+- Checagem de tipos avulsa (TypeScript do `server/`, a partir de `src/main.tsx`):
+  57 erros antes, 54 depois. Os três a menos são o `ReviewGroup` duplicado, o
+  `process` em código de navegador e a função sem uso. Os que restam já existiam.
+- Navegador, numa instância nova do Vite (modo Supabase, admin): login, galeria com
+  2519 resultados, status da planilha (2519 ativos, sincronização das 17:15),
+  ranking de acessos, favorito adicionado e removido, sessão com papel `admin`.
+
+### Impacto observado
+
+Um servidor Vite que já estava rodando antes da troca precisa ser reiniciado: ele
+guarda o caminho antigo `api.ts` e deixa a página em branco.
+
+### Próximos passos
+
+1. Reiniciar o `npm run dev` local.
+2. `App.tsx` é o próximo da reorganização.
+
+---
+
+## 2026-10-20 · 15:25 — Falha de banco pede contato com Interações Digitais
+
+### Antes
+
+O aviso do catálogo falava em internet ou instabilidade passageira. O login, no
+modo Supabase, ainda mandava conferir se a API local estava rodando. Quem via o
+projeto pausado no plano gratuito não tinha o que fazer com essa frase.
+
+### Depois
+
+- `catalogLoadError` reconhece pausa (`paused`, código `540`) e, no modo
+  Supabase, o texto da queda de conexão também cita o plano gratuito.
+- Catálogo, login e fila do admin pedem para avisar o time de Interações Digitais.
+- A tela de erro inesperado da aplicação traz a mesma orientação.
+- No modo Express, o aviso de desenvolvimento (`server:dev`, `prisma:migrate`)
+  continua.
+
+### Decisão
+
+O usuário final não opera o painel do Supabase. A frase acionável é falar com o
+time. O nome do fornecedor do banco não entra no aviso.
+
+### Evidência
+
+Testes de `classifyCatalogLoadError` cobrem pausa, sessão e servidor fora do ar
+(73 testes passando, build ok). No navegador local, com as chamadas ao Supabase
+bloqueadas, o login mostrou: "A conexão falhou. [Na época: No ambiente de testes]
+isso acontece quando a internet cai ou quando o plano gratuito pausa o banco depois de
+alguns dias sem uso. Se a sua rede estiver funcionando, avise o time de
+Interações Digitais." `[A VALIDAR]` O aviso da galeria com a sessão aberta não foi
+forçado na tela; usa o mesmo texto.
+
+### Impacto observado
+
+`[A VALIDAR]` Depois de uma pausa real ou de um teste com a rede bloqueada.
+
+### Próximos passos
+
+Nenhum.
+
+---
+
+## 2026-10-20 · 15:15 — Menu de filtros visível enquanto o acervo carrega
+
+### Antes
+
+Durante o carregamento, a barra lateral mostrava só o título "Filtros": os grupos só
+são desenhados quando já há opções, e as opções vêm do catálogo. O aviso "Carregando
+acervo..." usava `animate-spin`, classe que não existe no Tailwind congelado, então o
+círculo não girava.
+
+### Depois
+
+- `FilterSidebar` recebe `loading` e mostra os grupos e os nomes dos filtros mesmo
+  sem opções, esmaecidos e sem clique.
+- O aviso usa `.acervo-loading-spinner` em `AcervoLoading.css`, com rotação própria.
+
+### Decisão
+
+O menu é estrutura da tela, não dado. Ele aparece junto com a página. O texto de
+carregamento continua, agora com um indicador que gira.
+
+### Evidência
+
+No navegador local, depois do carregamento, a barra mostra Localização (Marca,
+Volume, Bloco/Capítulo, Livro, Coleção, Envio à escola), Currículo e Detalhes.
+O estado de carregamento passa rápido demais no ambiente local para um print;
+o círculo está em CSS próprio, fora do Tailwind congelado.
+
+### Impacto observado
+
+`[A VALIDAR]` Depois do deploy.
+
+### Próximos passos
+
+Nenhum.
+
+---
+
 ## 2026-10-20 · 15:10 — Versão 2.1: EC2 removida e ícone de macroformato único
 
 ### Antes
@@ -52,7 +246,8 @@ Quem clonava e rodava `docker compose up --build -d` precisa passar a usar
 ### Próximos passos
 
 1. Os outros três pontos de reorganização (`App.tsx`, páginas grandes e `api.ts`)
-   ficam para depois do lançamento.
+   ficam para depois do lançamento. Atualização: o `api.ts` foi dividido no mesmo
+   dia, a pedido do responsável (entrada das 15:50).
 
 ---
 

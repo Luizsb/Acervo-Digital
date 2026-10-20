@@ -1,10 +1,10 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { getSupabasePublicConfig } from '../config/backend';
 import { createJwtRetryFetch } from '../utils/jwtRetryFetch';
 
-let client: ReturnType<typeof createClient> | null = null;
+let client: SupabaseClient | null = null;
 
-export function getSupabaseClient() {
+export function getSupabaseClient(): SupabaseClient {
   if (!client) {
     const { url, anonKey } = getSupabasePublicConfig();
     client = createClient(url, anonKey, {

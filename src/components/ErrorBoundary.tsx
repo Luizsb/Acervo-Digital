@@ -38,7 +38,8 @@ export class ErrorBoundary extends Component<Props, State> {
             </div>
             <h2 className="text-xl font-bold text-gray-900 mb-2">Algo deu errado</h2>
             <p className="text-sm text-gray-600 mb-6">
-              Ocorreu um erro inesperado. Tente recarregar a página.
+              Ocorreu um erro inesperado. Tente recarregar a página. Se continuar,
+              avise o time de Interações Digitais.
             </p>
             <button
               type="button"
