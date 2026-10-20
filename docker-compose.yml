@@ -1,3 +1,6 @@
+# Só o Postgres local. A API e o front rodam no Node (npm run server:dev e npm run dev).
+# A publicação em container (nginx, Caddy, imagens) foi removida em 2026-10-20,
+# junto com a EC2. O empacotamento volta quando o servidor corporativo existir.
 services:
   postgres:
     image: postgres:16-alpine
@@ -21,92 +24,5 @@ services:
       timeout: 5s
       retries: 12
 
-  api:
-    build:
-      context: .
-      dockerfile: server/Dockerfile
-    container_name: acervo-api
-    restart: unless-stopped
-    depends_on:
-      postgres:
-        condition: service_healthy
-    environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-acervo}:${POSTGRES_PASSWORD:-acervo}@postgres:5432/${POSTGRES_DB:-acervo}
-      DIRECT_URL: postgresql://${POSTGRES_USER:-acervo}:${POSTGRES_PASSWORD:-acervo}@postgres:5432/${POSTGRES_DB:-acervo}
-      PORT: 3001
-      CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
-      JWT_SECRET: ${JWT_SECRET:-acervo-dev-local-only-altere-em-producao}
-      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
-      NODE_ENV: production
-      SKIP_SEED: ${SKIP_SEED:-false}
-      ENABLE_REGISTRATION: ${ENABLE_REGISTRATION:-false}
-      TRUST_PROXY: ${TRUST_PROXY:-true}
-      SPREADSHEET_SYNC_TOKEN: ${SPREADSHEET_SYNC_TOKEN:-}
-      AUTO_CAPTURE_THUMBS_AFTER_SYNC: ${AUTO_CAPTURE_THUMBS_AFTER_SYNC:-true}
-      AUTO_CAPTURE_THUMBS_LIMIT: ${AUTO_CAPTURE_THUMBS_LIMIT:-50}
-      GOOGLE_SHEETS_ID: ${GOOGLE_SHEETS_ID:-}
-      GOOGLE_SHEETS_URL: ${GOOGLE_SHEETS_URL:-}
-      GOOGLE_SERVICE_ACCOUNT_EMAIL: ${GOOGLE_SERVICE_ACCOUNT_EMAIL:-}
-      GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY: ${GOOGLE_SERVICE_ACCOUNT_PRIVATE_KEY:-}
-      GOOGLE_SERVICE_ACCOUNT_JSON: ${GOOGLE_SERVICE_ACCOUNT_JSON:-}
-      GOOGLE_SERVICE_ACCOUNT_JSON_INLINE: ${GOOGLE_SERVICE_ACCOUNT_JSON_INLINE:-}
-    ports:
-      - "127.0.0.1:3001:3001"
-    volumes:
-      # Novas thumbs e a planilha (fora do Git, em data/) permanecem no host entre rebuilds.
-      - ./public:/app/public
-      - ./data:/app/data
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "node",
-          "-e",
-          "fetch('http://127.0.0.1:3001/health').then((r)=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
-        ]
-      interval: 10s
-      timeout: 5s
-      retries: 12
-      start_period: 180s
-
-  web:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        VITE_API_URL: ${VITE_API_URL:-/api}
-    container_name: acervo-web
-    restart: unless-stopped
-    depends_on:
-      api:
-        condition: service_healthy
-    ports:
-      - "${WEB_BIND:-127.0.0.1}:${WEB_PORT:-3000}:80"
-    volumes:
-      # O nginx serve imediatamente as thumbs capturadas pela API.
-      - ./public/thumbs:/usr/share/nginx/html/thumbs:ro
-
-  # HTTPS automático na frente do nginx. Sobe só onde o perfil está habilitado
-  # (COMPOSE_PROFILES=https no .env), então o ambiente local segue em HTTP.
-  caddy:
-    image: caddy:2-alpine
-    container_name: acervo-caddy
-    restart: unless-stopped
-    profiles: ["https"]
-    depends_on:
-      - web
-    environment:
-      ACERVO_HOSTNAME: ${ACERVO_HOSTNAME:-}
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./docker/Caddyfile:/etc/caddy/Caddyfile:ro
-      # Sem persistir os certificados, cada deploy pediria um novo à Let's Encrypt.
-      - acervo_caddy_data:/data
-      - acervo_caddy_config:/config
-
 volumes:
   acervo_pgdata:
-  acervo_caddy_data:
-  acervo_caddy_config:

@@ -10,6 +10,52 @@ trazem a seção "Impacto observado" com dado medido: nenhuma métrica foi colet
 
 ---
 
+## 2026-10-20 · 15:10 — Versão 2.1: EC2 removida e ícone de macroformato único
+
+### Antes
+
+- A versão no GitHub era a 2.0 (`f38da47`), já publicada.
+- O repositório guardava a publicação na EC2: `Dockerfile`, `server/Dockerfile`,
+  `docker-entrypoint.sh`, nginx, Caddy, `deploy-ec2.sh`, `recover-ec2-http.sh` e o
+  Compose com API, front e Caddy. A instância estava inacessível desde agosto.
+- O ícone de macroformato estava copiado em `ProjectCard.tsx` e em
+  `MacroformatoBadge.tsx`.
+
+### Depois
+
+- **EC2 removida.** O `docker-compose.yml` sobe só o Postgres local. `server/`
+  permanece: é a API de desenvolvimento e a importação da planilha. O nome
+  `VITE_BACKEND=ec2` continua, como nome histórico do modo Express.
+- **Ícone único.** `MacroIcon` é exportado por `MacroformatoBadge.tsx` e o card usa
+  esse. Escolhido entre os quatro pontos de reorganização: é o que não rearranja a
+  galeria na véspera do lançamento.
+- **Versão** `2.1.0` no `package.json`. O rodapé do login lê esse valor.
+
+### Decisão
+
+O responsável pediu para tirar toda a estrutura da EC2. Quando houver servidor
+corporativo, o empacotamento é feito de novo. Isso rompe a regra do `.cursorrules`
+que mandava preservar os scripts de deploy; a regra foi reescrita para proteger o
+`server/` e o Postgres local, que não são a EC2.
+
+### Evidência
+
+- Arquivos de publicação ausentes. `docker compose config --services` lista só
+  `postgres`.
+- `npm test` e `npm run build` passando, com `2.1.0` no bundle.
+
+### Impacto observado
+
+Quem clonava e rodava `docker compose up --build -d` precisa passar a usar
+`npm run setup` e `npm run server:dev`. O site na Vercel não usava essas imagens.
+
+### Próximos passos
+
+1. Os outros três pontos de reorganização (`App.tsx`, páginas grandes e `api.ts`)
+   ficam para depois do lançamento.
+
+---
+
 ## 2026-10-20 · 14:45 — Relacionados em carrossel
 
 ### Antes

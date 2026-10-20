@@ -17,8 +17,8 @@ const app = express();
 const PORT = Number(process.env.PORT) || 3001;
 
 /**
- * Quantidade de proxies entre o cliente e a API: só o nginx conta 1; com o
- * Caddy na frente, 2. Um valor menor que o real faz o limitador de requisições
+ * Quantidade de proxies entre o cliente e a API. Um valor menor que o real faz o
+ * limitador de requisições
  * enxergar o IP do proxy no lugar do usuário e bloquear todos de uma vez.
  * `true` continua aceito e equivale a 1.
  */

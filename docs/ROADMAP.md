@@ -43,7 +43,7 @@ dependência de ambiente local para atualizar o catálogo.
 - Captura automatizada de capas em WebP
 - Fila de revisão agrupada por motivo, inclusive linhas incompletas da planilha
 
-### Fase 3 — Infraestrutura na EC2 ✅ Concluída, hoje inacessível
+### Fase 3 — Infraestrutura na EC2 ✅ Concluída e removida em 2026-10-20
 
 - HTTPS automático com Caddy, certificado emitido direto no IP
 - Deploy automático por GitHub Actions via SSH
@@ -62,7 +62,9 @@ Resposta à perda de acesso à EC2, com custo zero.
 - Histórico de importação persistido em `import_events` e exibido no painel admin
   com capas, data e hora
 - Ordenação do catálogo pelos recursos mais visualizados
-- Deploy da EC2 desativado no CI
+- Deploy da EC2 desativado no CI. Em 2026-10-20 as imagens, o nginx, o Caddy e os
+  scripts de deploy saíram do repositório, por decisão do responsável. O `server/`
+  e o Postgres local ficam
 
 ### Fase 5 — Continuidade da operação 🔄 Em andamento
 
@@ -115,6 +117,7 @@ Resposta à perda de acesso à EC2, com custo zero.
 - ✅ 14 capas `SAE25_AF61/AF62_ING_...` soltas na raiz de `public/thumbs/` apagadas:
   os códigos não existem na planilha nem no banco (a planilha passou a ter os
   `SAE26_AF71/AF72_ING_...`). Ficam no histórico do Git
+- ✅ Versão 2.1: EC2 removida do repositório e ícone de macroformato num lugar só
 - ✅ Relacionados da ficha em carrossel de uma linha (`RelatedCarousel`): até 12
   recursos, setas, arraste com o mouse, deslize no toque e rolagem pelo teclado; o
   arraste não abre o card
@@ -202,7 +205,7 @@ O objetivo é que atualizar o catálogo deixe de exigir um ambiente Node configu
 `[A VALIDAR]` nenhuma das alternativas foi avaliada tecnicamente ainda.
 
 - Retomar o gatilho automático de sincronização, apontando para um destino que
-  exista (Supabase Edge Function, ou a API na EC2 se ela voltar)
+  exista (Supabase Edge Function, ou a API no servidor corporativo)
 - Captura de capas sob demanda a partir do painel admin, o que exige um host com
   Node e Playwright
 - Alternativa de curto prazo: registrar o procedimento em vídeo e garantir que duas
@@ -345,7 +348,6 @@ Na ordem, para quem assume o projeto:
   ou o projeto entra em modo de manutenção durante as férias?
 - `[PERGUNTA AO RESPONSÁVEL]` Existe demanda editorial em espera que dependa do
   acervo e não esteja neste arquivo?
-- `[A VALIDAR]` Se a recuperação do acesso à EC2 ainda é tentativa em curso ou foi
-  abandonada em favor do servidor corporativo.
+- ✅ Recuperação da EC2 abandonada em 2026-10-20. O destino é o servidor corporativo.
 - `[PERGUNTA AO RESPONSÁVEL]` No servidor corporativo, os dados ficam no Postgres de
   lá ou continuam no Supabase?

@@ -78,8 +78,9 @@ evidência precisa ser coletada.
 `VITE_BACKEND=ec2` é o Express em `server/`, usado no desenvolvimento local e
 guardado como plano de retorno para a instância AWS. Toda alteração de API precisa
 ser pensada nos dois caminhos: `src/utils/api.ts` faz o desvio e
-`src/utils/supabaseApi.ts` implementa o lado Supabase. Não remova `server/`,
-`docker-compose.yml` nem os scripts de deploy da EC2.
+`src/utils/supabaseApi.ts` implementa o lado Supabase. Não remova `server/` nem o
+Postgres local do `docker-compose.yml`. A hospedagem na EC2 (imagens, nginx, Caddy
+e scripts de deploy) foi retirada em 2026-10-20, por decisão do responsável.
 
 **Segredos nunca entram no repositório.** A chave `anon`/`publishable` do Supabase é
 pública por design e pode aparecer em exemplo de configuração. A `service_role`

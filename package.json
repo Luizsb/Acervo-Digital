@@ -1,6 +1,6 @@
 {
       "name": "Acervo Digital",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "private": true,
       "dependencies": {
             "@supabase/supabase-js": "^2.112.3",
@@ -27,7 +27,6 @@
             "prisma:studio": "cd server && npx prisma studio",
             "db:up": "docker compose up -d postgres",
             "db:reset": "docker compose down -v && docker compose up -d postgres",
-            "docker:up": "docker compose up --build -d",
             "docker:down": "docker compose down",
             "seed": "cd server && npm run seed",
             "setup": "npm run db:up && npm run prisma:generate && npm run prisma:migrate && npm run seed",

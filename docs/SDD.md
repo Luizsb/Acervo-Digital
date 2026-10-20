@@ -171,7 +171,7 @@ fuso de São Paulo. Dois tipos são distinguidos: `page` (abriu a ficha) e `open
 | Testes | Vitest, apenas testes unitários de utilitários |
 | Segurança no CI | `npm audit`, CodeQL, Trivy e Dependabot (ver "Segurança e privacidade") |
 | Mapa do código | Graphify, ferramenta local de desenvolvimento, fora das dependências (ver `README.md`) |
-| Hospedagem | Vercel (front). Docker Compose com nginx e Caddy permanece para a EC2 |
+| Hospedagem | Vercel (front). Docker Compose sobe só o Postgres local |
 | Automação | GitHub Actions: CI de verificação e ping semanal no Supabase |
 
 ### Organização das pastas
@@ -197,9 +197,7 @@ public/
 data/             planilha de categorização, fora do Git (ver "Dados, entradas e saídas")
 scripts/
   supabase/rls.sql          políticas e funções do Supabase
-  apps-script/sync-acervo.gs gatilho diário (parado)
-  deploy-ec2.sh, recover-ec2-http.sh
-docker/                     nginx.conf e Caddyfile
+  apps-script/sync-acervo.gs gatilho diário (parado; apontava para a EC2)
 ```
 
 ---
@@ -465,7 +463,7 @@ de 2026 de não rotacioná-la.
 | SCA | `npm audit --omit=dev --audit-level=high` no front e na API; reprova o build | `.github/workflows/ci-e-deploy.yml` |
 | SCA | Dependabot, atualização semanal de npm e de actions | `.github/dependabot.yml` |
 | SAST | CodeQL com as consultas `security-extended` | `.github/workflows/seguranca.yml` |
-| IaC | Trivy nos Dockerfiles e workflows; só reporta, não reprova | `.github/workflows/seguranca.yml` |
+| IaC | Trivy no Compose e nos workflows; só reporta, não reprova | `.github/workflows/seguranca.yml` |
 
 Os achados de CodeQL e Trivy aparecem na aba *Security → Code scanning* do GitHub. O
 workflow também roda toda segunda-feira, para pegar vulnerabilidade nova sem commit.
@@ -692,20 +690,19 @@ Sequência prevista:
 4. Restaurar contadores, favoritos e histórico a partir do export.
    `[A VALIDAR]` Ainda não há comando de restauração; ele é escrito quando o destino
    e o modelo de identidade do JumpCloud estiverem definidos.
-5. Subir com `VITE_BACKEND=ec2` e `docker compose up --build -d`. A pasta `./data`
-   é montada na API.
+5. Subir a API Express com `VITE_BACKEND=ec2`. O empacotamento (o que a TI definir)
+   é feito quando o servidor existir. A imagem Docker da EC2 foi removida.
 6. Manter o Supabase até validar o servidor. Depois, apagar os exports.
 
 `[PERGUNTA AO RESPONSÁVEL]` No servidor, o Postgres é local ou um serviço gerenciado
 da TI?
 
-### Voltar para a EC2
+### EC2
 
-O caminho está preservado. Quando o acesso à instância for recuperado: `VITE_BACKEND=ec2`,
-`docker compose up --build -d` na instância e o job de deploy reativado no CI com a
-variável `ENABLE_EC2_DEPLOY=true`. Para emergência há
-`scripts/recover-ec2-http.sh`, que sobe só HTTP e sem reimportar a planilha. O
-detalhamento de HTTPS, Caddy e certificados está no `README.md`.
+Removida em 2026-10-20, por decisão do responsável. Imagens Docker, nginx, Caddy e
+os scripts `deploy-ec2.sh` e `recover-ec2-http.sh` saíram do repositório. O modo
+`VITE_BACKEND=ec2` continua sendo o nome do backend Express, usado na máquina local.
+O servidor corporativo, quando existir, ganha o empacotamento na hora.
 
 ### Problemas conhecidos e o que fazer
 
@@ -763,9 +760,9 @@ decidido **não rotacioná-la**: a conversa foi interna e o risco foi avaliado e
 pelo responsável. A senha continua sendo tratada como segredo e não entra no
 repositório.
 
-**A instância EC2 está inacessível.** SSH na porta 22 não responde e não há acesso ao
-console AWS para investigar. Enquanto isso, o gatilho diário do Apps Script está
-parado, porque aponta para a API daquela instância.
+**A EC2 saiu do repositório em 2026-10-20.** A instância já estava inacessível e o
+responsável decidiu não guardar o caminho. O gatilho do Apps Script continua parado:
+apontava para a API daquela instância.
 
 **O modal de vídeo depende de embed.** Desde 2026-10-19 só o audiovisual abre no
 `iframe`; ODAs abrem em nova guia porque, embarcados, parte deles cortava o conteúdo

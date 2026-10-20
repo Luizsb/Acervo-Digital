@@ -1,7 +1,7 @@
 import { Video, Gamepad2, Headphones, Monitor, ListVideo, Presentation, Wrench, Box, Sparkles, MousePointer2 } from 'lucide-react';
 import { resolveMacroformato, type MacroformatoKind } from '../utils/macroformato';
 
-function MacroIcon({ kind, className }: { kind: MacroformatoKind; className?: string }) {
+export function MacroIcon({ kind, className }: { kind: MacroformatoKind; className?: string }) {
   const props = { className: className || 'w-3.5 h-3.5' };
   switch (kind) {
     case 'video':
