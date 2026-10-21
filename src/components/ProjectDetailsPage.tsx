@@ -12,6 +12,7 @@ import { MarcaBadge } from './MarcaBadge';
 import { RelatedCarousel } from './RelatedCarousel';
 import { apiRecordOdaView } from '../utils/api';
 import { copyTextToClipboard } from '../utils/clipboard';
+import { openResourceActionLabel, opensInsideAcervo } from '../utils/openResource';
 import './ProjectDetailsPage.css';
 
 type RelatedCriterion = 'year' | 'bncc' | 'samr';
@@ -99,12 +100,19 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
     };
   }, [showResourceModal]);
 
+  // Vídeo toca na capa e no modal 16:9; ODA e playlist abrem em nova guia.
+  const isAudiovisualResource = opensInsideAcervo(project);
+  const newTabLabel =
+    project.contentType === 'Audiovisual'
+      ? `${openResourceActionLabel(project)} em nova guia`
+      : 'Abrir recurso em nova guia';
+
   useEffect(() => {
     let cancelled = false;
     setShowVideo(false);
     setVideoEmbedUrl(undefined);
 
-    if (project.contentType !== 'Audiovisual' || !project.videoUrl) {
+    if (!isAudiovisualResource || !project.videoUrl) {
       return () => {
         cancelled = true;
       };
@@ -125,7 +133,7 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
     return () => {
       cancelled = true;
     };
-  }, [project.contentType, project.id, project.videoUrl]);
+  }, [isAudiovisualResource, project.id, project.videoUrl]);
 
   const technicalRequirements = project.technicalRequirements
     ?.split('\n')
@@ -158,9 +166,6 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
     bncc: getBnccCodes(project).length > 0,
     samr: Boolean(normalizeRelationValue(project.samr)),
   };
-  // Vídeo abre no modal 16:9; os demais recursos abrem em nova guia.
-  const isAudiovisualResource = project.contentType === 'Audiovisual';
-
   const handleCopyCode = async () => {
     if (!project.codigoODA) return;
     const copied = await copyTextToClipboard(project.codigoODA);
@@ -246,7 +251,7 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
               <div className="relative aspect-video w-full bg-black rounded-[20px] overflow-hidden shadow-lg">
                 {/* Verificar se é audiovisual para mostrar o player */}
                 {(() => {
-                  const isAudiovisual = project.contentType === 'Audiovisual' && project.videoUrl;
+                  const isAudiovisual = isAudiovisualResource;
                   
                   if (isAudiovisual && showVideo) {
                     return (
@@ -545,7 +550,7 @@ export function ProjectDetailsPage({ project, onBack, isFavorite, onToggleFavori
                     className="flex-1 bg-primary px-4 py-3 rounded-[20px] text-white hover:bg-[#013668] transition-all flex items-center justify-center gap-2 font-semibold shadow-sm hover:shadow-md"
                   >
                     <ExternalLink className="w-4 h-4" />
-                    <span>Abrir recurso em nova guia</span>
+                    <span>{newTabLabel}</span>
                   </a>
                 ) : null}
                 <button 

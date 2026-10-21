@@ -1,5 +1,25 @@
 import { describe, expect, it } from 'vitest';
-import { getResourceUrl, openResourceActionLabel } from './openResource';
+import { getResourceUrl, openResourceActionLabel, opensInsideAcervo } from './openResource';
+
+describe('opensInsideAcervo', () => {
+  const videoUrl = 'https://url.sae.digital/X';
+
+  it('abre vídeo dentro do Acervo', () => {
+    expect(opensInsideAcervo({ contentType: 'Audiovisual', macroformato: 'Vídeo', videoUrl })).toBe(true);
+  });
+
+  it('manda a playlist para nova guia, pelo macroformato ou pelo tipo de objeto', () => {
+    expect(opensInsideAcervo({ contentType: 'Audiovisual', macroformato: 'Playlist', videoUrl })).toBe(false);
+    expect(
+      opensInsideAcervo({ contentType: 'Audiovisual', tipoObjeto: 'Playlist de vídeos', videoUrl })
+    ).toBe(false);
+  });
+
+  it('não abre dentro o que não é audiovisual nem o que não tem link', () => {
+    expect(opensInsideAcervo({ contentType: 'OED', macroformato: 'ODA', videoUrl })).toBe(false);
+    expect(opensInsideAcervo({ contentType: 'Audiovisual', macroformato: 'Vídeo' })).toBe(false);
+  });
+});
 
 describe('getResourceUrl', () => {
   it('devolve o link do repositório quando existe', () => {

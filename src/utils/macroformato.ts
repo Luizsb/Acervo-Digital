@@ -25,11 +25,12 @@ export function resolveMacroformato(value?: string | null): MacroformatoMeta | n
   const key = normalize(value);
   if (!key) return null;
 
-  if (key.includes('video')) {
-    return { kind: 'video', label: value.trim(), className: 'catalog-macro catalog-macro-video' };
-  }
+  // Antes de vídeo: "Playlist de vídeos" é playlist.
   if (key.includes('playlist')) {
     return { kind: 'playlist', label: value.trim(), className: 'catalog-macro catalog-macro-playlist' };
+  }
+  if (key.includes('video')) {
+    return { kind: 'video', label: value.trim(), className: 'catalog-macro catalog-macro-video' };
   }
   if (key.includes('pagina interativa') || key.includes('interativ')) {
     return { kind: 'interactive', label: value.trim(), className: 'catalog-macro catalog-macro-interactive' };

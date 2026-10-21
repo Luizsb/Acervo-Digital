@@ -30,6 +30,19 @@ function resolveResourceKind(project: ResourceProject): MacroformatoKind | null 
   );
 }
 
+/**
+ * Recurso que abre dentro do Acervo (player e tela ampliada). A playlist fica de fora:
+ * o link do SAE leva a uma playlist do YouTube, que recusa iframe, e o navegador não
+ * consegue seguir o redirecionamento para converter em embed (o SAE bloqueia por CORS).
+ */
+export function opensInsideAcervo(project: ResourceProject): boolean {
+  return (
+    project.contentType === 'Audiovisual' &&
+    Boolean(getResourceUrl(project)) &&
+    resolveResourceKind(project) !== 'playlist'
+  );
+}
+
 export function openResourceActionLabel(project: ResourceProject): string {
   const kind = resolveResourceKind(project);
   if (kind) return OPEN_LABEL_BY_KIND[kind];

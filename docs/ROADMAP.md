@@ -224,6 +224,13 @@ ferramenta de cadastro.
   Supabase não é o ambiente oficial. No servidor da Arco o SSL do banco é exigido
 - ✅ Backup definido (responsável, 2026-10-21): `db:exportar` antes de cada importação
   e no mínimo mensal, na pasta restrita do time de ID no Drive corporativo
+- ✅ `npm run relatorio:nde`: planilha de pendências para o NDE (Leia-me + Pendências).
+  Primeira versão gerada em 2026-10-21 com 172 itens
+- ⬜ Enviar ao NDE a planilha de pendências e combinar o prazo da próxima versão da
+  planilha
+- ✅ As 19 playlists do YouTube abrem em nova guia (ver "Bugs conhecidos")
+- ⬜ Opcional: tocar playlist dentro do Acervo, resolvendo o destino do link na
+  importação e guardando o endereço de embed
 - ✅ Fila do admin com "Sem código" e "Código repetido" (tabela `import_issues`,
   recriada a cada importação), com a linha da planilha e qual linha vale
 - ✅ Resposta ao comitê explica a função do login de admin do MVP (demonstração,
@@ -277,11 +284,13 @@ Nenhuma das alternativas foi avaliada tecnicamente ainda. Sem data (responsável
 
 ## Bugs conhecidos
 
-- **19 vídeos em playlist do YouTube não tocam no modal** (conferido em 2026-10-21).
-  O encurtador do SAE leva a `youtube.com/playlist`, que recusa `iframe`, e
-  `resolveVideoEmbedUrl` (`src/utils/videoThumbnails.ts`) só converte Vimeo. Correção
-  de código: trocar `youtube.com/playlist?list=…` por `youtube.com/embed/videoseries?list=…`
-  (e `watch?v=` por `embed/`). Códigos: `EF22_9_L1_ING_1ED`, `EF22_9_L1_ING_2ED`,
+- ✅ **19 vídeos em playlist do YouTube não tocavam no modal** (conferido em
+  2026-10-21). O encurtador do SAE leva a `youtube.com/playlist`, que recusa `iframe`,
+  e o navegador não consegue seguir o redirecionamento para montar o embed (o SAE
+  bloqueia por CORS). Desde 2026-10-21 a playlist abre em nova guia
+  (`opensInsideAcervo`). Tocar dentro do Acervo exigiria resolver o destino na
+  importação e guardar o endereço de embed (`youtube.com/embed/videoseries?list=…`).
+  Códigos: `EF22_9_L1_ING_1ED`, `EF22_9_L1_ING_2ED`,
   `EF22_9_L1_ING_3ED`, `EF22_9_L1_ING_4ED`, `EF22_9_L1_MAT_4_ED`, `EF22_9_L2_ING_1ED`,
   `EF22_9_L2_ING_2ED`, `EF22_9_MAT_L1_U1_03_ED`, `EF229L1CIE2ED`, `EF229L1CIE3ED`,
   `EF229L1HIS3ED`, `EF229L1HIS4ED`, `EF229L1HIS5ED`, `EF229L1MAT5ED`, `EF229L1POR1ED`,

@@ -277,6 +277,7 @@ A operação do catálogo está no [SDD.md](./docs/SDD.md).
 | `npm run planilha:preparar -- "arquivo.xlsx"` | Prepara a planilha baixada do Drive: só a aba Recursos Digitais, sem dados pessoais, em `data/` |
 | `npm run diff:planilha` | Compara a planilha de `data/` com a última importada |
 | `npm run db:exportar` | Exporta o banco em JSON para `data/export-*` (migração e backup; contém dado pessoal) |
+| `npm run relatorio:nde` | Gera `data/relatorio-nde-AAAAMMDD.xlsx` com as pendências da fila de revisão e o que o NDE deve corrigir |
 | `npm run thumbs:setup` | Instala o Chromium para captura local |
 | `npm run thumbs:capture` | Captura as capas que faltam, lendo a lista da planilha. Opções: `-- --limit=100`, `-- --do-banco` |
 | `npm run test` | Vitest |

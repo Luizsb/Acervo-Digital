@@ -10,6 +10,98 @@ trazem a seção "Impacto observado" com dado medido: nenhuma métrica foi colet
 
 ---
 
+## 2026-10-21 · 09:35 — Playlist abre em nova guia
+
+### Antes
+
+Os 19 recursos com macroformato "Playlist" (9º ano, SAE) tinham player na capa e o
+botão "Assistir em tela ampliada". O link do SAE leva a `youtube.com/playlist`, que
+recusa `iframe`, então o vídeo não carregava. Além disso, `resolveMacroformato`
+classificava "Playlist de vídeos" como vídeo, porque testava "vídeo" antes de
+"playlist".
+
+### Depois
+
+- `opensInsideAcervo` (`src/utils/openResource.ts`): abre dentro do Acervo só o
+  audiovisual com link que não é playlist. A ficha usa essa regra no player da capa,
+  no botão de tela ampliada e no modal.
+- Playlist mostra a capa e o botão "Abrir playlist em nova guia". O texto vem de
+  `openResourceActionLabel`; ODA continua "Abrir recurso em nova guia".
+- `resolveMacroformato` testa "playlist" antes de "vídeo".
+
+### Decisão
+
+Converter para o embed do YouTube no navegador não é possível: um `fetch` para
+`apis.sae.digital/redirect/r/…` falha por CORS, então o front não descobre o `list=`
+da playlist. A sugestão do responsável, nova guia para playlist, resolve sem
+depender disso. Tocar dentro do Acervo fica opcional, resolvendo o destino na
+importação.
+
+### Evidência
+
+- Banco: o macroformato "Playlist" separa exatamente os 19 recursos, todos com link
+  `apis.sae.digital/redirect/r/…`.
+- Navegador: `fetch` ao redirecionamento do SAE responde "Failed to fetch".
+- Ficha de `EF22_9_L1_ING_1ED` ("It has been fun!"): sem player e sem tela ampliada,
+  com o link "Abrir playlist em nova guia" (`target=_blank`). Ficha de
+  `SAE26_AI42_POR_C05_VA1`: player e "Assistir em tela ampliada", como antes.
+- Busca por "It has been fun" e por `EF22_9_L1_ING_1ED` acha o recurso. O código
+  dentro do link (`EF229L1ING1ED`) é outro e não é buscável.
+- `npm test`: 92 testes, com os casos novos de `opensInsideAcervo`. Tipos sem erro.
+
+### Impacto observado
+
+`[A VALIDAR]` Depois do deploy.
+
+### Próximos passos
+
+Nenhum obrigatório.
+
+---
+
+## 2026-10-21 · 09:20 — Planilha de pendências para o NDE
+
+### Antes
+
+As 172 pendências só podiam ser vistas no painel admin. O NDE, que corrige a
+planilha, não tem acesso ao painel.
+
+### Depois
+
+`npm run relatorio:nde` (`server/scripts/relatorio-nde.ts`, regras em
+`server/lib/ndeReport.ts`) grava `data/relatorio-nde-AAAAMMDD.xlsx`:
+
+- aba "Leia-me": data de geração, data da importação, total, como usar e contagem por
+  problema;
+- aba "Pendências": problema, o que fazer, linha na planilha (sem código e repetido),
+  código, título, status atual, link e observação (no repetido, qual linha vale).
+  Cabeçalho fixo e filtro.
+
+### Decisão
+
+Arquivo gerado por comando, e não feito à mão, para ser refeito depois de cada
+importação. Fica em `data/`, fora do Git. Não tem dado pessoal: só dados dos
+recursos.
+
+### Evidência
+
+- Gerado em 2026-10-21: 172 pendências (Sem código 37, Código repetido 40, Quebrado
+  76, Incorreto 10, Não avaliado 6, Sem link 1, Acesso restrito 1, Em cadastro 1),
+  igual à fila do admin. Lido de volta: abas "Leia-me" e "Pendências" com 173 linhas
+  (cabeçalho + 172).
+- Cópia em `Downloads/Pendências Acervo Digital - NDE 2026-10-21.xlsx` para envio.
+- `ndeReport.test.ts`: 3 testes. `tsc --noEmit` do `server/` sem erro.
+
+### Impacto observado
+
+`[A VALIDAR]` Quanto da lista o NDE corrige até a próxima planilha.
+
+### Próximos passos
+
+1. Enviar ao NDE.
+
+---
+
 ## 2026-10-21 · 09:10 — Revisão das marcações abertas e App.tsx dividido
 
 ### Antes

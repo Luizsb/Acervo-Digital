@@ -34,7 +34,8 @@ Express. `src/utils/api/` é o ponto único de desvio entre os dois.
 - Galeria autenticada com busca textual, filtros combináveis, paginação e dois modos
   de exibição.
 - Ficha do recurso com metadados pedagógicos, BNCC e relacionados.
-- Abertura do recurso: vídeo em modal de tela ampliada; ODA e demais em nova guia.
+- Abertura do recurso: vídeo em modal de tela ampliada; ODA, playlist e demais em
+  nova guia.
 - Favoritos por usuário.
 - Telemetria de visualização (ficha aberta e recurso aberto).
 - Painel administrativo: fila de revisão, status de sincronização, histórico de
@@ -647,8 +648,11 @@ o `diff:planilha` pede a planilha anterior como argumento
 O passo 3 imprime quantos recursos foram criados, atualizados, desativados e quantos
 estão sem capa. Os mesmos números ficam registrados em `import_events` e aparecem no
 painel admin, na aba de histórico, com data, hora e a capa de cada item. A fila de
-revisão passa a mostrar os pendentes e os problemas da planilha desta importação,
-para repassar ao NDE.
+revisão passa a mostrar os pendentes e os problemas da planilha desta importação.
+Para repassar ao NDE, `npm run relatorio:nde` grava em `data/relatorio-nde-AAAAMMDD.xlsx`
+uma planilha com a aba "Leia-me" (resumo e instruções) e a aba "Pendências" (uma
+linha por item, com o problema, o que fazer, a linha da planilha quando se sabe, o
+código, o título, o status e o link). Não tem dado pessoal.
 
 O passo 5 dispara o build da Vercel automaticamente. O banco já está atualizado
 desde o passo 3, então o catálogo muda antes das capas.
@@ -891,7 +895,7 @@ seguidos até o destino final:
 | Arquivos na DigitalOcean (`cdn-livrodigital…`) | 279 | Abre (sem bloqueio de `iframe`) |
 | Conquista (`digital.solucaoconquista.com.br`) | 244 | Abre (sem bloqueio de `iframe`) |
 | Livro digital SAE (`livrodigital.sae.digital`) | 202 | Abre (sem bloqueio de `iframe`) |
-| Playlist do YouTube (`youtube.com/playlist`) | 19 | **Não abre**: a página manda `X-Frame-Options: SAMEORIGIN` e o front só converte endereço do Vimeo para embed |
+| Playlist do YouTube (`youtube.com/playlist`) | 19 | **Nova guia** desde 2026-10-21: a página manda `X-Frame-Options: SAMEORIGIN`, e o navegador não consegue seguir o redirecionamento do SAE (bloqueio de CORS) para montar o embed. A regra é `opensInsideAcervo` (`src/utils/openResource.ts`): macroformato ou tipo de objeto "Playlist" abre em nova guia |
 | Sem resposta em 10 s ou parado em redirecionamento | 34 | `[A VALIDAR]` testar de novo; pode ser lentidão ou link morto |
 
 Os links passam pelos encurtadores do SAE (`url.sae.digital`, `go.sae.digital`,
@@ -954,8 +958,9 @@ limpo**, sem esse arquivo.
   diz que só bancos de planos pagos têm backup diário (conferido em 2026-10-21).
 - `[A VALIDAR]` Se o comitê aceita JumpCloud com MFA no lugar da VPN. É hipótese do
   responsável, não decisão do comitê.
-- ✅ Vídeos que recusam `iframe` (conferido em 2026-10-21): 19 playlists do YouTube.
-  Os demais destinos abrem; 34 links não responderam a tempo e ficam para novo teste.
+- ✅ Vídeos que recusam `iframe` (conferido em 2026-10-21): 19 playlists do YouTube,
+  que passaram a abrir em nova guia. Os demais destinos abrem; 34 links não
+  responderam a tempo e ficam para novo teste.
   Detalhe em "Riscos e pontos de atenção".
 - ✅ Backup do banco (responsável, 2026-10-21): `npm run db:exportar` antes de cada
   importação e no mínimo uma vez por mês, guardado numa pasta restrita do time de

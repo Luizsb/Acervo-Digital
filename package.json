@@ -38,6 +38,7 @@
             "diff:planilha": "cd server && npm run diff:planilha --",
             "planilha:preparar": "cd server && npm run planilha:preparar --",
             "db:exportar": "cd server && npm run db:exportar",
+            "relatorio:nde": "cd server && npm run relatorio:nde",
             "thumbs:setup": "cd server && npm run thumbs:setup",
             "thumbs:capture": "cd server && npm run thumbs:capture --",
             "test": "vitest run",
