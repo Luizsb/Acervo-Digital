@@ -31,6 +31,7 @@ import {
   SYNC_SOURCE_LABELS,
 } from '../lib/spreadsheetSync';
 import { getTopOdaViews, isViewKind, isViewPeriod } from '../lib/odaViews';
+import { recordAuditEvent } from '../lib/audit';
 
 const router = express.Router();
 type ThumbJob = {
@@ -101,10 +102,36 @@ router.get('/review', async (req: AuthRequest, res) => {
       orderBy: { titulo: 'asc' },
     });
 
-    const items = odas.map((oda) => ({
-      ...oda,
-      reviewGroup: reviewGroupFor(oda),
-    }));
+    const issues = await prisma.importIssue.findMany({
+      where: search
+        ? {
+            OR: [
+              { titulo: { contains: search, mode: 'insensitive' } },
+              { codigo: { contains: search, mode: 'insensitive' } },
+              { status: { contains: search, mode: 'insensitive' } },
+            ],
+          }
+        : undefined,
+      orderBy: [{ codigo: 'asc' }, { linha: 'asc' }],
+    });
+
+    const items = [
+      ...odas.map((oda) => ({
+        ...oda,
+        reviewGroup: reviewGroupFor(oda),
+      })),
+      ...issues.map((issue) => ({
+        id: issue.id,
+        titulo: issue.titulo || `Linha ${issue.linha} sem título`,
+        codigoOda: issue.codigo,
+        status: issue.status,
+        tipoConteudo: '',
+        linkRepositorio: issue.linkRepositorio,
+        reviewGroup: issue.kind as ReviewGroup,
+        linha: issue.linha,
+        vigente: issue.vigente,
+      })),
+    ];
 
     const counts = Object.fromEntries(REVIEW_GROUP_ORDER.map((key) => [key, 0])) as Record<
       ReviewGroup,
@@ -123,6 +150,11 @@ router.get('/review', async (req: AuthRequest, res) => {
     filtered.sort((a, b) => {
       const byGroup = rank(a.reviewGroup) - rank(b.reviewGroup);
       if (byGroup !== 0) return byGroup;
+      if (a.reviewGroup === 'codigo-repetido') {
+        const byCode = (a.codigoOda ?? '').localeCompare(b.codigoOda ?? '');
+        if (byCode !== 0) return byCode;
+        return ('linha' in a ? a.linha : 0) - ('linha' in b ? b.linha : 0);
+      }
       return a.titulo.localeCompare(b.titulo, 'pt-BR');
     });
 
@@ -406,6 +438,40 @@ router.get('/thumbs/jobs/:jobId', (req, res) => {
   const job = thumbJobs.get(req.params.jobId);
   if (!job) return res.status(404).json({ error: 'Captura não encontrada ou expirada.' });
   res.json(job);
+});
+
+router.get('/users', async (req: AuthRequest, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      select: { email: true, role: true, createdAt: true },
+      orderBy: [{ role: 'asc' }, { email: 'asc' }],
+    });
+    const lastLogins = await prisma.auditEvent.groupBy({
+      by: ['actor'],
+      where: { action: 'auth.login', actor: { in: users.map((user) => user.email) } },
+      _max: { occurredAt: true },
+    });
+    const lastLoginByEmail = new Map(
+      lastLogins.map((row) => [row.actor, row._max.occurredAt?.toISOString() ?? null])
+    );
+    await recordAuditEvent({
+      action: 'admin.users_listed',
+      origin: 'express',
+      actor: req.user?.email,
+      ip: req.ip,
+    });
+    res.json(
+      users.map((user) => ({
+        email: user.email,
+        papel: user.role,
+        criadoEm: user.createdAt.toISOString(),
+        ultimoAcesso: lastLoginByEmail.get(user.email) ?? null,
+      }))
+    );
+  } catch (error: any) {
+    console.error('Admin users error:', error);
+    res.status(500).json({ error: error.message || 'Erro ao listar usuários.' });
+  }
 });
 
 router.get('/views/top', async (req, res) => {

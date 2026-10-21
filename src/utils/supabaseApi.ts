@@ -1,7 +1,16 @@
 import { getSupabaseClient } from '../lib/supabaseClient';
-import { hasCatalogStatus, hasResourceLink, reviewGroupFor, type ReviewGroup } from './catalogVisibility';
+import {
+  hasCatalogStatus,
+  hasResourceLink,
+  REVIEW_GROUP_ORDER,
+  reviewGroupFor,
+  type ImportIssueGroup,
+  type ReviewGroup,
+} from './catalogVisibility';
 import { thumbPublicPath } from './thumbPaths';
 import type {
+  AdminReviewItem,
+  AdminUserItem,
   AuthUserResponse,
   ODA,
   AdminReviewResponse,
@@ -191,6 +200,17 @@ type RecordViewCount = {
   openViewCount?: number;
 };
 
+type ImportIssueRow = {
+  id: number;
+  kind: ImportIssueGroup;
+  linha: number;
+  codigo: string | null;
+  titulo: string | null;
+  status: string | null;
+  link_repositorio: string | null;
+  vigente: boolean;
+};
+
 export async function supabaseAdminReview(params?: {
   group?: string;
   search?: string;
@@ -219,8 +239,27 @@ export async function supabaseAdminReview(params?: {
       return !hasCatalogStatus(oda?.status) || !hasResourceLink(oda?.linkRepositorio);
     });
 
+  const { data: issueRows, error: issuesError } = await getSupabaseClient()
+    .from('import_issues')
+    .select('id, kind, linha, codigo, titulo, status, link_repositorio, vigente')
+    .order('codigo', { ascending: true })
+    .order('linha', { ascending: true });
+  throwIfError(issuesError, 'Erro ao ler os problemas da planilha.');
+  const issueItems: AdminReviewItem[] = ((issueRows ?? []) as ImportIssueRow[]).map((row) => ({
+    id: row.id,
+    titulo: row.titulo || `Linha ${row.linha} sem título`,
+    codigoOda: row.codigo,
+    status: row.status,
+    tipoConteudo: '',
+    linkRepositorio: row.link_repositorio,
+    reviewGroup: row.kind,
+    linha: row.linha,
+    vigente: row.vigente,
+  }));
+  const allItems: AdminReviewItem[] = [...issueItems, ...reviewItems];
+
   const search = params?.search?.trim().toLowerCase();
-  const filtered = reviewItems.filter((item) => {
+  const filtered = allItems.filter((item) => {
     if (params?.group && params.group !== 'todos' && item.reviewGroup !== params.group) return false;
     if (!search) return true;
     return [item.titulo, item.codigoOda, item.status].some((value) =>
@@ -228,22 +267,16 @@ export async function supabaseAdminReview(params?: {
     );
   });
 
-  const counts = {
-    'sem-link': 0,
-    'em-cadastro': 0,
-    quebrado: 0,
-    incorreto: 0,
-    'acesso-restrito': 0,
-    'nao-avaliado': 0,
-    duvida: 0,
-    outro: 0,
-  } as Record<ReviewGroup, number>;
-  for (const item of reviewItems) counts[item.reviewGroup] += 1;
+  const counts = Object.fromEntries(REVIEW_GROUP_ORDER.map((key) => [key, 0])) as Record<
+    ReviewGroup,
+    number
+  >;
+  for (const item of allItems) counts[item.reviewGroup] += 1;
 
   return {
     data: filtered,
     total: filtered.length,
-    totalReview: reviewItems.length,
+    totalReview: allItems.length,
     counts,
   };
 }
@@ -274,6 +307,24 @@ export async function supabaseAdminViewsTop(params?: {
       count: Number(kind === 'page' ? row.page_view_count : row.open_view_count),
     })),
   };
+}
+
+type AdminUserRow = {
+  email: string;
+  papel: string;
+  criado_em: string;
+  ultimo_acesso: string | null;
+};
+
+export async function supabaseAdminUsers(): Promise<AdminUserItem[]> {
+  const { data, error } = await getSupabaseClient().rpc('admin_list_users');
+  throwIfError(error, 'Erro ao listar usuários.');
+  return ((data ?? []) as AdminUserRow[]).map((row) => ({
+    email: row.email,
+    papel: row.papel,
+    criadoEm: row.criado_em,
+    ultimoAcesso: row.ultimo_acesso,
+  }));
 }
 
 export async function supabaseSpreadsheetStatus(): Promise<SpreadsheetStatusResponse> {

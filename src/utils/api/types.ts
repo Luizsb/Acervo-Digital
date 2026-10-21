@@ -112,6 +112,17 @@ export interface AdminReviewItem {
   anoSerie?: string | null;
   componenteCurricular?: string | null;
   reviewGroup: ReviewGroup;
+  /** Só nos problemas da planilha (sem código, código repetido): a linha na planilha. */
+  linha?: number | null;
+  /** Só em código repetido: a linha que ficou valendo no banco. */
+  vigente?: boolean | null;
+}
+
+export interface AdminUserItem {
+  email: string;
+  papel: string;
+  criadoEm: string;
+  ultimoAcesso: string | null;
 }
 
 export interface AdminReviewResponse {

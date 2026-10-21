@@ -8,7 +8,8 @@ export type AuditAction =
   | 'catalog.import_failed'
   | 'catalog.resource_created'
   | 'catalog.resource_updated'
-  | 'catalog.resource_deleted';
+  | 'catalog.resource_deleted'
+  | 'admin.users_listed';
 
 /** De onde o evento partiu. `banco` e `supabase` são gravados por gatilhos SQL, não por aqui. */
 export type AuditOrigin = 'express' | 'cli' | 'apps-script';

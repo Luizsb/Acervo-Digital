@@ -65,12 +65,13 @@ IA do Cursor é obrigada a seguir neste repositório, está no
 
 | Camada | Stack |
 |--------|--------|
-| **Frontend** | React 18, TypeScript, Vite 6, CSS compilado (Tailwind congelado em `src/index.css`), Radix UI, Lucide React, Intro.js |
-| **Backend** | Node.js, Express, TypeScript, Prisma 5, JWT e bcrypt |
-| **Banco** | PostgreSQL 16 via Docker Compose (porta **5433** local) |
+| **Frontend** | React 18, TypeScript (modo estrito, `npm run typecheck`), Vite 6, CSS compilado (Tailwind congelado em `src/index.css`), Radix UI, Lucide React, Intro.js |
+| **Backend** | Produção: Supabase (Auth + Data API com RLS). Local: Node.js, Express, TypeScript, Prisma 5, JWT e bcrypt |
+| **Banco** | PostgreSQL. Produção no Supabase (`sa-east-1`); local via Docker Compose (porta **5433**) |
 | **Dados** | ExcelJS, BNCC (`public/bncc.db`) |
 | **Thumbs** | Playwright + Sharp (`npm run thumbs:capture`) |
-| **Auth (dev)** | Usuário demo local; botão JumpCloud Go como entrada principal na UI (placeholder no ambiente de teste) |
+| **Auth** | MVP: login único de visitante e de admin (botões na tela de login). JumpCloud na migração para a infraestrutura da Arco |
+| **CI** | GitHub Actions: tipos, testes, `npm audit`, build, CodeQL, Trivy e Dependabot |
 
 ---
 
@@ -107,57 +108,47 @@ Diretrizes de interface: `src/guidelines/Guidelines.md`.
 A planilha **não** é lida a cada abertura do site. O fluxo é:
 
 ```
-planilha (.xlsx)
-    → seed / import:categorizacao  (também no start da API em Docker)
-    → PostgreSQL
-    → API /api/odas
-    → frontend
+planilha do NDE (.xlsx, baixada do Drive)
+    → planilha:preparar → diff:planilha → import:categorizacao   (máquina do operador)
+    → PostgreSQL (Supabase em produção; Postgres local no desenvolvimento)
+    → Data API do Supabase com RLS, ou API Express /api/odas no modo local
+    → frontend (galeria para o leitor; fila de revisão para o admin)
 ```
 
-O que fica no banco: título, códigos, BNCC, coleção, livro, bloco, SAMR, requisitos, **caminho da thumb** (`/thumbs/{codigo}.webp`) e **link externo** do ODA/vídeo.
+O que fica no banco: título, códigos, BNCC, coleção, livro, bloco, SAMR, requisitos, **caminho da thumb** (`/thumbs/{marca}/{arquivo}.webp`) e **link externo** do ODA/vídeo. O mapa completo dos fluxos está no [SDD.md](./docs/SDD.md), em "Fluxos principais reais".
 
 O que **não** fica no banco: o arquivo do ODA e o vídeo. As capas ficam em `public/thumbs/` e sobem no Git (WebP, cerca de 60 MB).
 
 ### Por que as thumbs não vão para o PostgreSQL
 
-São mais de mil imagens. Guardá-las como `BYTEA` deixaria o banco pesado. O banco guarda só o caminho (`/thumbs/{codigo}.webp`); o arquivo vai no disco e no repositório.
+São mais de mil imagens. Guardá-las como `BYTEA` deixaria o banco pesado. O banco guarda só o caminho; o arquivo vai no disco e no repositório.
 
 ### Atualizar o catálogo quando a planilha oficial mudar
 
-**Opção A — Apps Script agendado (recomendado):** funciona com a planilha privada,
-porque o script roda com a conta que criou o acionador.
+O caminho em uso é manual, na máquina de quem opera (com o `server/.env` apontando
+para o Supabase):
 
-1. No `.env` da API: `SPREADSHEET_SYNC_TOKEN=` (`openssl rand -hex 32`)
-2. Planilha → Extensões → Apps Script → cole `scripts/apps-script/sync-acervo.gs`
-3. O endereço da API já está preenchido. Em **Configurações do projeto → Propriedades do script**, cadastre apenas `SYNC_TOKEN` com o mesmo valor do `.env`; depois autorize rodando `testSyncNow`
-4. Acionadores → novo acionador para `syncAcervoDaily`, baseado em tempo, temporizador diário (recomendado) ou semanal
-5. Endpoints usados: `POST /api/sync/spreadsheet` (responde `202` com `jobId`) e `GET /api/sync/jobs/:jobId`, com header `X-Acervo-Sync-Token`
-6. Capas: por padrão a sincronização captura as elegíveis (até `AUTO_CAPTURE_THUMBS_LIMIT`, 50 por execução). Use `AUTO_CAPTURE_THUMBS_AFTER_SYNC=false` para deixar só sob demanda
+```bash
+npm run planilha:preparar -- "C:/Users/voce/Downloads/planilha-baixada.xlsx"
+npm run diff:planilha          # o que vai mudar, sem tocar no banco
+npm run db:exportar            # backup; enviar ao Drive restrito do time de ID
+npm run import:categorizacao
+npm run thumbs:capture         # capas que faltam; depois git add/commit/push
+```
 
-Não é necessário implantar o Apps Script como App da Web. No painel admin ficam o
-upload manual de `.xlsx` e a data/origem da última sincronização concluída. O gatilho
-apontava para a API da EC2 e está parado.
+O `planilha:preparar` grava em `data/` só a aba `Recursos Digitais`, sem dados
+pessoais. Apague o arquivo baixado depois. O passo a passo completo, com o que cada
+etapa imprime, está no runbook do [SDD.md](./docs/SDD.md).
 
-**Opção B — arquivo manual:** baixe a planilha do Drive do NDE e rode
-`npm run planilha:preparar -- "caminho/do/arquivo-baixado.xlsx"`, que grava em
-`data/` só a aba `Recursos Digitais`, sem dados pessoais. Depois rode
-`npm run import:categorizacao`. No Docker, `./data` é montado na API.
+A chave é o **Código do recurso**. Em resumo: linha com código real é cadastrada,
+mesmo quebrada ou sem link, e fica fora da galeria até ser corrigida. Linha sem
+código e código repetido aparecem na fila do admin, para o NDE corrigir na
+planilha. Código que sai da planilha é desativado, nunca apagado. A regra completa
+está no SDD, em "Sincronização pelo código do recurso". Não use `--clear` no dia a
+dia.
 
-O feedback (tela admin ou terminal) mostra novos, atualizados, desativados e recursos sem thumb.
-
-Para comparar a planilha nova com a última importada sem tocar no banco: `npm run diff:planilha`.
-
-A chave é o **Código do recurso**:
-
-| Situação na planilha | O que o código faz |
-|----------------------|--------------------|
-| Linha nova | Cria o ODA |
-| Linha já cadastrada, com alteração | Atualiza os campos no banco |
-| Linha já cadastrada, sem alteração | Mantém o registro e só marca a sincronização |
-| Código que saiu da planilha | **Desativa** (`ativo = false`); some da galeria |
-| Código que voltou depois de sair | Reativa o registro |
-
-Não use `--clear` no dia a dia.
+O gatilho do Google Apps Script (`scripts/apps-script/sync-acervo.gs`) está **parado**:
+apontava para a API da EC2, que foi desligada. Volta quando houver servidor.
 
 ---
 
@@ -259,7 +250,10 @@ Cuidados, por causa dos dados e do relatório de segurança:
 
 ## Publicação
 
-O front publica na Vercel a cada push em main. O banco é o Supabase.
+O front publica na Vercel a cada push em main, depois do CI (tipos, testes, auditoria
+de dependências e build). O banco é o Supabase. Mudança de banco (migração do Prisma
+e `scripts/supabase/rls.sql`) não é aplicada pelo deploy: veja "Aplicar mudanças de
+banco" no SDD.
 A EC2, o nginx, o Caddy e as imagens Docker foram removidos em 2026-10-20;
 quando houver servidor corporativo, o empacotamento é feito de novo.
 A operação do catálogo está no [SDD.md](./docs/SDD.md).
@@ -286,6 +280,7 @@ A operação do catálogo está no [SDD.md](./docs/SDD.md).
 | `npm run thumbs:setup` | Instala o Chromium para captura local |
 | `npm run thumbs:capture` | Captura as capas que faltam, lendo a lista da planilha. Opções: `-- --limit=100`, `-- --do-banco` |
 | `npm run test` | Vitest |
+| `npm run typecheck` | Checagem de tipos do front (`tsconfig.json`, modo estrito); o CI roda |
 
 ---
 
@@ -293,13 +288,19 @@ A operação do catálogo está no [SDD.md](./docs/SDD.md).
 
 | Área | Endpoints |
 |------|-----------|
-| **ODAs** | `GET/POST /api/odas`, `GET/PUT/DELETE /api/odas/:id` |
-| **Auth** | `POST /api/auth/login`, `register`, `GET/PATCH /api/auth/me` |
-| **Admin** | `GET /api/admin/review` (JWT com `role=admin`; fila do que não entra na galeria) |
+API Express, usada no modo local (`VITE_BACKEND=ec2`). Em produção o front fala com o
+Supabase; as funções equivalentes estão em `scripts/supabase/rls.sql`.
+
+| Área | Endpoints |
+|------|-----------|
+| **ODAs** | `GET/POST /api/odas`, `GET/PUT/DELETE /api/odas/:id`, `POST /api/odas/:id/view` |
+| **Auth** | `POST /api/auth/login`, `register`, `forgot-password`, `reset-password`, `GET/PATCH /api/auth/me` |
+| **Admin** (JWT com `role=admin`) | `GET /api/admin/review` (fila de revisão e problemas da planilha), `GET /api/admin/users` (usuários e perfis), `GET /api/admin/views/top`, `GET /api/admin/spreadsheet/status`, `POST /api/admin/spreadsheet`, `POST /api/admin/thumbs/capture` |
 | **Favoritos** | `GET/POST /api/users/me/favorites`, `DELETE .../:projectId` |
 | **BNCC** | `GET /api/bncc`, `GET /api/bncc/:codigo` |
+| **Sincronização** | `POST /api/sync/spreadsheet`, `GET /api/sync/jobs/:jobId` (token `X-Acervo-Sync-Token`; usado pelo Apps Script, hoje parado) |
 
-`GET /api/odas` retorna só registros `ativo = true` com **Status do link = Funcionando** e **Link do recurso preenchido**. Em branco, acesso restrito, quebrado, incorreto, não avaliado, dúvida para revisão e itens sem link ficam no banco para o painel admin e não entram na galeria. Um recurso marcado como Funcionando mas sem link aparece na fila de revisão no grupo **Sem link**. Para incluir desativados: `?includeInactive=true`.
+`GET /api/odas` retorna só o que entra na galeria: `ativo = true`, **Status do link = Funcionando** e **Link do recurso preenchido**. O resto fica no banco para a fila de revisão do admin. A regra está em `catalogVisibility.ts` (nos dois espelhos) e descrita no SDD.
 
 ---
 
@@ -312,4 +313,6 @@ A operação do catálogo está no [SDD.md](./docs/SDD.md).
 - **CSS / classes Tailwind:** o `src/index.css` é compilado e congelado; preferir CSS dedicado.
 - **Vimeo no console:** `ERR_BLOCKED_BY_CLIENT` costuma ser bloqueador de ads.
 - **Galeria vazia:** rode `npm run setup` e `npm run server:dev`, ou use o modo Supabase.
+- **Aviso "O banco do acervo está inativo":** o plano Free do Supabase pausou o projeto por falta de uso. Restaure no painel do Supabase e confira o workflow de ping (SDD, "Manter o Supabase acordado").
+- **Página em branco depois de mover ou renomear arquivo:** reinicie o `npm run dev`; o Vite em execução guarda o caminho antigo.
 - **Cards sem capa:** confira se `public/thumbs/` veio no clone; se faltar arquivo, `npm run thumbs:capture`.

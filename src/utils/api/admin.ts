@@ -1,6 +1,7 @@
 import { isSupabaseBackend } from '../../config/backend';
 import {
   supabaseAdminReview,
+  supabaseAdminUsers,
   supabaseAdminViewsTop,
   supabaseLocalJobOnly,
   supabaseSpreadsheetStatus,
@@ -8,6 +9,7 @@ import {
 import { requestJson, requireAuthToken } from './http';
 import type {
   AdminReviewResponse,
+  AdminUserItem,
   AsyncJobStartResponse,
   OdaViewKind,
   SpreadsheetJob,
@@ -44,6 +46,11 @@ export async function apiAdminViewsTop(params?: {
   if (params?.period) query.set('period', params.period);
   if (params?.limit) query.set('limit', String(params.limit));
   return adminGet(`/admin/views/top?${query.toString()}`, 'Erro ao carregar o ranking de acessos.');
+}
+
+export async function apiAdminUsers(): Promise<AdminUserItem[]> {
+  if (isSupabaseBackend()) return supabaseAdminUsers();
+  return adminGet('/admin/users', 'Erro ao listar usuários.');
 }
 
 export async function apiAdminSpreadsheetStatus(): Promise<SpreadsheetStatusResponse> {

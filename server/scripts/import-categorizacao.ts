@@ -12,7 +12,12 @@ import {
   type RepeatedCode,
 } from '../lib/map-categorizacao';
 import { completeBnccText, completeObjectiveList } from '../lib/completeBnccText';
-import { isImportableResource, isVisibleInCatalog } from '../lib/catalogVisibility';
+import { buildImportIssues, type ImportIssueSourceRow } from '../lib/importIssues';
+import {
+  createRepeatedCodeResolver,
+  isImportableResource,
+  isVisibleInCatalog,
+} from '../lib/catalogVisibility';
 import {
   findWorkbook,
   lastImportedWorkbookPath,
@@ -34,9 +39,13 @@ export type ImportSummary = {
   reactivated: number;
   deactivated: number;
   skipped: number;
-  /** Linhas fora do critério de isImportableResource: não são cadastradas. */
+  /** Linhas sem código real (isImportableResource): não são cadastradas. */
   notImportable: number;
+  /** Linhas repetidas ignoradas porque outra linha do mesmo código entra na galeria. */
+  repeatedIgnored: number;
   repeatedCodes: RepeatedCode[];
+  /** Linhas gravadas em import_issues para a fila do admin (sem código e código repetido). */
+  issues: number;
   errors: number;
   totalActive: number;
   totalAudiovisual: number;
@@ -139,16 +148,20 @@ function printSummary(summary: ImportSummary) {
   console.log(`   alterados: ${summary.updated}`);
   console.log(`   sem alteração: ${summary.unchanged}`);
   console.log(`   reativados: ${summary.reactivated}`);
-  console.log(`   desativados (fora da planilha ou não funcionais): ${summary.deactivated}`);
+  console.log(`   desativados (fora da planilha ou sem código): ${summary.deactivated}`);
   console.log(`   pulados (linha vazia): ${summary.skipped}`);
-  console.log(`   não cadastrados (sem Funcionando, link ou código): ${summary.notImportable}`);
+  console.log(`   não cadastrados (sem código do recurso): ${summary.notImportable}`);
+  console.log(`   linhas repetidas ignoradas (outra linha do código está na galeria): ${summary.repeatedIgnored}`);
   console.log(`   erros: ${summary.errors}`);
   if (summary.repeatedCodes.length > 0) {
-    console.log(`   ⚠️  códigos repetidos na planilha (a última linha vence): ${summary.repeatedCodes.length}`);
+    console.log(
+      `   ⚠️  códigos repetidos na planilha (vence a linha da galeria; entre iguais, a última): ${summary.repeatedCodes.length}`
+    );
     summary.repeatedCodes.forEach(({ codigo, linhas }) =>
       console.log(`     ! ${codigo} — linhas ${linhas.join(', ')}`)
     );
   }
+  console.log(`   problemas da planilha na fila do admin: ${summary.issues}`);
   if (summary.deferredWithoutThumb > 0) {
     console.log(`   adiados por falta de capa (--somente-com-capa): ${summary.deferredWithoutThumb}`);
   }
@@ -191,6 +204,8 @@ export async function importCategorizacao(options: ImportOptions = {}): Promise<
         reativados: summary.reactivated,
         desativados: summary.deactivated,
         naoCadastrados: summary.notImportable,
+        repetidasIgnoradas: summary.repeatedIgnored,
+        problemasPlanilha: summary.issues,
         codigosRepetidos: summary.repeatedCodes.length,
         erros: summary.errors,
         adiadosSemCapa: summary.deferredWithoutThumb,
@@ -233,10 +248,14 @@ async function runImport(options: ImportOptions): Promise<ImportSummary> {
   let reactivated = 0;
   let skipped = 0;
   let notImportable = 0;
+  let repeatedIgnored = 0;
+  const acceptRepeatedRow = createRepeatedCodeResolver();
   let errors = 0;
   let deferredWithoutThumb = 0;
   const seenCodes: string[] = [];
   const rowCodes: { codigo: string; linha: number }[] = [];
+  const issueRows: ImportIssueSourceRow[] = [];
+  const appliedLineByCode = new Map<string, number>();
   const thumbCandidates: ImportSummary['missingThumbs'] = [];
   const changes: ChangedItem[] = [];
   const synchronizedAt = new Date();
@@ -253,11 +272,24 @@ async function runImport(options: ImportOptions): Promise<ImportSummary> {
       continue;
     }
     rowCodes.push({ codigo: mapped.codigoOda, linha: sheetRow });
+    issueRows.push({
+      linha: sheetRow,
+      codigo: mapped.codigoOda,
+      titulo: mapped.titulo,
+      status: mapped.status,
+      linkRepositorio: mapped.linkRepositorio,
+    });
     if (!isImportableResource(mapped)) {
       notImportable += 1;
       options.onProgress?.({ phase: 'importing', current: i + 1, total: rows.length });
       continue;
     }
+    if (!acceptRepeatedRow(mapped.codigoOda, isVisibleInCatalog(mapped.status, mapped.linkRepositorio))) {
+      repeatedIgnored += 1;
+      options.onProgress?.({ phase: 'importing', current: i + 1, total: rows.length });
+      continue;
+    }
+    appliedLineByCode.set(mapped.codigoOda, sheetRow);
 
     mapped.descricaoBncc = completeBnccText(mapped.codigoBncc, mapped.descricaoBncc);
     mapped.descricaoBnccSecundaria = completeBnccText(
@@ -434,6 +466,16 @@ async function runImport(options: ImportOptions): Promise<ImportSummary> {
     }
   }
 
+  const issues = buildImportIssues(issueRows, appliedLineByCode);
+  if (errors === 0) {
+    await prisma.$transaction([
+      prisma.importIssue.deleteMany({}),
+      prisma.importIssue.createMany({
+        data: issues.map((issue) => ({ ...issue, syncedAt: synchronizedAt })),
+      }),
+    ]);
+  }
+
   const totalActive = await prisma.oDA.count({ where: { ativo: true } });
   const totalAudiovisual = await prisma.oDA.count({
     where: { ativo: true, tipoConteudo: 'Audiovisual' },
@@ -454,7 +496,9 @@ async function runImport(options: ImportOptions): Promise<ImportSummary> {
     deactivated,
     skipped,
     notImportable,
+    repeatedIgnored,
     repeatedCodes: findRepeatedCodes(rowCodes),
+    issues: issues.length,
     errors,
     totalActive,
     totalAudiovisual,

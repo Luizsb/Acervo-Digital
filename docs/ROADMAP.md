@@ -109,8 +109,10 @@ Resposta à perda de acesso à EC2, com custo zero.
   http, odaToProject), sem mudar o que os componentes importam
 - ✅ Admin: status da planilha voltou a carregar na aba principal (a condição de
   aba estava no efeito errado)
-- ⬜ Reorganização: `App.tsx` (978 linhas), depois `AdminReviewPage.tsx` e
-  `ProjectDetailsPage.tsx`
+- ✅ Reorganização do `App.tsx` (1046 → 520 linhas): hooks `useCatalog` e
+  `useFavorites`; componentes `MobileActiveFilters`, `WelcomeBanner`,
+  `ContentTypeSelector` e `GalleryResults`. A navegação por hash ficou no `App.tsx`
+- ⬜ Reorganização: `AdminReviewPage.tsx` e `ProjectDetailsPage.tsx`
 - ✅ Checagem de tipos do front: `tsconfig.json` em modo estrito, `npm run typecheck`
   no CI, zero erros
 - ⬜ Tipos gerados das tabelas do Supabase (`supabase gen types`), para o
@@ -148,9 +150,10 @@ Resposta à perda de acesso à EC2, com custo zero.
 - ✅ Selos de marca nas cores oficiais (Conquista, SAE, e já prontas Positivo, COC,
   Geekie, SAS e Nave), num componente único `MarcaBadge`. Conquista deixou de sair
   roxa como o SAE
-- ⬜ `[A VALIDAR]` Contraste do texto branco nos selos de Geekie (`#fd1747`), Positivo
-  (`#e94c26`) e Nave (`#ee377d`), abaixo de 4,5:1 para texto pequeno, quando essas
-  marcas entrarem no catálogo
+- ⬜ Contraste do texto branco nos selos de marca, medido em 2026-10-21 (mínimo AA
+  para texto pequeno: 4,5:1). Passam SAE (11,77), SAS (14,97) e Conquista (4,71).
+  Ficam abaixo Positivo (3,80), Nave (3,83), COC (3,87) e Geekie (3,90). Hoje só SAE
+  e Conquista estão no catálogo; decidir o tratamento quando as outras entrarem
 
 ### Resposta ao relatório do Comitê Security by Design 🔄 Em andamento
 
@@ -210,11 +213,34 @@ ferramenta de cadastro.
 - ⬜ Solicitar o repositório no GitHub da ArcoTech e migrar com histórico limpo
 - ⬜ Integrar o JumpCloud no backend Express e remover os botões de acesso rápido
 - ⬜ Pedir ao comitê o aceite de JumpCloud com MFA no lugar da VPN e enviar a
-  atualização de escopo (cadastro → vitrine de consulta)
+  atualização de escopo (cadastro → vitrine de consulta). Texto de resposta redigido
+  em 2026-10-21, fora do repositório; falta revisar e enviar no PSBD-411
+- ✅ Relatório de usuários e perfis no admin (aba *Usuários e perfis*, com CSV), nos
+  dois backends; o SQL continua no runbook. Função `admin_list_users()` aplicada no
+  Supabase em 2026-10-21
+- ✅ Evidência de criptografia em repouso e em trânsito no `SDD.md` (Supabase AES-256
+  e TLS; Vercel só HTTPS)
+- ✅ *Enforce SSL* no Supabase: não será ativado (responsável, 2026-10-21), porque o
+  Supabase não é o ambiente oficial. No servidor da Arco o SSL do banco é exigido
+- ✅ Backup definido (responsável, 2026-10-21): `db:exportar` antes de cada importação
+  e no mínimo mensal, na pasta restrita do time de ID no Drive corporativo
+- ✅ Fila do admin com "Sem código" e "Código repetido" (tabela `import_issues`,
+  recriada a cada importação), com a linha da planilha e qual linha vale
+- ✅ Resposta ao comitê explica a função do login de admin do MVP (demonstração,
+  conta de teste, só leitura)
+- ✅ Selos de marca e macroformato com o mesmo tamanho dos vizinhos, na grade e na
+  lista
+- ✅ Fluxos do `SDD.md` revisados contra o código, com mapa geral e ciclo de
+  correção com o NDE
+- ✅ Decisão (2026-10-21): no MVP, login único de visitante e de admin, só para
+  demonstrar a ideia. Na migração, o botão de admin sai e o admin é criado no banco.
+  Nenhuma conta pessoal enquanto o botão existir
+
 ### Fase 6 — Reduzir a dependência de máquina local ⬜ Planejada
 
 O objetivo é que atualizar o catálogo deixe de exigir um ambiente Node configurado.
-`[A VALIDAR]` nenhuma das alternativas foi avaliada tecnicamente ainda.
+Nenhuma das alternativas foi avaliada tecnicamente ainda. Sem data (responsável,
+2026-10-21): depende do servidor da Arco.
 
 - Retomar o gatilho automático de sincronização, apontando para um destino que
   exista (Supabase Edge Function, ou a API no servidor corporativo)
@@ -241,16 +267,30 @@ O objetivo é que atualizar o catálogo deixe de exigir um ambiente Node configu
 | 1 | Repassar acessos por mensagem direta a quem assume | Sem isso o catálogo congela |
 | 2 | Abrir o chamado do servidor corporativo e solicitar o GitHub da ArcoTech | Pendente, sem data. Destrava o JumpCloud e a maior parte do relatório de segurança |
 | 3 | Cadastrar os secrets do workflow de ping e remover o gatilho de push | Hoje funciona com valor embutido |
-| 4 | Corrigir os 20 códigos repetidos na planilha (lista em "Bugs conhecidos") | A última linha vence; um deles junta dois recursos diferentes |
+| 4 | Corrigir os 20 códigos repetidos na planilha (lista em "Bugs conhecidos") | Vence a linha da galeria, senão a última; um deles junta dois recursos diferentes |
 | 5 | SSO JumpCloud | Tira o login com senha manual |
 | 6 | Teste end-to-end do fluxo de login e galeria | Única forma de detectar quebra dos dois backends |
 | 7 | Reduzir o bundle inicial | Aviso do Vite, sem impacto relatado por usuário |
-| 8 | Revisar `src/guidelines/Guidelines.md` | Pode estar descrevendo estilo que não se aplica mais |
+| 8 | Reescrever `src/guidelines/Guidelines.md` | Confirmado em 2026-10-21: descreve cores, logo e filtros de uma versão anterior; tem aviso no topo |
 
 ---
 
 ## Bugs conhecidos
 
+- **19 vídeos em playlist do YouTube não tocam no modal** (conferido em 2026-10-21).
+  O encurtador do SAE leva a `youtube.com/playlist`, que recusa `iframe`, e
+  `resolveVideoEmbedUrl` (`src/utils/videoThumbnails.ts`) só converte Vimeo. Correção
+  de código: trocar `youtube.com/playlist?list=…` por `youtube.com/embed/videoseries?list=…`
+  (e `watch?v=` por `embed/`). Códigos: `EF22_9_L1_ING_1ED`, `EF22_9_L1_ING_2ED`,
+  `EF22_9_L1_ING_3ED`, `EF22_9_L1_ING_4ED`, `EF22_9_L1_MAT_4_ED`, `EF22_9_L2_ING_1ED`,
+  `EF22_9_L2_ING_2ED`, `EF22_9_MAT_L1_U1_03_ED`, `EF229L1CIE2ED`, `EF229L1CIE3ED`,
+  `EF229L1HIS3ED`, `EF229L1HIS4ED`, `EF229L1HIS5ED`, `EF229L1MAT5ED`, `EF229L1POR1ED`,
+  `EF229L1POR2ED`, `EF229L1POR3ED`, `EF229L2ING3ED`, `EF229L2ING4ED`.
+- **34 links de audiovisual sem destino em 10 segundos** (2026-10-21)
+  `[A VALIDAR]`: testar de novo antes de levar ao NDE. Entre eles `IMP/84/CLA44/`,
+  `IMP/84/CLA59/`, `IMP/92/MLA71`, `IMP/G21/ELA13`, `IMP/G22/ELA47`, quatro
+  `EF21_…_OD2`/`od2` parados em `apis.sae.digital` e 25 códigos `SAE23`–`SAE26`
+  (`…_VA1`, `…_OA1`), como `SAE25_AF61_FIL_C01_VA1` e `SAE26_AI44_GEO_C11_VA1`.
 - **Códigos repetidos na planilha.** 20 códigos aparecem em duas linhas cada (planilha
   de 2026-10-19). Desde 2026-10-20 a importação lista todos no resumo. Correção
   editorial: manter uma linha por código. Na planilha:
@@ -279,19 +319,18 @@ O objetivo é que atualizar o catálogo deixe de exigir um ambiente Node configu
   `IMP/61/ILA19/`. Elas dividem a capa. Correção editorial: um código por recurso,
   sem barra no fim.
 - **Marca em branco na planilha.** 296 linhas estão sem Marca, 293 delas com código
-  `IMP/...`; no banco são 294 recursos, provavelmente porque códigos repetidos viram
-  um só `[A VALIDAR]`. Desde 2026-10-20, a interface deduz Conquista pelo prefixo, como
-  já fazia a capa. As 3 restantes são linhas **sem código do recurso**, todas
-  `Quebrado` e fora da galeria: `PLANILHA_L2274` (sem título nem link),
-  `PLANILHA_L2314` (Estrutura interna do osso) e `PLANILHA_L2316` (Circulação do corpo
-  humano). As duas últimas apontam para PDFs de realidade aumentada na pasta `SPE` do
-  SharePoint `[HIPÓTESE — CONFIRMAR]` Sistema Positivo. Correção editorial: preencher
-  a coluna e dar código a essas linhas, ou removê-las.
-- **`ERR_NAME_NOT_RESOLVED` no domínio do Supabase dentro da rede corporativa.**
-  Ocorreu em setembro de 2026 e foi diagnosticado inicialmente como pausa do
-  projeto; era o DNS da rede. `[HIPÓTESE — CONFIRMAR]` se acontece de forma
-  consistente para outros usuários na mesma rede, o impacto é grave e precisa ser
-  levado à TI.
+  `IMP/...`. No banco são 291 recursos ativos sem marca (conferido em 2026-10-21):
+  as 293 linhas menos as cópias de `IMP/23/GLA3` e `IMP/33/GLA3`, que se repetem.
+  Desde 2026-10-20, a interface deduz Conquista pelo prefixo, como já fazia a capa.
+  As 3 restantes são linhas **sem código do recurso** e aparecem na fila do admin,
+  em "Sem código": `PLANILHA_L2274` (sem título nem link), `PLANILHA_L2314`
+  (Estrutura interna do osso) e `PLANILHA_L2316` (Circulação do corpo humano). As
+  duas últimas apontam para PDFs de realidade aumentada na pasta `SPE` do SharePoint
+  `[HIPÓTESE — CONFIRMAR]` Sistema Positivo; quem confirma é o NDE. Correção
+  editorial: preencher a coluna e dar código a essas linhas, ou removê-las.
+- ✅ **`ERR_NAME_NOT_RESOLVED` no domínio do Supabase dentro da rede corporativa**
+  (setembro de 2026, DNS da rede). Encerrado pelo responsável em 2026-10-21: o
+  projeto sai do Supabase na migração, então não será levado à TI.
 - **Favoritos não migram entre os modos de backend.** Não é bug de código, é
   consequência da arquitetura, mas se comporta como bug para o usuário que testou
   nos dois ambientes.
@@ -356,10 +395,9 @@ Na ordem, para quem assume o projeto:
 
 ## Pontos a complementar
 
-- `[PERGUNTA AO RESPONSÁVEL]` Há compromisso de data para alguma das fases 6 ou 7,
-  ou o projeto entra em modo de manutenção durante as férias?
-- `[PERGUNTA AO RESPONSÁVEL]` Existe demanda editorial em espera que dependa do
-  acervo e não esteja neste arquivo?
+- ✅ Datas das fases 6 e 7 (responsável, 2026-10-21): sem data. Dependem do servidor
+  da Arco; até lá, manutenção sob demanda.
+- ✅ Demanda editorial em espera fora deste arquivo (responsável, 2026-10-21): não há.
 - ✅ Recuperação da EC2 abandonada em 2026-10-20. O destino é o servidor corporativo.
 - ✅ Onde ficam os dados (responsável, 2026-10-20): hoje a base oficial é o
   Supabase; no futuro, a infraestrutura da Arco.

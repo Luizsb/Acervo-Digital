@@ -76,6 +76,16 @@ export function catalogLoadMessage(
   };
 }
 
+/** Texto de falha para telas que não usam o aviso do catálogo: banco fora do ar ou mensagem do erro. */
+export function databaseFailureText(error: unknown, fallback: string, isLocalBackend: boolean): string {
+  const kind = classifyCatalogLoadError(error);
+  if (kind === 'paused' || kind === 'backend-offline') {
+    return catalogLoadMessage(kind, isLocalBackend).text;
+  }
+  const message = error instanceof Error ? error.message : '';
+  return message || fallback;
+}
+
 /** Mensagem de login quando o banco não responde. Null quando o erro é de credencial. */
 export function loginConnectionMessage(error: unknown, isLocalBackend: boolean): string | null {
   const kind = classifyCatalogLoadError(error);

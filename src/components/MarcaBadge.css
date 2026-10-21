@@ -1,11 +1,7 @@
+/* Tamanho e espaçamento vêm das mesmas classes dos selos vizinhos (text-xs, padding do contexto). */
 .marca-badge {
   --marca-color: #6b7280;
-  display: inline-flex;
-  align-items: center;
   border: 1px solid var(--marca-color);
   background-color: var(--marca-color);
   color: #ffffff;
-  font-size: 0.75rem;
-  line-height: 1rem;
-  font-weight: 600;
 }

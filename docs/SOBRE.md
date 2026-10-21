@@ -20,8 +20,10 @@ galeria com busca, filtros, capa, ficha pedagógica e acesso direto ao recurso.
 
 ## Para quem é
 
-- **Time de Interações Digitais** — quem produz e cura os recursos.
-- **NDE** — quem valida a aderência pedagógica e curricular.
+- **Time de Interações Digitais (ID)** — desenvolve e mantém a plataforma do Acervo e
+  responde pela operação técnica.
+- **NDE (Núcleo de Design Educacional)** — alimenta o catálogo: cadastra e categoriza
+  os recursos na planilha oficial e responde pelo conteúdo pedagógico dos materiais.
 - **Editores das coleções** — quem precisa localizar recurso por coleção, livro,
   bloco ou capítulo para montar material.
 - **Administradores do acervo** — quem cuida da qualidade: fila de revisão,
@@ -41,11 +43,11 @@ um modal em tela ampliada, dentro do Acervo; ODAs e demais recursos abrem em nov
 guia, porque embarcados parte deles cortava o conteúdo ou não carregava. O histórico
 dessa decisão está no `ROADMAP.md`.
 
-Administradores têm um painel próprio com a fila de revisão (o que estiver ativo
-fora da galeria, e por quê; desde outubro de 2026 só recursos funcionais são
-cadastrados, então ela tende a ficar vazia), o status da última sincronização da planilha, o histórico de
-recursos novos e atualizados com as capas, o ranking de acessos e a captura de capas
-faltantes.
+Administradores têm um painel próprio com a fila de revisão (o que está cadastrado
+mas fora da galeria, e por quê: quebrado, incorreto, sem link, não avaliado), o
+status da última sincronização da planilha, o histórico de recursos novos e
+atualizados com as capas, o ranking de acessos, o relatório de usuários e perfis e a
+captura de capas faltantes.
 
 ## Funcionalidades prontas
 
@@ -56,8 +58,9 @@ faltantes.
 - Vídeo em tela ampliada; ODA e demais recursos em nova guia.
 - Favoritos por usuário.
 - Contagem de visualizações, separando visita à ficha de abertura do recurso.
-- Painel admin: fila de revisão, status da planilha, histórico de novos e
-  atualizados com capas, ranking de acessos, captura de capas.
+- Painel admin: fila de revisão (inclusive linhas sem código e códigos repetidos da
+  planilha), status da planilha, histórico de novos e atualizados com capas, ranking
+  de acessos, relatório de usuários e perfis, captura de capas.
 - Importação da planilha criando, atualizando, desativando e reativando pelo código
   do recurso.
 - Captura automatizada de capas em WebP.
@@ -82,8 +85,9 @@ link funciona, o reaproveitamento de recursos digitais nas coleções aumenta e 
 retrabalho de curadoria cai. A fila de revisão dá ao administrador a lista exata do
 que precisa de conserto, em vez de a descoberta acontecer por reclamação de usuário.
 
-`[A VALIDAR]` A hipótese ainda não foi medida. Há contagem de visualizações no banco,
-mas nenhuma meta definida nem comparação com o cenário anterior.
+`[A VALIDAR]` A hipótese ainda não foi medida, e só pode ser depois do uso oficial: hoje
+o Acervo é um MVP de validação. Há contagem de visualizações no banco; falta definir a
+meta e a comparação com o cenário anterior no lançamento.
 
 ## Discovery resumido
 
@@ -117,13 +121,15 @@ está quebrado, restrito ou incompleto, e a planilha nova entra no ar com um com
 
 O MVP roda num **ambiente de testes** na Vercel, com banco e autenticação no Supabase
 Free. Essa arquitetura foi adotada em agosto de 2026 como resposta à perda de acesso à
-instância AWS, com custo zero.
+instância AWS, com custo zero. **O Acervo ainda não está em uso oficial:** é um MVP de
+validação da proposta, com login único de visitante e de admin. O catálogo passa de
+2 mil recursos; o número exato está no painel admin.
 
 Em julho de 2026, o Comitê Security by Design da Arco avaliou o projeto, ainda como
 ferramenta de cadastro, e classificou o risco como alto. O rumo combinado depois disso
 é levar o Acervo para um **servidor corporativo da Arco, com SSO JumpCloud**, e o
-código para o GitHub da ArcoTech. Os pedidos de servidor e de repositório estão
-sendo encaminhados à TI. O backend Express em `server/`, que roda em servidor, é o caminho
+código para o GitHub da ArcoTech. Os pedidos de servidor, com a infraestrutura
+adequada ao projeto, e de repositório estão em fluxo de solicitação com a TI. O backend Express em `server/`, que roda em servidor, é o caminho
 para esse ambiente; trocar é mudar a variável `VITE_BACKEND`.
 
 **O ponto de atenção do momento é operacional, não de produto.** A atualização do
@@ -149,14 +155,16 @@ operação" é o que mantém o acervo funcionando.
 
 ## Pontos a complementar
 
-- `[PERGUNTA AO RESPONSÁVEL]` Quem passa a responder pelo produto a partir de
-  setembro de 2026, e quem responde pela operação técnica? Podem ser pessoas
-  diferentes.
-- `[A VALIDAR]` Volume atual do catálogo. A ordem de grandeza é de mil e duzentos
-  recursos, divididos entre audiovisual e OED, mas o número exato deve ser lido no
-  painel admin, não fixado aqui.
-- `[A VALIDAR]` Quantos usuários reais usam o acervo hoje e com que frequência.
-- `[A VALIDAR]` Prazo do SSO JumpCloud. Depende do servidor corporativo, solicitado
-  à TI.
-- `[HIPÓTESE — CONFIRMAR]` O nome "Interações Digitais" é o time responsável;
-  confirmar a nomenclatura oficial da área para uso em documentação externa.
+Respostas do responsável em 2026-10-21:
+
+- ✅ **Responsáveis.** O NDE responde pelos cadastros e pelo conteúdo pedagógico dos
+  materiais; o time de Interações Digitais (ID) responde pela operação técnica. Sem
+  data definida para a transição.
+- ✅ **Volume do catálogo.** Mais de 2 mil recursos, entre audiovisual e OED. O número
+  exato fica no painel admin, não neste arquivo.
+- ✅ **Usuários reais.** Ainda não há uso oficial: é um MVP de validação. Métrica de
+  uso só faz sentido depois do lançamento.
+- `[A VALIDAR]` **Prazo do SSO JumpCloud.** O servidor e a infraestrutura adequada ao
+  projeto estão em fluxo de solicitação com a TI; ainda sem data.
+- ✅ **Nomenclatura.** "Interações Digitais" (ID) é o time que desenvolve a plataforma
+  do Acervo. O NDE é o Núcleo de Design Educacional, que alimenta o catálogo.

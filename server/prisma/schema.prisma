@@ -158,6 +158,23 @@ model ImportEvent {
   @@map("import_events")
 }
 
+/// Problemas da planilha na última importação: linha sem código e código repetido.
+/// Recriada a cada importação sem erro. Não é catálogo: nada daqui vai para a galeria.
+model ImportIssue {
+  id              Int      @id @default(autoincrement())
+  syncedAt        DateTime @map("synced_at")
+  kind            String
+  linha           Int
+  codigo          String?
+  titulo          String?
+  status          String?
+  linkRepositorio String?  @map("link_repositorio")
+  vigente         Boolean  @default(false)
+
+  @@index([kind])
+  @@map("import_issues")
+}
+
 /// Trilha de auditoria de eventos críticos. Só inserção: sem acesso pela Data API do Supabase.
 model AuditEvent {
   id         Int      @id @default(autoincrement())

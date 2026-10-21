@@ -10,6 +10,7 @@ import {
   RefreshCw,
   Search,
   Upload,
+  Users,
 } from 'lucide-react';
 import type { AuthUser } from '../contexts/AuthContext';
 import {
@@ -32,18 +33,34 @@ import {
   type OdaViewKind,
 } from '../utils/api';
 import { isSupabaseBackend } from '../config/backend';
-import { catalogLoadMessage, classifyCatalogLoadError } from '../utils/catalogLoadError';
-import { REVIEW_GROUP_LABELS, REVIEW_GROUP_ORDER } from '../utils/catalogVisibility';
+import { databaseFailureText as failureText } from '../utils/catalogLoadError';
+import {
+  IMPORT_ISSUE_GROUPS,
+  REVIEW_GROUP_LABELS,
+  REVIEW_GROUP_ORDER,
+} from '../utils/catalogVisibility';
 import { thumbPublicPath } from '../utils/thumbPaths';
+import { AdminUsersPanel } from './AdminUsersPanel';
 import './AdminReviewPage.css';
 
 function databaseFailureText(error: unknown, fallback: string): string {
-  const kind = classifyCatalogLoadError(error);
-  if (kind === 'paused' || kind === 'backend-offline') {
-    return catalogLoadMessage(kind, !isSupabaseBackend()).text;
+  return failureText(error, fallback, !isSupabaseBackend());
+}
+
+const ALERT_GROUPS: string[] = [...IMPORT_ISSUE_GROUPS, 'quebrado', 'incorreto', 'acesso-restrito'];
+
+function isImportIssue(group: ReviewGroup): boolean {
+  return (IMPORT_ISSUE_GROUPS as ReviewGroup[]).includes(group);
+}
+
+/** Onde corrigir na planilha: linha, status e, no código repetido, qual linha ficou valendo. */
+function spreadsheetIssueMeta(item: AdminReviewItem): string {
+  const parts = [`Linha ${item.linha}`];
+  if (item.reviewGroup === 'codigo-repetido') {
+    parts.push(item.vigente ? 'vale esta linha' : 'linha ignorada');
   }
-  const message = error instanceof Error ? error.message : '';
-  return message || fallback;
+  if (item.status) parts.push(item.status);
+  return parts.join(' · ');
 }
 
 interface AdminReviewPageProps {
@@ -52,7 +69,7 @@ interface AdminReviewPageProps {
 }
 
 type FilterKey = 'todos' | ReviewGroup;
-type AdminTab = 'catalog' | 'history' | 'views';
+type AdminTab = 'catalog' | 'history' | 'views' | 'users';
 type SyncLogTab = 'created' | 'updated';
 
 const SYNC_CHANGE_LABELS: Record<SyncChangeKind, string> = {
@@ -347,7 +364,9 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
               ? 'Sincronize a planilha e acompanhe o status dos itens e das capas.'
               : activeTab === 'history'
                 ? 'Veja o que entrou novo e o que mudou na última importação, com capa e horário.'
-                : 'Acompanhe quais recursos são visitados e abertos pelos usuários.'}
+                : activeTab === 'views'
+                  ? 'Acompanhe quais recursos são visitados e abertos pelos usuários.'
+                  : 'Revise quem tem acesso e com qual perfil.'}
           </p>
         </div>
       </section>
@@ -380,7 +399,18 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
           <BarChart3 size={17} />
           Acessos e visualizações
         </button>
+        <button
+          type="button"
+          className={activeTab === 'users' ? 'is-active' : ''}
+          aria-current={activeTab === 'users' ? 'page' : undefined}
+          onClick={() => setActiveTab('users')}
+        >
+          <Users size={17} />
+          Usuários e perfis
+        </button>
       </nav>
+
+      {activeTab === 'users' ? <AdminUsersPanel /> : null}
 
       {activeTab === 'catalog' ? (
         <>
@@ -755,9 +785,7 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
               key={item.key}
               type="button"
               className={`admin-review-chip${group === item.key ? ' is-active' : ''}${
-                item.key === 'quebrado' || item.key === 'incorreto' || item.key === 'acesso-restrito'
-                  ? ' is-alert'
-                  : ''
+                ALERT_GROUPS.includes(item.key) ? ' is-alert' : ''
               }`}
               onClick={() => setGroup(item.key)}
             >
@@ -791,23 +819,29 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
                 <td colSpan={5}>Nenhum recurso neste filtro.</td>
               </tr>
             ) : (
-              items.map((item) => (
-                <tr key={item.id}>
+              items.map((item) => {
+                const fromSpreadsheet = isImportIssue(item.reviewGroup);
+                return (
+                <tr key={`${item.reviewGroup}-${item.id}`}>
                   <td>
                     <span className={`admin-review-status is-${item.reviewGroup}`}>
-                      {item.reviewGroup === 'sem-link'
-                        ? REVIEW_GROUP_LABELS['sem-link']
+                      {item.reviewGroup === 'sem-link' || fromSpreadsheet
+                        ? REVIEW_GROUP_LABELS[item.reviewGroup]
                         : item.status?.trim() || REVIEW_GROUP_LABELS[item.reviewGroup]}
                     </span>
                   </td>
                   <td>
                     <strong>{item.titulo}</strong>
                     <span className="admin-review-meta">
-                      {[item.componenteCurricular, item.anoSerie, item.marca].filter(Boolean).join(' · ')}
+                      {fromSpreadsheet
+                        ? spreadsheetIssueMeta(item)
+                        : [item.componenteCurricular, item.anoSerie, item.marca].filter(Boolean).join(' · ')}
                     </span>
                   </td>
                   <td className="admin-review-code">{item.codigoOda || '—'}</td>
-                  <td>{item.tipoObjeto || item.macroformato || item.tipoConteudo}</td>
+                  <td>
+                    {fromSpreadsheet ? 'Planilha' : item.tipoObjeto || item.macroformato || item.tipoConteudo}
+                  </td>
                   <td>
                     {item.linkRepositorio ? (
                       <a href={item.linkRepositorio} target="_blank" rel="noopener noreferrer">
@@ -819,7 +853,8 @@ export function AdminReviewPage({ onBack, user }: AdminReviewPageProps) {
                     )}
                   </td>
                 </tr>
-              ))
+                );
+              })
             )}
           </tbody>
         </table>

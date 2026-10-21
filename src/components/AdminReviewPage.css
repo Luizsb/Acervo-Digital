@@ -917,6 +917,12 @@
   color: #991b1b;
 }
 
+.admin-review-status.is-sem-codigo,
+.admin-review-status.is-codigo-repetido {
+  background: #f5f3ff;
+  color: #5b21b6;
+}
+
 .admin-review-status.is-acesso-restrito,
 .admin-review-status.is-sem-link,
 .admin-review-status.is-duvida {

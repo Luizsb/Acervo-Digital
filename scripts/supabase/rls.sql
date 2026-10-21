@@ -175,6 +175,20 @@ create policy import_events_admin_select on public.import_events
 
 grant select on table public.import_events to authenticated;
 
+-- Problemas da planilha (sem código, código repetido) na fila do admin. A tabela vem
+-- da migração do Prisma; só admin lê.
+do $$
+begin
+  if to_regclass('public.import_issues') is not null then
+    execute 'alter table public.import_issues enable row level security';
+    execute 'drop policy if exists import_issues_admin_select on public.import_issues';
+    execute 'create policy import_issues_admin_select on public.import_issues
+      for select to authenticated using (public.is_acervo_admin())';
+    execute 'revoke all on table public.import_issues from anon';
+    execute 'grant select on table public.import_issues to authenticated';
+  end if;
+end $$;
+
 -- Ping do GitHub Actions (keep-supabase-awake.yml). SELECT público, sem dado do catálogo.
 create table if not exists public.keep_alive (
   id integer primary key,
@@ -250,3 +264,35 @@ drop trigger if exists auth_user_change_audit on auth.users;
 create trigger auth_user_change_audit
   after update on auth.users
   for each row execute function public.audit_auth_user_change();
+
+-- Relatório de usuários e perfis para o painel admin. auth.users não é exposto pela
+-- Data API; esta função devolve só e-mail, papel e datas, e registra a consulta.
+create or replace function public.admin_list_users()
+returns table (email text, papel text, criado_em timestamptz, ultimo_acesso timestamptz)
+language plpgsql
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_acervo_admin() then
+    raise exception 'not authorized' using errcode = '42501';
+  end if;
+  begin
+    insert into public.audit_events (action, actor, origin)
+    values ('admin.users_listed', auth.jwt() ->> 'email', 'supabase');
+  exception when others then
+    raise warning 'admin_list_users: %', sqlerrm;
+  end;
+  return query
+    select u.email::text,
+           coalesce(u.raw_app_meta_data ->> 'role', 'user'),
+           u.created_at,
+           u.last_sign_in_at
+    from auth.users u
+    order by 2, 1;
+end;
+$$;
+
+revoke execute on function public.admin_list_users() from public;
+revoke execute on function public.admin_list_users() from anon;
+grant execute on function public.admin_list_users() to authenticated;

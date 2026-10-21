@@ -10,6 +10,309 @@ trazem a seção "Impacto observado" com dado medido: nenhuma métrica foi colet
 
 ---
 
+## 2026-10-21 · 09:10 — Revisão das marcações abertas e App.tsx dividido
+
+### Antes
+
+- SOBRE, SDD e ROADMAP tinham 33 marcações `[A VALIDAR]`, `[PERGUNTA AO RESPONSÁVEL]`
+  e `[HIPÓTESE — CONFIRMAR]`, várias já respondíveis por evidência.
+- O `App.tsx` tinha 1046 linhas: carregamento do catálogo, favoritos, rotas, faixa
+  de boas-vindas, filtros ativos do celular, seletor de tipo e resultados.
+
+### Depois
+
+- **Resolvidas por evidência:**
+  - `Guidelines.md` obsoleto em boa parte: confirmado, com aviso no topo do arquivo.
+  - Marca em branco: 291 recursos, explicado pelas cópias de `IMP/23/GLA3` e
+    `IMP/33/GLA3`.
+  - Contraste dos selos medido para todas as marcas, com COC incluído.
+  - Vídeos que recusam `iframe`: os 1064 links seguidos até o destino.
+  - Débito "README ainda descreve EC2" retirado: deixou de valer na 2.1.
+- **Resolvidas pelo responsável:**
+  - Backup antes de cada importação e mensal, no Drive restrito do time de ID; entrou
+    no runbook.
+  - Enforce SSL não será ativado no Supabase.
+  - O erro de DNS na rede corporativa foi encerrado.
+  - Fases 6 e 7 sem data.
+  - Não há demanda editorial fora do ROADMAP.
+- **Ficam abertas, com dono:**
+  - DPO: base legal, prazos, aviso, descarte, Marco Civil e quantidade de exports.
+  - Segurança: cofre e destino da auditoria.
+  - TI: Postgres do servidor e prazo do JumpCloud.
+  - Comitê: VPN.
+  - NDE: marca das linhas sem código.
+  - Novo teste: 34 links de vídeo sem resposta.
+  - Medição de valor: só depois do lançamento.
+  - Retenção dos logs do Supabase Free.
+  - Causa do 401 "JWT issued at future".
+- **`App.tsx` (1046 → 520 linhas):**
+  - Hooks `useCatalog` (carregamento e aviso de falha, com cancelamento) e
+    `useFavorites` (API ou localStorage, com reversão se a gravação falhar).
+  - Componentes `MobileActiveFilters` (as cores viram tabela), `WelcomeBanner`,
+    `ContentTypeSelector` e `GalleryResults`.
+  - Constante `COMPONENTES_CURRICULARES` sem uso removida. A navegação por hash
+    ficou no `App.tsx`.
+- **README:** tecnologias com Supabase, CI e login do MVP; fluxo de dados real (sem
+  Docker na API); atualização do catálogo pelo caminho manual com backup, Apps Script
+  marcado como parado; regra de sincronização resumida com link para o SDD; script
+  `typecheck`; API com as rotas de admin, visualização e sincronização; dois itens
+  novos em solução de problemas (banco pausado e Vite com caminho antigo).
+
+### Decisão
+
+A navegação ficou fora da divisão porque mexe com login, link compartilhado e o botão
+voltar ao mesmo tempo; separar tudo de uma vez aumentaria o risco. As playlists do
+YouTube ficaram registradas como bug, sem correção nesta entrega.
+
+### Evidência
+
+- Banco (2026-10-21): 1064 audiovisuais na galeria; destinos finais 286 Vimeo, 279
+  DigitalOcean, 244 Conquista, 202 livro digital SAE, 19 playlist do YouTube, 34 sem
+  resposta. Cabeçalho `X-Frame-Options: SAMEORIGIN` na playlist do YouTube.
+- Contraste do branco: SAE 11,77; SAS 14,97; Conquista 4,71; Geekie 3,90; COC 3,87;
+  Nave 3,83; Positivo 3,80.
+- Navegador, depois da divisão: 2519 na galeria; Audiovisual 1064; Objeto Digital
+  1455; filtro Conquista 805; busca "tangram" com 4 resultados e "ODAs Semelhantes";
+  busca sem resultado com "ODAs Recomendados" e "Limpar e Explorar Tudo" voltando a
+  2519; lista e grade; página 2; faixa recolhe e expande; filtros ativos do celular
+  "(1) Conquista" e contador no botão flutuante; favorito tirado e reposto; ficha
+  abre em `#/recurso/SAE25_EI_G4_BL2_UT4_OD1` e o voltar retorna a `#/acervo`.
+- `npm run typecheck`, 86 testes e build passando.
+
+### Impacto observado
+
+Nenhum na tela.
+
+### Próximos passos
+
+1. Corrigir o embed das playlists do YouTube.
+2. Dividir `AdminReviewPage.tsx` e `ProjectDetailsPage.tsx`.
+
+---
+
+## 2026-10-21 · 08:25 — Pontos a complementar do SOBRE respondidos
+
+### Antes
+
+O `SOBRE.md` tinha cinco pontos em aberto: responsáveis pelo produto e pela
+operação, volume do catálogo ("ordem de mil e duzentos"), usuários reais, prazo do
+JumpCloud e o nome oficial do time. O SDD repetia o volume antigo e o SOBRE descrevia
+Interações Digitais como "quem produz e cura os recursos".
+
+### Depois
+
+- NDE (Núcleo de Design Educacional): cadastros e conteúdo pedagógico. Interações
+  Digitais (ID): desenvolve a plataforma e responde pela operação técnica.
+- Volume: mais de 2 mil recursos, com o número exato no painel admin (SOBRE e SDD).
+- O Acervo ainda não está em uso oficial: é um MVP de validação.
+- JumpCloud segue `[A VALIDAR]`: servidor e infraestrutura em fluxo de solicitação
+  com a TI, sem data.
+- A resposta ao comitê expande a sigla NDE na primeira menção.
+
+### Decisão
+
+Respostas do responsável em 2026-10-21.
+
+### Evidência
+
+Seção "Pontos a complementar" do `SOBRE.md` com as respostas datadas. Na importação
+de 2026-10-21, 11:07, o banco tinha 2614 recursos cadastrados e 2519 na galeria.
+
+### Impacto observado
+
+Nenhum no sistema; só documentação.
+
+### Próximos passos
+
+Nenhum.
+
+---
+
+## 2026-10-21 · 08:20 — Problemas da planilha na fila do admin, selos alinhados e mapa de fluxos
+
+### Antes
+
+- Linhas sem código e códigos repetidos só apareciam no terminal de quem importava.
+  O NDE não tinha onde ver o que corrigir.
+- No modo lista, o selo da marca tinha 10,5px e 20px de altura, e o de macroformato
+  31px, ao lado do componente curricular com 13px e 27px. O CSS congelado só
+  ajusta selos com `inline-flex` e `text-xs`, e a marca não tinha essas classes.
+- O texto ao comitê não explicava para que serve o login de admin do MVP.
+- O SDD citava a rota `POST /api/odas/:id/views`; a rota real é `/view`. Faltava um
+  mapa geral e o ciclo de correção com o NDE.
+
+### Depois
+
+- Tabela `import_issues` (migração `20261021090000`), recriada a cada importação
+  sem erro: uma linha por linha sem código e por linha de código repetido, com a
+  linha da planilha, título, status, link e se é a linha que vale (`vigente`).
+  Montada por `buildImportIssues` (`server/lib/importIssues.ts`).
+- Fila do admin com os grupos "Sem código" e "Código repetido", nos dois backends,
+  com destaque de alerta. A coluna Tipo mostra "Planilha" e a linha aparece abaixo
+  do título. No Supabase, só admin lê (`import_issues_admin_select` em `rls.sql`).
+- `MarcaBadge` usa `inline-flex items-center text-xs font-semibold`; o macroformato
+  ganhou a regra da lista em `catalogBadges.css`.
+- Resposta ao comitê: a função do login de admin (demonstração, conta de teste, só
+  leitura) e a fila como apoio ao NDE no risco de erros na planilha.
+- SDD: mapa geral, fluxo editorial com as quatro tabelas, ciclo de correção com o
+  NDE, admin somente leitura no Supabase e rota de visualização corrigida.
+
+### Decisão
+
+Os problemas da planilha ficam numa tabela própria, e não como recurso: linha sem
+código não tem identidade estável, e uma linha repetida não é um segundo recurso.
+Assim o catálogo continua limpo e o NDE vê o que corrigir.
+
+### Evidência
+
+- Migração aplicada no Supabase (`prisma migrate deploy`). `import_issues` com RLS,
+  1 política, sem `select` para `anon`.
+- Importação de 2026-10-21, 11:07: 0 erros, 77 problemas gravados.
+- Navegador, admin: fila com 172 itens (Sem código 37, Código repetido 40, Quebrado
+  76, Incorreto 10, Não avaliado 6, Sem link 1, Acesso restrito 1, Em cadastro 1).
+  No código `EF21_8_ART_L1_U1_02_OD1`, a linha 1979 ("Walt Disney…") aparece como
+  ignorada e a 1980 ("Noções de desenho…") como a que vale.
+- Selos na lista: componente, marca e macroformato com 13px e 27px. Na grade, os
+  três com 10px e 22px.
+- `npm test`: 16 arquivos, 86 testes, com `importIssues.test.ts`. Tipos do front e
+  do `server/` sem erro.
+
+### Impacto observado
+
+`[A VALIDAR]` Uso da fila pelo NDE na próxima rodada de correção da planilha.
+
+### Próximos passos
+
+1. Enviar a resposta ao comitê no PSBD-411.
+2. Repassar ao NDE a fila filtrada por "Sem código" e "Código repetido".
+
+---
+
+## 2026-10-21 · 08:00 — Itens pendentes voltam ao banco, fora da vitrine
+
+### Antes
+
+Desde 20/10 a importação só cadastrava o que entra na galeria (`Funcionando`, link
+e código real). Os outros 132 recursos estavam desativados e a fila de revisão do
+admin ficava vazia: não havia como acompanhar o que está pendente com o NDE.
+
+### Depois
+
+- `isImportableResource` exige só código real. Quebrado, incorreto, não avaliado,
+  acesso restrito e sem link entram ativos no banco, fora da galeria, e aparecem na
+  fila de revisão.
+- Linha sem código continua fora, porque o código provisório (`PLANILHA_L…`) muda
+  quando a linha muda de lugar.
+- Código repetido: `createRepeatedCodeResolver` faz a linha da galeria vencer a que
+  não entra; entre iguais, a última. O resumo mostra quantas linhas repetidas foram
+  ignoradas (`repeatedIgnored`) e a auditoria grava `repetidasIgnoradas`.
+- SDD, SOBRE e ROADMAP atualizados.
+
+### Decisão
+
+O responsável pediu para voltar atrás: cadastrar não é publicar. O admin precisa
+ver o pendente, e a próxima planilha pode corrigir o item, que entra na galeria na
+mesma importação. Linhas sem código ficam fora (decisão do responsável). Na
+repetição, vence a linha da galeria (decisão do responsável), para os 11 recursos de
+Português e Ciências `Funcionando` não sumirem pela cópia `Não avaliado`.
+
+### Evidência
+
+- Antes: 2519 ativos, 2519 na galeria, 132 inativos.
+- Importação no Supabase em 2026-10-21, 10:47–10:56 (UTC-3), sobre a planilha
+  preparada de 20/10: 2623 processados, 0 novos, 14 alterados, 2514 sem alteração,
+  95 reativados, 0 desativados, 206 linhas vazias, 37 sem código, 11 repetidas
+  ignoradas, 0 erros, 20 códigos repetidos listados.
+- Depois: 2614 ativos, **2519 na galeria** (sem mudança), 37 inativos (as linhas sem
+  código).
+- Navegador, admin: fila com 95 itens (Quebrado 76, Incorreto 10, Não avaliado 6,
+  Sem link 1, Acesso restrito 1, Em cadastro 1). Galeria com 2519 resultados.
+- `npm test`: 83 testes, com os casos novos de `createRepeatedCodeResolver`.
+  `tsc --noEmit` do `server/` e `npm run typecheck` sem erro.
+
+### Impacto observado
+
+A galeria não mudou. O admin passou a ver 95 pendências.
+
+### Próximos passos
+
+1. Levar ao NDE a lista da fila (pode ser filtrada por grupo) e os 20 códigos
+   repetidos.
+
+---
+
+## 2026-10-21 · 07:50 — Relatório de usuários no admin, evidência de criptografia e resposta ao comitê
+
+### Antes
+
+- O relatório do Comitê Security by Design (v0.1, 29/07/2026, PSBD-411) pede
+  "funcionalidade administrativa para extração periódica" de usuários e perfis. Só
+  existia a consulta SQL no runbook.
+- Os requisitos mínimos "Criptografia em repouso" e "HTTPS/TLS" não tinham evidência
+  registrada.
+- As URLs de conexão ao Supabase não exigiam SSL (`sslmode` ausente).
+- O backup do plano Free estava `[A VALIDAR]`.
+- Não havia texto de resposta ao comitê.
+
+### Depois
+
+- **Aba *Usuários e perfis* no admin** (`AdminUsersPanel.tsx`): e-mail, perfil,
+  criação e último acesso, "Atualizar" e "Exportar CSV".
+  - Supabase: função `admin_list_users()` em `rls.sql`, `security definer`, recusa
+    quem não é admin e grava `admin.users_listed`.
+  - Express: `GET /api/admin/users`, último acesso tirado dos eventos `auth.login`,
+    mesma auditoria.
+  - CSV em `src/utils/usersReport.ts`: `;`, BOM e neutralização de células que o
+    Excel leria como fórmula.
+  - O SQL do runbook continua.
+- `databaseFailureText` passou para `catalogLoadError.ts`, usado pelo admin e pelo
+  painel novo.
+- **SDD, "Criptografia em repouso e em trânsito"**: citação do Supabase (AES-256 em
+  repouso, TLS em trânsito), TLS 1.2/1.3 nas APIs, HTTPS obrigatório na Vercel,
+  residência em `sa-east-1`.
+- `sslmode=require` nos exemplos de `server/.env.example` e do runbook.
+- Backup do Free respondido: não existe.
+- Risco registrado: com o botão de admin compartilhado, qualquer visitante lê os
+  e-mails da aba nova. Hoje só há contas de teste.
+- Resposta ao comitê redigida em
+  `Downloads/Resposta ao Comitê SbD - Acervo Digital.md`, fora do repositório
+  público, com atualização de escopo, status por requisito e por risco, e pedido de
+  exceção para VPN, MFA/SSO e repositório.
+
+### Decisão
+
+O relatório de usuários entra no admin sem tirar o SQL, como pedido pelo
+responsável. A lista não é bloqueada para o botão de admin compartilhado porque
+hoje só há contas de teste; a condição para criar conta pessoal passa a ser remover
+o botão. A resposta ao comitê fica fora do Git porque lista fraquezas abertas.
+
+### Evidência
+
+- `admin_list_users()` aplicada no Supabase em 2026-10-21: `security definer`, sem
+  execução para `anon`, com execução para `authenticated`.
+- Navegador: como leitor (`demo@acervo.local`), a função recusou com `not
+  authorized`. Como admin, a aba listou 2 usuários (1 administrador) com criação e
+  último acesso. Evento `admin.users_listed` gravado às 10:36 UTC com ator
+  `admin@acervo.local`, origem `supabase`.
+- `DATABASE_URL` e `DIRECT_URL` conectaram com `sslmode=require`.
+- `npm run typecheck`, `npx tsc --noEmit` do `server/` sem erro; `npm test`: 15
+  arquivos, 81 testes, incluindo `usersReport.test.ts`.
+- Fontes consultadas em 2026-10-21: supabase.com/security,
+  supabase.com/docs/guides/security/platform-security, vercel.com/docs/encryption.
+
+### Impacto observado
+
+`[A VALIDAR]` Depois do deploy, abrir a aba na Vercel.
+
+### Próximos passos
+
+1. Revisar e enviar a resposta no PSBD-411.
+2. Ativar *Enforce SSL* no painel do Supabase e pôr `sslmode=require` no
+   `server/.env` local.
+3. Remover o botão de admin compartilhado antes de qualquer conta pessoal.
+
+---
+
 ## 2026-10-20 · 16:00 — Checagem de tipos no front e Supabase como base atual
 
 ### Antes

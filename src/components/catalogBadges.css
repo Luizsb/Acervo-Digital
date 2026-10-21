@@ -58,6 +58,18 @@
   border: 1px solid #cbd5e1;
 }
 
+/* Mesmo tamanho dos selos vizinhos na lista (.catalog-list-item-inner do index.css). */
+.catalog-list-item-inner .catalog-macro {
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+.catalog-list-item-inner .catalog-macro,
+.catalog-list-item-inner .catalog-macro span {
+  font-size: 13px;
+  line-height: calc(1 / 0.75);
+}
+
 .catalog-samr-panel {
   background: #f8fafc;
   border: 1px solid #e2e8f0;

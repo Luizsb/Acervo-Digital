@@ -63,6 +63,33 @@ Express. `src/utils/api/` é o ponto único de desvio entre os dois.
 
 ## Fluxos principais reais
 
+Revisados contra o código em 2026-10-21.
+
+### Mapa geral
+
+```
+                    NDE (Drive da empresa)
+                    Planilha de categorização
+                              │ download manual
+                              ▼
+   Máquina do operador ─ planilha:preparar ─ diff:planilha ─ import:categorizacao
+          │                                                        │
+          │ thumbs:capture → public/thumbs → git push               │ Prisma (SSL)
+          ▼                                                        ▼
+   GitHub ── CI (tipos, testes, audit, build) ──► Vercel     Supabase (sa-east-1)
+                                                   │          odas · import_events
+                                                   │          import_issues · audit_events
+                                                   │          auth.users · favoritos · visitas
+                                                   ▼                 ▲
+                                        Navegador (React)  ── Data API + RLS ──┘
+                                         ├─ Leitor: galeria, ficha, favoritos
+                                         └─ Admin: fila de revisão, histórico,
+                                            ranking, usuários e perfis (só leitura)
+```
+
+O Express em `server/` atende o mesmo front no desenvolvimento local
+(`VITE_BACKEND=ec2`) e é o caminho para a infraestrutura da Arco.
+
 ### Fluxo do dado editorial
 
 ```
@@ -71,14 +98,35 @@ Planilha de categorização do NDE (Drive da empresa, todas as abas)
         │  download manual
         │  npm run planilha:preparar   (só a aba Recursos Digitais, só valores,
         │                               sem a coluna Avaliador) → data/
-        │  npm run import:categorizacao   (rodado na máquina do mantenedor)
+        │  npm run diff:planilha       (o que muda antes de gravar)
+        │  npm run import:categorizacao   (rodado na máquina do operador)
         ▼
-PostgreSQL no Supabase  ──►  tabela odas + registro em import_events
+PostgreSQL no Supabase
+  ├─ odas            toda linha com código real; ativa, mesmo quebrada
+  ├─ import_events   o que foi criado, alterado, reativado ou desativado
+  ├─ import_issues   linha sem código e código repetido (recriada a cada importação)
+  └─ audit_events    quem importou, quando e o resumo
         │
         │  Data API (PostgREST) com RLS
         ▼
-Front na Vercel  ──►  galeria e ficha do recurso
+Front na Vercel
+  ├─ galeria e ficha: só Funcionando + link
+  └─ admin: o resto, na fila de revisão
 ```
+
+### Ciclo de correção com o NDE
+
+```
+Fila de revisão (admin)  ──►  NDE corrige a planilha  ──►  nova importação
+  sem código · código repetido          │                        │
+  sem link · quebrado · incorreto       │                        ▼
+  acesso restrito · não avaliado        │            item corrigido entra na galeria;
+  em cadastro · outro                   │            o problema some da fila
+                                        └── a fila mostra a linha da planilha
+```
+
+Os grupos "Sem código" e "Código repetido" vêm de `import_issues`, não de recursos:
+mostram a linha da planilha e, no código repetido, qual linha ficou valendo.
 
 ### Fluxo das capas
 
@@ -125,7 +173,13 @@ Interações Digitais e Acervo.
 
 Enquanto o JumpCloud não chega, a tela de login tem dois botões de acesso rápido com
 credenciais fixas no front (`src/components/LoginPage.tsx`): um de leitura e um de
-admin provisório. Quem tem a URL do ambiente de testes entra como admin.
+admin provisório. Quem tem a URL do ambiente de testes entra como admin. É o login
+único do MVP, para demonstrar a ideia (decisão de 2026-10-21).
+
+No Supabase, o admin **só lê**: as políticas de `odas` e das tabelas de importação
+são de `select`, e não há rota de escrita. Ele vê a fila de revisão, o histórico, o
+ranking e o relatório de usuários. Importar, capturar capas e mudar papel é do
+operador, pela linha de comando e pelo banco.
 
 No modo Express, o login valida a senha com bcrypt e emite um JWT próprio com
 `role` no payload. A rota `/api/admin/*` exige `role = admin`.
@@ -157,7 +211,7 @@ No modo Express, o login valida a senha com bcrypt e emite um JWT próprio com
 
 ### Fluxo de visualização
 
-O front chama a RPC `record_oda_view()` (Supabase) ou `POST /api/odas/:id/views`
+O front chama a RPC `record_oda_view()` (Supabase) ou `POST /api/odas/:id/view`
 (Express). Há deduplicação: um mesmo usuário conta uma vez por recurso por dia, no
 fuso de São Paulo. Dois tipos são distinguidos: `page` (abriu a ficha) e `open`
 (abriu o recurso de fato).
@@ -188,7 +242,8 @@ src/
   components/     páginas e componentes de interface
   config/         backend.ts decide entre Express e Supabase
   contexts/       AuthContext
-  hooks/          filtros da galeria, tamanho de página
+  hooks/          filtros da galeria, tamanho de página, catálogo (useCatalog),
+                  favoritos (useFavorites)
   utils/          api/ (desvio), supabaseApi.ts, catalogVisibility.ts, galleryLayout.ts
     api/          index.ts (entrada), auth, favorites, catalog, admin, types, http
                   (chamadas ao Express) e odaToProject (registro do banco → card)
@@ -231,7 +286,9 @@ estático acessível sem login, e a planilha traz recursos não publicáveis. Os
 vai para `data/ultima-importada.xlsx`, que é a base do `diff:planilha`.
 
 **Tabelas principais:** `odas` (catálogo), `bncc` (habilidades),
-`import_events` (histórico de importação), `keep_alive` (uma linha, só para o ping).
+`import_events` (histórico de importação), `import_issues` (problemas da planilha na
+última importação, só admin lê), `audit_events` (trilha de auditoria), `keep_alive`
+(uma linha, só para o ping).
 
 **Tabelas de usuário, duplicadas por backend:**
 
@@ -249,8 +306,8 @@ criados num modo não aparecem no outro.**
 concedido apenas ao papel `authenticated`. RLS está habilitada em todas as tabelas
 públicas, inclusive `_prisma_migrations`, que tem todo acesso revogado.
 
-**Volume:** ordem de mil e duzentos recursos e mil e trezentas habilidades BNCC.
-`[A VALIDAR]` os números exatos devem ser lidos no painel admin.
+**Volume:** mais de 2 mil recursos (o número exato está no painel admin) e mil e
+trezentas habilidades BNCC.
 
 ---
 
@@ -267,27 +324,34 @@ aparece na galeria somente se:
    maiúsculas), **e**
 3. o link do recurso está preenchido.
 
-**Desde 2026-10-20, só esse recurso é cadastrado.** A importação usa o mesmo critério
-(`isImportableResource`, em `server/lib/catalogVisibility.ts`), acrescido de código
-real: quebrado, incorreto, não avaliado, acesso restrito, sem link e linha sem código
-ficam na planilha, sob a curadoria do NDE. O que já estava no banco e deixa de passar
-é desativado, como um código que saiu da planilha.
+**Cadastrar não é publicar.** Desde 2026-10-21, a importação cadastra toda linha
+com código real (`isImportableResource`, em `server/lib/catalogVisibility.ts`),
+inclusive quebrada, incorreta, não avaliada, com acesso restrito ou sem link. Essas
+ficam ativas no banco e fora da galeria. Entre 20 e 21/10 a regra foi a oposta (só
+cadastrar o que entra na galeria); voltou porque o admin precisa ver o que está
+pendente e porque uma planilha nova pode corrigir o item. Linha sem código continua
+fora: o código provisório muda quando a linha muda de lugar.
 
-A **fila de revisão** do admin continua existindo e mostra o que estiver ativo fora
-da regra, agrupado em: sem link, quebrado, incorreto, acesso restrito, dúvida para
-revisão, não avaliado, em cadastro, outro. Com o critério de importação, ela tende a
-ficar vazia.
+A **fila de revisão** do admin mostra o que estiver ativo fora da regra, agrupado em:
+sem link, quebrado, incorreto, acesso restrito, dúvida para revisão, não avaliado, em
+cadastro, outro. É o controle do que está pendente com o NDE.
+
+**Código repetido na planilha:** a linha que entra na galeria vence a que não entra
+(`createRepeatedCodeResolver`). Entre duas do mesmo tipo, vale a última. Todo código
+repetido aparece no resumo da importação, para correção editorial.
 
 ### Sincronização pelo código do recurso
 
 | Situação na planilha | Efeito no banco |
 |---|---|
-| Linha fora do critério (não `Funcionando`, sem link ou sem código) | Não cadastra; se já existia, **desativa** |
+| Linha sem código do recurso | Não cadastra; se já existia, **desativa** |
+| Linha não `Funcionando` ou sem link | Cadastra ou atualiza, ativa, **fora da galeria** e na fila de revisão |
 | Código novo | Cria o recurso |
 | Código existente com campo alterado | Atualiza |
 | Código existente sem alteração | Só marca a data de sincronização |
 | Código que saiu da planilha | **Desativa** (`ativo = false`) e sai da galeria |
-| Código que voltou, ou que voltou a `Funcionando` | Reativa |
+| Código que voltou à planilha | Reativa |
+| Item pendente que passou a `Funcionando` com link | Entra na galeria na mesma importação |
 
 Nada é apagado. O `--clear` existe no script e **não deve ser usado na rotina**.
 
@@ -295,9 +359,9 @@ Linha sem código recebe o identificador provisório `PLANILHA_L{número da linh
 é cadastrada.
 
 **Códigos repetidos.** O resumo da importação lista cada código que aparece em mais de
-uma linha, com os números das linhas (`findRepeatedCodes`). Entre as linhas do critério,
-a última vence; uma linha repetida fora do critério é ignorada, então o recurso
-`Funcionando` não é mais escondido por uma cópia `Não avaliado` mais abaixo. Códigos
+uma linha, com os números das linhas (`findRepeatedCodes`), e quantas linhas repetidas
+foram ignoradas. A linha que entra na galeria vence; entre iguais, a última. Assim o
+recurso `Funcionando` não é escondido por uma cópia `Não avaliado` mais abaixo. Códigos
 que só diferem pela barra final (`IMP/24/GLA10` e `IMP/24/GLA10/`) contam como
 recursos diferentes: a correção é editorial.
 
@@ -353,6 +417,7 @@ vão no próprio relatório, como o comitê pediu.
 | Fila de revisão (recursos fora da galeria) | — | — | ✅ | ✅ |
 | Ranking de acessos, status e histórico de importação | — | — | ✅ | ✅ |
 | Visualizações de todos os usuários | — | — | ✅ | ✅ |
+| Relatório de usuários e perfis (aba do admin e SQL) | — | — | ✅ | ✅ |
 | Enviar planilha e capturar capas pela interface (só modo Express) | — | — | ✅ | — |
 | Criar, editar e excluir recurso pela API, sem tela (só modo Express) | — | — | ✅ | — |
 | Preparar e importar planilha, capturar capas, exportar o banco | — | — | — | ✅ |
@@ -368,7 +433,16 @@ vão no próprio relatório, como o comitê pediu.
 No ambiente de testes, os botões de acesso rápido da tela de login dão a qualquer
 visitante o perfil de leitor ou de admin. Ver "Riscos e pontos de atenção".
 
-**Relatório de usuários e perfis**, para revisão periódica de acessos:
+**Relatório de usuários e perfis**, para revisão periódica de acessos. Dois caminhos
+com o mesmo resultado:
+
+- **Painel admin**, aba *Usuários e perfis*: e-mail, perfil, data de criação e último
+  acesso, com botão "Exportar CSV". No Supabase, a tela chama a função
+  `admin_list_users()` (`rls.sql`), que recusa quem não é admin e registra
+  `admin.users_listed` na trilha. No Express, a rota `GET /api/admin/users` faz o
+  mesmo e tira o último acesso dos eventos `auth.login`. O CSV usa `;` e neutraliza
+  células que o Excel leria como fórmula.
+- **SQL**, para quem opera o banco:
 
 ```sql
 -- Supabase
@@ -395,6 +469,7 @@ desde 2026-10-20.
 | `auth.role_changed` | Gatilho na tabela `users` | Gatilho em `auth.users` (`raw_app_meta_data`) |
 | `catalog.import` e `catalog.import_failed` | Importação: painel, Apps Script ou linha de comando (usuário do sistema ou `ACERVO_OPERADOR`) | A importação roda pelo Prisma e grava igual |
 | `catalog.resource_created`, `_updated`, `_deleted` | Rotas de admin de `/api/odas` | Não há essas rotas |
+| `admin.users_listed` | Rota `GET /api/admin/users`, com IP | Função `admin_list_users()`, sem IP |
 
 Os gatilhos do Supabase estão em `scripts/supabase/rls.sql` (`audit_auth_user_change`).
 Falha ao gravar auditoria vira aviso no log e não bloqueia o login.
@@ -427,7 +502,7 @@ e os prazos são propostas técnicas; quem define é a DPO.
 | Favoritos | `auth_favorites` ou `user_favorites` | Conveniência do usuário | Apagados junto com a conta (`on delete cascade`) |
 | Visualização por usuário, recurso e dia | `auth_view_events` ou `oda_view_events` | Ordenar a galeria pelos mais vistos | 12 meses identificados, depois removidos. As contagens agregadas em `odas` ficam |
 | Trilha de auditoria (e-mail, IP, ação) | `audit_events` | Segurança e rastreabilidade | 12 meses. `[A VALIDAR]` Se o art. 15 do Marco Civil (6 meses de registros de acesso) se aplica |
-| Export do banco | `data/export-*`, só na máquina do operador | Migração e backup | Apagado depois do uso |
+| Export do banco | Pasta restrita do time de ID no Drive corporativo; `data/export-*` na máquina do operador só até o envio | Backup e migração | Antes de cada importação e no mínimo mensal. `[A VALIDAR]` Quantos exports manter: decisão da DPO junto com os demais prazos |
 
 A planilha oficial do NDE tem nomes e e-mails; o `planilha:preparar` os remove antes
 de qualquer coisa entrar no projeto. A planilha original fica no Drive, sob a gestão
@@ -450,6 +525,28 @@ canal são da DPO.
 > compartilhados fora da Arco e são mantidos por [prazo definido pela DPO]. Para pedir
 > acesso, correção ou eliminação dos seus dados (art. 18 da LGPD), fale com [canal da
 > DPO].
+
+### Criptografia em repouso e em trânsito
+
+Responde aos requisitos mínimos "Criptografia em repouso" e "HTTPS/TLS em todas as
+comunicações". Evidência coletada em 2026-10-21 na documentação pública dos
+provedores:
+
+| Camada | Garantia | Fonte |
+|---|---|---|
+| Banco, Auth e Storage (Supabase) | "All customer data is encrypted at rest with AES-256 and in transit via TLS." | [supabase.com/security](https://supabase.com/security), seção *Data Encryption* |
+| APIs do Supabase (Auth, Data API) | Só aceitam HTTPS, com TLS 1.2 ou 1.3 | [Secure configuration of Supabase platform](https://supabase.com/docs/guides/security/platform-security), seção *TLS for project APIs* |
+| Site (Vercel) | Todo deploy é servido por HTTPS; HTTP recebe redirecionamento 308, que não pode ser desligado. TLS 1.2 e 1.3, HSTS com *preload* em `*.vercel.app` | [vercel.com/docs/encryption](https://vercel.com/docs/encryption) |
+| Residência dos dados | Projeto na região `sa-east-1` (São Paulo): banco, Auth e Storage ficam nela | [supabase.com/security](https://supabase.com/security), seção *Data Residency* |
+| Conexão direta ao Postgres (importação, migração) | `sslmode=require` nos exemplos de `server/.env`; testado nas duas URLs em 2026-10-21 | `server/.env.example` |
+
+O Supabase aceita, por padrão, conexão Postgres sem SSL, para compatibilidade. A
+opção *Enforce SSL* (*Settings → Database → SSL Configuration*) recusaria as que não
+usam. Decisão do responsável (2026-10-21): não ativar, porque o Supabase não é o
+ambiente oficial; no servidor da Arco o SSL do banco é exigido desde o início.
+
+**Backup:** pela mesma página, só bancos de planos pagos têm backup diário. No plano
+Free não há cópia automática; a proteção é o `npm run db:exportar` manual.
 
 ### MFA
 
@@ -500,9 +597,12 @@ npm run thumbs:setup      # instala o Chromium usado na captura de capas
 Crie `server/.env` a partir de `server/.env.example` apontando para o Supabase:
 
 ```env
-DATABASE_URL="postgresql://postgres.iezvzcrmzdfljvbbdneu:[SENHA]@aws-0-sa-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true"
-DIRECT_URL="postgresql://postgres.iezvzcrmzdfljvbbdneu:[SENHA]@aws-0-sa-east-1.pooler.supabase.com:5432/postgres"
+DATABASE_URL="postgresql://postgres.iezvzcrmzdfljvbbdneu:[SENHA]@aws-0-sa-east-1.pooler.supabase.com:6543/postgres?pgbouncer=true&sslmode=require"
+DIRECT_URL="postgresql://postgres.iezvzcrmzdfljvbbdneu:[SENHA]@aws-0-sa-east-1.pooler.supabase.com:5432/postgres?sslmode=require"
 ```
+
+`sslmode=require` recusa a conexão se o SSL não for negociado. Sem ele, o cliente
+tenta SSL mas aceitaria uma conexão aberta.
 
 A senha do banco está no painel do Supabase, em *Settings → Database*. **Não existe
 no repositório e não deve existir.** Na transferência de responsabilidade ela é
@@ -524,7 +624,11 @@ npm run planilha:preparar -- "C:/Users/voce/Downloads/planilha-baixada.xlsx"
 # 2. Confira o que vai mudar em relação à última importação, sem tocar no banco:
 npm run diff:planilha
 
-# 3. Aplique no banco:
+# 3. Faça o backup e envie a pasta data/export-AAAAMMDD-HHMM/ para a pasta restrita
+#    do time de ID no Drive corporativo. Depois apague a cópia local:
+npm run db:exportar
+
+#    Aplique no banco:
 npm run import:categorizacao
 
 # 4. Gere as capas que faltam (a lista vem da planilha; -- --do-banco usa o banco):
@@ -542,7 +646,9 @@ o `diff:planilha` pede a planilha anterior como argumento
 
 O passo 3 imprime quantos recursos foram criados, atualizados, desativados e quantos
 estão sem capa. Os mesmos números ficam registrados em `import_events` e aparecem no
-painel admin, na aba de histórico, com data, hora e a capa de cada item.
+painel admin, na aba de histórico, com data, hora e a capa de cada item. A fila de
+revisão passa a mostrar os pendentes e os problemas da planilha desta importação,
+para repassar ao NDE.
 
 O passo 5 dispara o build da Vercel automaticamente. O banco já está atualizado
 desde o passo 3, então o catálogo muda antes das capas.
@@ -696,15 +802,15 @@ Sequência prevista:
 2. No servidor: Postgres, `server/.env` com o `DATABASE_URL` novo,
    `npm run prisma:migrate`.
 3. Importar a planilha preparada e capturar as capas que faltarem.
-4. Restaurar contadores, favoritos e histórico a partir do export.
-   `[A VALIDAR]` Ainda não há comando de restauração; ele é escrito quando o destino
-   e o modelo de identidade do JumpCloud estiverem definidos.
+4. Restaurar contadores, favoritos e histórico a partir do export. Ainda não há
+   comando de restauração: ele é escrito quando o destino e o modelo de identidade
+   do JumpCloud estiverem definidos (item no `ROADMAP.md`).
 5. Subir a API Express com `VITE_BACKEND=ec2`. O empacotamento (o que a TI definir)
    é feito quando o servidor existir. A imagem Docker da EC2 foi removida.
 6. Manter o Supabase até validar o servidor. Depois, apagar os exports.
 
-`[PERGUNTA AO RESPONSÁVEL]` No servidor, o Postgres é local ou um serviço gerenciado
-da TI?
+`[A VALIDAR]` No servidor, o Postgres é local ou um serviço gerenciado: a resposta é
+da TI, no chamado do servidor.
 
 ### EC2
 
@@ -776,8 +882,21 @@ apontava para a API daquela instância.
 
 **O modal de vídeo depende de embed.** Desde 2026-10-19 só o audiovisual abre no
 `iframe`; ODAs abrem em nova guia porque, embarcados, parte deles cortava o conteúdo
-ou não carregava. Um vídeo hospedado fora do Vimeo/YouTube que recuse `iframe` abriria
-em branco no modal.
+ou não carregava. Em 2026-10-21 os 1064 links de audiovisual da galeria foram
+seguidos até o destino final:
+
+| Destino final | Recursos | No modal |
+|---|---|---|
+| Vimeo (`player.vimeo.com`) | 286 | Abre |
+| Arquivos na DigitalOcean (`cdn-livrodigital…`) | 279 | Abre (sem bloqueio de `iframe`) |
+| Conquista (`digital.solucaoconquista.com.br`) | 244 | Abre (sem bloqueio de `iframe`) |
+| Livro digital SAE (`livrodigital.sae.digital`) | 202 | Abre (sem bloqueio de `iframe`) |
+| Playlist do YouTube (`youtube.com/playlist`) | 19 | **Não abre**: a página manda `X-Frame-Options: SAMEORIGIN` e o front só converte endereço do Vimeo para embed |
+| Sem resposta em 10 s ou parado em redirecionamento | 34 | `[A VALIDAR]` testar de novo; pode ser lentidão ou link morto |
+
+Os links passam pelos encurtadores do SAE (`url.sae.digital`, `go.sae.digital`,
+`apis.sae.digital`), por isso nenhum aparece como Vimeo ou YouTube na planilha. A
+lista de códigos está no `ROADMAP.md`, em "Bugs conhecidos".
 
 **Autenticação sem SSO.** Usuários com senha definida manualmente e o botão
 JumpCloud sem função. A proteção contra senha vazada do Supabase Auth está
@@ -785,8 +904,11 @@ desligada — decisão consciente enquanto não há base real de usuários.
 
 **Acesso admin compartilhado no ambiente de testes.** O botão "Acesso admin
 (provisório)" entra com credencial fixa no front, então qualquer pessoa com a URL
-vira admin. Aceitável só enquanto a Vercel for ambiente de testes sem dado sensível;
-sai quando o JumpCloud entrar.
+vira admin. **Decisão do responsável (2026-10-21):** no MVP o acesso é um login único
+de visitante e um de admin, para demonstrar a ideia; não há contas pessoais. Na
+migração para a infraestrutura da Arco o botão de admin deixa de existir e o
+administrador é criado no banco. Como o admin vê a lista de e-mails em *Usuários e
+perfis*, a regra é não criar conta pessoal enquanto o botão existir.
 
 **Este repositório é público no GitHub.** Toda documentação aqui é legível por
 qualquer pessoa. A planilha completa, com e-mails e nomes de avaliadores, ficou no
@@ -805,17 +927,16 @@ limpo**, sem esse arquivo.
   componentes importam de `utils/api` e não mudam.
 - **Duas identidades de usuário sem ponte.** Favoritos e histórico de visualização
   não migram entre os modos.
-- **Documentação de infraestrutura dividida.** O `README.md` tem o detalhe de EC2,
-  Docker, nginx, Caddy e certificados; este `SDD.md` tem a operação atual. Há risco
-  de as duas divergirem.
 - **Sem teste de integração nem end-to-end.** Nenhuma cobertura do fluxo de login,
   da galeria ou da importação.
 - **Bundle inicial acima do recomendado** pelo Vite, na casa dos 500 kB. Há lazy
   loading das páginas pesadas, mas o pacote principal ainda é grande.
-- **`src/guidelines/Guidelines.md` pode estar parcialmente obsoleto.**
-  `[HIPÓTESE — CONFIRMAR]` o documento descreve classes utilitárias do Tailwind, mas
-  o `src/index.css` está compilado e congelado, então parte das diretrizes pode não
-  ser mais aplicável na prática.
+- **`src/guidelines/Guidelines.md` está em boa parte obsoleto** (conferido em
+  2026-10-21). Descreve primária índigo e secundária rosa (hoje são `#012451` e
+  `#f05039`), glassmorphism e gradientes, logo BookOpen (hoje `BrandMark`), filtros
+  de 1º ao 5º ano e marcas "CQT, SAE, SPE". Continuam válidos: Nunito, a tabela de
+  cores de marca, a regra de cor reservada para componente, campo e marca, e WCAG AA.
+  O arquivo tem um aviso no topo até ser reescrito.
 - **O workflow de ping tem a URL e a chave `anon` embutidas como valor padrão** e
   também dispara em push. Foi feito assim para validar sem depender de secret.
   Funciona, mas o correto é cadastrar `SUPABASE_URL` e `SUPABASE_ANON_KEY` como
@@ -829,16 +950,20 @@ limpo**, sem esse arquivo.
 
 - ✅ Onde ficam os dados: respondido pelo responsável em 2026-10-20. Hoje a base
   oficial é o Supabase; no futuro, os dados vão para a infraestrutura da Arco.
-- `[A VALIDAR]` Backup automático no plano Free do Supabase. Conferir no painel
-  (*Database → Backups*) se há cópia disponível; enquanto não houver, a proteção é
-  o `npm run db:exportar` manual.
+- ✅ Backup automático no plano Free: não existe. A página de segurança do Supabase
+  diz que só bancos de planos pagos têm backup diário (conferido em 2026-10-21).
 - `[A VALIDAR]` Se o comitê aceita JumpCloud com MFA no lugar da VPN. É hipótese do
   responsável, não decisão do comitê.
-- `[A VALIDAR]` Se algum vídeo do catálogo está hospedado fora do Vimeo/YouTube e
-  recusa `iframe` no modal.
-- `[A VALIDAR]` Backup do banco: o `npm run db:exportar` existe desde 2026-10-20, mas
-  roda manualmente. Falta definir periodicidade e onde guardar o export, que tem dado
-  pessoal.
+- ✅ Vídeos que recusam `iframe` (conferido em 2026-10-21): 19 playlists do YouTube.
+  Os demais destinos abrem; 34 links não responderam a tempo e ficam para novo teste.
+  Detalhe em "Riscos e pontos de atenção".
+- ✅ Backup do banco (responsável, 2026-10-21): `npm run db:exportar` antes de cada
+  importação e no mínimo uma vez por mês, guardado numa pasta restrita do time de
+  Interações Digitais no Drive corporativo. O export tem e-mails de usuários; a
+  cópia na máquina do operador é apagada depois de enviada ao Drive.
+- ✅ Enforce SSL no painel do Supabase (responsável, 2026-10-21): não será ativado,
+  porque o Supabase não é o ambiente oficial. `sslmode=require` fica nos exemplos de
+  `server/.env`.
 - `[PERGUNTA AO RESPONSÁVEL]` Para a DPO: base legal do tratamento, prazos de
   retenção, texto final do aviso de privacidade e canal para os direitos do titular.
 - `[PERGUNTA AO RESPONSÁVEL]` Para a Segurança: qual é o cofre corporativo e para onde

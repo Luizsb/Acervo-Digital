@@ -1,5 +1,12 @@
 # Acervo Digital - Diretrizes
 
+> **Em boa parte obsoleto (conferido em 2026-10-21).** Cores primária e secundária,
+> glassmorphism, gradientes, logo e as listas de filtros abaixo descrevem uma versão
+> anterior. Hoje: primária `#012451`, secundária `#f05039`, logo `BrandMark` e o
+> Tailwind compilado e congelado em `src/index.css` (estilo novo vai em CSS do
+> componente). Continuam válidos: Nunito, cores de marca, cor reservada para
+> componente, campo e marca, e WCAG AA. Detalhe em `docs/SDD.md`, "Débitos estruturais".
+
 ## Diretrizes Gerais
 
 - Use posicionamento absoluto apenas quando necessário. Opte por layouts responsivos e bem estruturados que usem flexbox e grid por padrão

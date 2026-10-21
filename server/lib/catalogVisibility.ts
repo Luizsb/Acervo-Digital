@@ -3,9 +3,8 @@ import { isPlaceholderResourceCode } from './map-categorizacao';
 /**
  * Visibilidade no acervo público (galeria).
  * Só entra quem tem Status do link = Funcionando E link do recurso preenchido.
- * Desde 2026-10-20 a importação só cadastra esses recursos (isImportableResource);
- * o que deixa de passar é desativado. A fila de revisão do admin mostra os ativos
- * que ainda não passam, como registros anteriores ao critério.
+ * A importação cadastra toda linha com código real (isImportableResource); o que não
+ * passa por aqui fica no banco, fora da galeria, e aparece na fila de revisão do admin.
  */
 export const CATALOG_VISIBLE_STATUS = 'Funcionando';
 
@@ -42,18 +41,28 @@ export function isVisibleInCatalog(
 }
 
 /**
- * Linha da planilha que a importação cadastra: a que entraria na galeria e tem código
- * real. Quebrado, incorreto, sem link ou sem código fica na planilha, com o NDE.
+ * Linha da planilha que a importação cadastra: qualquer uma com código real, inclusive
+ * quebrada, incorreta ou sem link. Sem código, o provisório muda quando a linha muda de
+ * lugar, então fica só no resumo da importação.
  */
-export function isImportableResource(item: {
-  codigoOda: string;
-  status: string | null | undefined;
-  linkRepositorio: string | null | undefined;
-}): boolean {
-  return (
-    !isPlaceholderResourceCode(item.codigoOda) &&
-    isVisibleInCatalog(item.status, item.linkRepositorio)
-  );
+export function isImportableResource(item: { codigoOda: string }): boolean {
+  return !isPlaceholderResourceCode(item.codigoOda);
+}
+
+/**
+ * Decide qual linha vale quando o código se repete na planilha: a que entra na galeria
+ * vence uma que não entra; entre duas do mesmo tipo, a última. Devolve false para a linha
+ * que deve ser ignorada.
+ */
+export function createRepeatedCodeResolver(): (codigo: string, visible: boolean) => boolean {
+  const visibleCodes = new Set<string>();
+  return (codigo, visible) => {
+    if (visible) {
+      visibleCodes.add(codigo);
+      return true;
+    }
+    return !visibleCodes.has(codigo);
+  };
 }
 
 /** Cláusula Prisma: status Funcionando e link preenchido. */
@@ -83,7 +92,13 @@ export function catalogReviewWhere() {
   };
 }
 
+/** Problemas da planilha que não viram recurso no banco (tabela import_issues). */
+export type ImportIssueGroup = 'sem-codigo' | 'codigo-repetido';
+
+export const IMPORT_ISSUE_GROUPS: ImportIssueGroup[] = ['sem-codigo', 'codigo-repetido'];
+
 export type ReviewGroup =
+  | ImportIssueGroup
   | 'sem-link'
   | 'em-cadastro'
   | 'quebrado'
@@ -94,6 +109,8 @@ export type ReviewGroup =
   | 'outro';
 
 export const REVIEW_GROUP_LABELS: Record<ReviewGroup, string> = {
+  'sem-codigo': 'Sem código',
+  'codigo-repetido': 'Código repetido',
   'sem-link': 'Sem link',
   'em-cadastro': 'Em cadastro',
   quebrado: 'Quebrado',
@@ -105,6 +122,8 @@ export const REVIEW_GROUP_LABELS: Record<ReviewGroup, string> = {
 };
 
 export const REVIEW_GROUP_ORDER: ReviewGroup[] = [
+  'sem-codigo',
+  'codigo-repetido',
   'sem-link',
   'quebrado',
   'incorreto',

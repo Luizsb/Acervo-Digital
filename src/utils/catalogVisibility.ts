@@ -32,7 +32,13 @@ export function isVisibleInCatalog(
   return hasCatalogStatus(status) && hasResourceLink(resourceLink);
 }
 
+/** Problemas da planilha que não viram recurso no banco (tabela import_issues). */
+export type ImportIssueGroup = 'sem-codigo' | 'codigo-repetido';
+
+export const IMPORT_ISSUE_GROUPS: ImportIssueGroup[] = ['sem-codigo', 'codigo-repetido'];
+
 export type ReviewGroup =
+  | ImportIssueGroup
   | 'sem-link'
   | 'em-cadastro'
   | 'quebrado'
@@ -43,6 +49,8 @@ export type ReviewGroup =
   | 'outro';
 
 export const REVIEW_GROUP_LABELS: Record<ReviewGroup, string> = {
+  'sem-codigo': 'Sem código',
+  'codigo-repetido': 'Código repetido',
   'sem-link': 'Sem link',
   'em-cadastro': 'Em cadastro',
   quebrado: 'Quebrado',
@@ -54,6 +62,8 @@ export const REVIEW_GROUP_LABELS: Record<ReviewGroup, string> = {
 };
 
 export const REVIEW_GROUP_ORDER: ReviewGroup[] = [
+  'sem-codigo',
+  'codigo-repetido',
   'sem-link',
   'quebrado',
   'incorreto',
