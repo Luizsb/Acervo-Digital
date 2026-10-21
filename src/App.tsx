@@ -22,7 +22,7 @@ import {
   getResourceCodeFromHash,
   type PageKey,
 } from "./utils/hashRouting";
-import { startOnboardingIfNeeded } from "./utils/onboarding";
+import { startOnboardingIfNeeded, stopOnboarding } from "./utils/onboarding";
 import { isAdminRole } from "./utils/catalogVisibility";
 import { isSupabaseBackend } from "./config/backend";
 import { CatalogLoadError } from "./components/CatalogLoadError";
@@ -122,12 +122,17 @@ export default function App() {
   const [viewMode, setViewMode] = useState<GalleryViewMode>("grid");
   const [currentPageNumber, setCurrentPageNumber] = useState(1);
 
-  // Onboarding (tour guiado) no primeiro acesso à galeria
+  // Onboarding (tour guiado) no primeiro acesso à galeria. Fora dela (login, ficha,
+  // admin), um tour em andamento ou agendado é encerrado.
+  const onGallery = currentPage === "gallery" && Boolean(user) && !selectedProject;
   useEffect(() => {
-    if (currentPage !== "gallery") return;
+    if (!onGallery) {
+      stopOnboarding();
+      return;
+    }
     if (projectsLoading) return;
     startOnboardingIfNeeded();
-  }, [currentPage, projectsLoading]);
+  }, [onGallery, projectsLoading]);
 
   // Link compartilhado (#/recurso/<codigo>): abre o recurso assim que o catálogo chega.
   useEffect(() => {

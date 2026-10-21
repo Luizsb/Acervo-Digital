@@ -64,7 +64,9 @@ captura de capas faltantes.
 - Importação da planilha criando, atualizando, desativando e reativando pelo código
   do recurso.
 - Captura automatizada de capas em WebP.
-- Tour de onboarding no primeiro acesso.
+- Tour de onboarding no primeiro acesso à galeria, com 7 passos curtos (boas-vindas,
+  busca, tipo de conteúdo, filtros, card que abre a ficha, favoritos e menu do
+  perfil); pode ser revisto pelo menu do perfil. Nunca começa fora da galeria.
 
 ## Funcionalidades parciais
 

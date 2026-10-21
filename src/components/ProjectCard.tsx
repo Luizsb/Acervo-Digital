@@ -89,6 +89,9 @@ export function ProjectCard({ project, onClick, isFavorite = false, onToggleFavo
           {/* Favorite Button */}
           {onToggleFavorite && (
             <button
+              type="button"
+              aria-label={isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
+              aria-pressed={isFavorite}
               onClick={(e) => {
                 e.stopPropagation();
                 onToggleFavorite(project.id);

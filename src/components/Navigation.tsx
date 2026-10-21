@@ -84,8 +84,11 @@ export function Navigation({ searchQuery, onSearchChange, onNavigateToSettings, 
               {user ? (
                 <>
                   <button
+                    type="button"
                     onClick={() => setIsProfileOpen(!isProfileOpen)}
                     className="acervo-profile-trigger p-3 bg-gray-100 hover:bg-gray-200 rounded-xl transition-all duration-300 group"
+                    aria-expanded={isProfileOpen}
+                    aria-label="Abrir menu do perfil"
                   >
                     <User className="w-5 h-5 text-gray-700 group-hover:text-primary transition-colors" />
                     <RoleBadge role={user.role} />

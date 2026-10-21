@@ -7,7 +7,10 @@ import { loadODAsFromDatabase } from '../utils/loadODAs';
 /** Catálogo da galeria. Só carrega com sessão: sem usuário, a lista fica vazia. */
 export function useCatalog(user: AuthUser | null, authLoading: boolean) {
   const [projects, setProjects] = useState<ODAFromExcel[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [fetching, setFetching] = useState(false);
+  // Usuário para o qual o catálogo já respondeu. Logo após o login, o efeito ainda não
+  // rodou; sem isto, haveria um render com "não está carregando" e lista vazia.
+  const [settledFor, setSettledFor] = useState<AuthUser | null>(null);
   const [error, setError] = useState<CatalogLoadErrorKind | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
@@ -15,13 +18,14 @@ export function useCatalog(user: AuthUser | null, authLoading: boolean) {
     if (authLoading) return;
     if (!user) {
       setProjects([]);
-      setLoading(false);
+      setFetching(false);
+      setSettledFor(null);
       setError(null);
       return;
     }
 
     let cancelled = false;
-    setLoading(true);
+    setFetching(true);
     setError(null);
     loadODAsFromDatabase()
       .then((odas) => {
@@ -34,7 +38,9 @@ export function useCatalog(user: AuthUser | null, authLoading: boolean) {
         setError(classifyCatalogLoadError(err));
       })
       .finally(() => {
-        if (!cancelled) setLoading(false);
+        if (cancelled) return;
+        setFetching(false);
+        setSettledFor(user);
       });
     return () => {
       cancelled = true;
@@ -43,7 +49,7 @@ export function useCatalog(user: AuthUser | null, authLoading: boolean) {
 
   return {
     projects,
-    loading,
+    loading: authLoading || fetching || (user !== null && settledFor !== user),
     error,
     retry: () => setReloadKey((key) => key + 1),
     dismissError: () => setError(null),

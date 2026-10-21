@@ -10,6 +10,141 @@ trazem a seção "Impacto observado" com dado medido: nenhuma métrica foi colet
 
 ---
 
+## 2026-10-21 · 10:05 — Tour fora do login e com passos curtos
+
+### Antes
+
+- O tour podia aparecer na tela de login: sem sessão, a galeria agendava o tour e,
+  600 ms depois, ele abria por cima do login, só com o passo de boas-vindas.
+- O passo final tinha 270 caracteres e juntava ficha, favoritos e o menu do perfil.
+- O botão de perfil do desktop e o coração dos cards não tinham `aria-label`.
+
+### Depois
+
+- O tour só começa com a galeria na tela (`#acervo-content-type`), com usuário e sem
+  ficha aberta. Ao sair da galeria, `stopOnboarding` encerra o tour em andamento ou
+  agendado. Sem começar, ele continua pendente para a próxima visita.
+- O passo final virou três: "Abra a ficha do recurso" (primeiro card), "Guarde nos
+  favoritos" (coração do primeiro card) e "Seu menu" (botão do perfil). O tour tem
+  7 passos, o maior com 111 caracteres.
+- A busca de elementos do tour pega o primeiro visível entre as cópias de celular e
+  desktop.
+- `aria-label` no botão de perfil do desktop ("Abrir menu do perfil") e no coração
+  ("Adicionar aos favoritos" ou "Remover dos favoritos", com `aria-pressed`), em card
+  e lista.
+
+### Decisão
+
+Passos próprios, com destaque no elemento, em vez de um texto único longo. O tour
+pertence à galeria; qualquer outra tela o encerra.
+
+### Evidência
+
+- Navegador, sem sessão e com o tour pendente: 3 s na tela de login, nenhum
+  overlay. Depois do login: o tour abre na galeria.
+- "Rever tour do acervo": 7 passos (111, 80, 95, 105, 92, 58 e 55 caracteres),
+  terminando em "Seu menu" com o botão do perfil destacado.
+- `npm run typecheck` e testes passando.
+
+### Impacto observado
+
+`[A VALIDAR]` Depois do deploy.
+
+### Próximos passos
+
+Nenhum.
+
+---
+
+## 2026-10-21 · 09:55 — Tour do primeiro acesso completo
+
+### Antes
+
+No primeiro acesso, o tour terminava em "Refine os resultados" (filtros). Pelo menu
+do perfil, em "Rever tour do acervo", ele tinha um passo a mais, "Explore os
+recursos".
+
+Causa: logo após o login, `useCatalog` passava um render informando "não está
+carregando" antes de o efeito iniciar a busca. O tour começava nesse instante. Ao
+montar os passos, 600 ms depois, a galeria ainda mostrava "Carregando acervo...", e o
+passo da grade era descartado por não existir na tela. Pelo menu, a grade já estava
+lá.
+
+O passo destacava a grade inteira, mais alta que a tela, e o texto não dizia o que a
+ficha traz.
+
+### Depois
+
+- `useCatalog` considera carregando até o catálogo responder para o usuário atual
+  (`settledFor`). O tour só começa com a grade na tela.
+- O passo destaca o primeiro card, na grade ou na lista; sem resultados, a área
+  inteira. Os seletores são testados em ordem (`getVisibleElement` recebe uma lista).
+- Texto novo: "Clique em um card para abrir a ficha do recurso: descrição,
+  habilidades da BNCC, requisitos técnicos, recursos relacionados e o botão para
+  abrir o objeto digital ou assistir ao vídeo. O coração guarda o recurso nos seus
+  favoritos. Você pode rever este tour pelo menu do perfil."
+
+### Decisão
+
+Corrigir a origem, o estado de carregamento, em vez de aumentar a espera do tour.
+Isso também evita um instante de galeria vazia logo após o login.
+
+### Evidência
+
+- Navegador, primeiro acesso (marca do tour apagada, login pelo botão): 5 passos,
+  terminando em "Explore os recursos" com o primeiro card destacado (237 × 372 px).
+- "Rever tour do acervo" no menu do perfil: os mesmos 5 passos.
+- `npm run typecheck` e 92 testes passando.
+
+### Impacto observado
+
+`[A VALIDAR]` Depois do deploy.
+
+### Próximos passos
+
+Nenhum.
+
+---
+
+## 2026-10-21 · 09:45 — Grafo do Graphify só com código
+
+### Antes
+
+O grafo tinha 1275 nós e 91 comunidades. Uma extração semântica anterior tinha
+incluído os Markdown: cada entrada do changelog e cada seção do SDD, ROADMAP e SOBRE
+virava um nó, misturado às comunidades do código. O `graphify update` não removia
+esses nós.
+
+### Depois
+
+- `.graphifyignore` exclui `*.md` e `docs/`.
+- `graphify update . --force` e `graphify cluster-only . --no-label` refizeram o
+  grafo: 865 nós, 2093 relações, 44 comunidades.
+- README, seção Graphify: o grafo é só de código, e o caminho para um grafo próprio
+  da documentação fica descrito, condicionado à decisão do responsável.
+
+### Decisão
+
+O Graphify agrupa comunidades por algoritmo, sem como fixar uma comunidade para os
+documentos. Separar em dois grafos é o caminho. O dos documentos não foi gerado:
+pelo Graphify, Markdown só entra pela extração semântica, que envia o texto a um
+LLM.
+
+### Evidência
+
+`graphify-out/graph.json`: 865 nós, nenhum com origem `.md` (arquivos `.ts` 81,
+`.tsx` 34, `.json` 5). 410 nós podados de 7 arquivos que passaram a ser ignorados.
+
+### Impacto observado
+
+Nenhum no sistema; ferramenta local de desenvolvimento.
+
+### Próximos passos
+
+Nenhum.
+
+---
+
 ## 2026-10-21 · 09:35 — Playlist abre em nova guia
 
 ### Antes

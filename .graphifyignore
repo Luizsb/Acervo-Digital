@@ -13,3 +13,7 @@ server/dist/
 node_modules/
 server/node_modules/
 graphify-out/
+# Documentação tem grafo próprio (graphify update docs → docs/graphify-out/), para as
+# comunidades do código não se misturarem com títulos de Markdown.
+*.md
+docs/

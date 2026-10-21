@@ -239,6 +239,14 @@ Cuidados, por causa dos dados e do relatório de segurança:
 
 - `.graphifyignore` tira do grafo `data/` (planilha e exports), `public/thumbs/`,
   `.env` e artefatos. `graphify-out/` fica fora do Git.
+- **O grafo é só de código.** `docs/` e todo `*.md` ficam fora, para as comunidades
+  não se misturarem com títulos de Markdown (cada entrada do changelog virava um nó).
+  A documentação se lê em `docs/visao-projeto.html`. Um grafo próprio dos documentos
+  só sai pela extração semântica, que envia o texto a um LLM:
+  `graphify extract docs --out graphify-docs`, com `.graphifyignore` sem as linhas de
+  `*.md` e `docs/`. Fazer só com decisão do responsável.
+- Se o grafo antigo ainda tiver nós de documentação, `graphify update . --force` remove
+  os arquivos que passaram a ser ignorados.
 - A extração completa (sem `--code-only`) envia documentos e imagens para um LLM. Use
   só conscientemente.
 - **Nunca** use `--postgres` com a conexão do Supabase: a senha do banco iria para a
