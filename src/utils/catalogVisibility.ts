@@ -1,13 +1,5 @@
 export const CATALOG_VISIBLE_STATUS = 'Funcionando';
 
-export const CATALOG_ATTENTION_STATUSES = [
-  'Acesso restrito',
-  'Quebrado',
-  'Incorreto',
-  'Não avaliado',
-  'Dúvida para revisão',
-] as const;
-
 export function normalizeCatalogStatus(value?: string | null): string {
   return (value || '')
     .normalize('NFD')

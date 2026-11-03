@@ -59,7 +59,3 @@ export function resolveMacroformato(value?: string | null): MacroformatoMeta | n
 
   return { kind: 'oda', label: value.trim(), className: 'catalog-macro catalog-macro-oda' };
 }
-
-export function isVideoMacroformato(value?: string | null): boolean {
-  return resolveMacroformato(value)?.kind === 'video';
-}

@@ -36,14 +36,18 @@ export function classifyCatalogLoadError(error: unknown): CatalogLoadErrorKind {
   return 'unavailable';
 }
 
+/** Falha de conexão para quem usa o Acervo: sem nome de fornecedor nem detalhe de plano. */
+const CONNECTION_FAILURE_TEXT =
+  'Não foi possível conectar ao Acervo. Pode ser a internet ou o ambiente de teste. Tente de novo em alguns minutos. Se continuar, avise o time de Interações Digitais.';
+
 export function catalogLoadMessage(
   kind: CatalogLoadErrorKind,
   isLocalBackend: boolean,
 ): { title: string; text: string } {
   if (kind === 'paused') {
     return {
-      title: 'O banco do acervo está inativo',
-      text: 'O banco está no plano gratuito e foi pausado por falta de uso. Avise o time de Interações Digitais para reativar. Depois, tente novamente.',
+      title: 'Acervo temporariamente indisponível',
+      text: 'O Acervo está temporariamente indisponível (ambiente de teste). Tente novamente ou avise o time de Interações Digitais.',
     };
   }
   if (kind === 'session') {
@@ -60,8 +64,8 @@ export function catalogLoadMessage(
       };
     }
     return {
-      title: 'Não foi possível falar com o banco',
-      text: 'A conexão falhou. Isso acontece quando a internet cai ou quando o plano gratuito pausa o banco depois de alguns dias sem uso. Se a sua rede estiver funcionando, avise o time de Interações Digitais.',
+      title: 'Não foi possível conectar ao Acervo',
+      text: CONNECTION_FAILURE_TEXT,
     };
   }
   if (isLocalBackend) {
@@ -93,5 +97,5 @@ export function loginConnectionMessage(error: unknown, isLocalBackend: boolean):
   if (isLocalBackend) {
     return 'Não foi possível conectar ao servidor. Verifique se o backend está rodando (npm run server:dev em outro terminal).';
   }
-  return catalogLoadMessage(kind, false).text;
+  return CONNECTION_FAILURE_TEXT;
 }

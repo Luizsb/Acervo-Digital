@@ -1,5 +1,37 @@
 import { describe, expect, it } from 'vitest';
-import { classifyCatalogLoadError } from './catalogLoadError';
+import {
+  catalogLoadMessage,
+  classifyCatalogLoadError,
+  loginConnectionMessage,
+  type CatalogLoadErrorKind,
+} from './catalogLoadError';
+
+const KINDS: CatalogLoadErrorKind[] = ['backend-offline', 'session', 'unavailable', 'paused'];
+
+describe('mensagens para quem usa o Acervo', () => {
+  it('login sem conexão usa o texto simples', () => {
+    expect(loginConnectionMessage(new TypeError('Failed to fetch'), false)).toBe(
+      'Não foi possível conectar ao Acervo. Pode ser a internet ou o ambiente de teste. Tente de novo em alguns minutos. Se continuar, avise o time de Interações Digitais.'
+    );
+    expect(loginConnectionMessage(new Error('Invalid login credentials'), false)).toBeNull();
+  });
+
+  it('galeria com banco pausado fala em indisponibilidade temporária', () => {
+    expect(catalogLoadMessage('paused', false).text).toBe(
+      'O Acervo está temporariamente indisponível (ambiente de teste). Tente novamente ou avise o time de Interações Digitais.'
+    );
+  });
+
+  it('nenhuma mensagem fora do modo local cita fornecedor ou plano', () => {
+    const texts = [
+      ...KINDS.flatMap((kind) => Object.values(catalogLoadMessage(kind, false))),
+      loginConnectionMessage(new Error('Project is paused'), false) ?? '',
+    ];
+    for (const text of texts) {
+      expect(text).not.toMatch(/supabase|plano gratuito/i);
+    }
+  });
+});
 
 describe('classifyCatalogLoadError', () => {
   it('reconhece servidor fora do ar', () => {
@@ -21,7 +53,7 @@ describe('classifyCatalogLoadError', () => {
     expect(classifyCatalogLoadError(new Error('Não autorizado'))).toBe('session');
   });
 
-  it('reconhece o banco pausado do plano gratuito', () => {
+  it('reconhece o banco pausado por falta de uso', () => {
     expect(classifyCatalogLoadError(new Error('Project is paused'))).toBe('paused');
     expect(classifyCatalogLoadError({ message: 'Service Unavailable', code: '540' })).toBe(
       'paused'

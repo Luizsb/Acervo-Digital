@@ -92,11 +92,6 @@ export function resolveVideoEmbedUrl(videoUrl: string): Promise<string> {
   return resolution;
 }
 
-/** @deprecated Use getVimeoEmbedUrl(url, { autoplay: true }) */
-export function getVimeoUrlWithAutoplay(videoUrl: string): string {
-  return getVimeoEmbedUrl(videoUrl, { autoplay: true });
-}
-
 /**
  * Extrai o ID do vídeo do Vimeo a partir da URL
  * @param url - URL do Vimeo (ex: https://player.vimeo.com/video/780826423?h=6c0fc1f)

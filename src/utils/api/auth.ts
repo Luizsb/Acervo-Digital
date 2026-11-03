@@ -10,7 +10,7 @@ import {
 import type { AuthUserResponse } from './types';
 
 const SUPABASE_PASSWORD_RESET =
-  'Redefinição de senha neste MVP: Authentication no painel do Supabase.';
+  'Neste ambiente de teste, a senha não pode ser redefinida por aqui. Fale com o time de Interações Digitais.';
 
 type AuthSession = { token: string; user: AuthUserResponse };
 
@@ -64,7 +64,7 @@ export async function apiUpdateMe(params: {
   currentPassword?: string;
   newPassword?: string;
 }): Promise<AuthUserResponse> {
-  if (isSupabaseBackend()) throw new Error('Altere a senha pelo painel do Supabase Auth neste MVP.');
+  if (isSupabaseBackend()) throw new Error('Neste ambiente de teste, nome e senha não podem ser alterados.');
   const token = requireAuthToken();
   return requestJson<AuthUserResponse>(
     '/auth/me',

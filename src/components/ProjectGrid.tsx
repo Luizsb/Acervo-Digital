@@ -15,7 +15,7 @@ export function ProjectGrid({ projects, onProjectClick, favorites = [], onToggle
   if (projects.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-muted-foreground">Nenhum projeto encontrado.</p>
+        <p className="text-muted-foreground">Nenhum recurso encontrado.</p>
       </div>
     );
   }

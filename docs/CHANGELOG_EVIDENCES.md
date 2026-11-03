@@ -10,6 +10,74 @@ trazem a seção "Impacto observado" com dado medido: nenhuma métrica foi colet
 
 ---
 
+## 2026-11-03 · 08:40 — Mensagens em linguagem simples, menu em nova guia e limpeza pequena
+
+### Antes
+
+- As mensagens de falha citavam "plano gratuito" e "Supabase": "O banco do acervo
+  está inativo", "Altere a senha pelo painel do Supabase Auth neste MVP.",
+  "Redefinição de senha neste MVP: Authentication no painel do Supabase."
+- Com o catálogo em falha, a galeria mostrava o aviso no topo e, ao mesmo tempo,
+  "Nenhum ODA encontrado" e "ODAs Recomendados" vazio.
+- No botão direito do card, "Abrir ODA" abria na mesma guia e tirava a pessoa do
+  Acervo; "Abrir em nova guia" vinha logo abaixo.
+- A grade vazia dizia "Nenhum projeto encontrado."
+- Sobras: `isVideoMacroformato`, `getVimeoUrlWithAutoplay` e
+  `CATALOG_ATTENTION_STATUSES` (nos dois espelhos) sem uso; `.dockerignore` da época
+  da EC2; README com "~60 MB" de capas; Graphify gerado um commit atrás.
+
+### Depois
+
+- Login sem conexão: "Não foi possível conectar ao Acervo. Pode ser a internet ou o
+  ambiente de teste. Tente de novo em alguns minutos. Se continuar, avise o time de
+  Interações Digitais." A falha de conexão na galeria usa o mesmo texto.
+- Galeria com banco pausado: "Acervo temporariamente indisponível" / "O Acervo está
+  temporariamente indisponível (ambiente de teste). Tente novamente ou avise o time
+  de Interações Digitais."
+- Minha Conta: "Neste ambiente de teste, nome e senha não podem ser alterados."
+  Recuperação de senha: "Neste ambiente de teste, a senha não pode ser redefinida
+  por aqui. Fale com o time de Interações Digitais."
+- `GalleryResults` ganhou a prop `unavailable`: com o catálogo em falha, só o aviso
+  aparece.
+- `ProjectContextMenu`: um item só, "{rótulo} em nova guia".
+- "Nenhum recurso encontrado."
+- Removidas as três exportações sem uso e o `.dockerignore`. README com "~120 MB".
+  Graphify refeito a partir de `edb30b7`.
+- SDD descreve as mensagens e registra que `public/metodologia/` não tem nenhum PDF,
+  então o botão de orientações aparece sempre desativado.
+
+### Decisão
+
+Mensagem para quem usa não cita fornecedor nem plano. Um teste garante isso fora do
+modo Express. O menu do botão direito tinha dois itens que, com a correção, fariam
+a mesma coisa; ficou um só.
+
+### Evidência
+
+- Diagnóstico antes da mudança: `npm run typecheck` e `tsc --noEmit` do `server/` sem
+  erro, 92 testes, nenhuma mudança pendente. Nenhum arquivo de código sem uso.
+- Depois: 95 testes (3 novos em `catalogLoadError.test.ts`), tipos e build sem erro.
+- Navegador, Vite temporário na porta 3002:
+  - Com as chamadas ao Supabase bloqueadas, o login mostrou o texto novo.
+  - Com só a consulta do catálogo bloqueada (`Project is paused`, código `540`), a
+    galeria mostrou só "Acervo temporariamente indisponível", sem "Nenhum ODA
+    encontrado" e sem "ODAs Recomendados".
+  - Botão direito no primeiro card: um item, "Abrir ODA em nova guia", com
+    `target="_blank"`.
+  - Busca sem resultado: "Nenhum ODA encontrado", "ODAs Recomendados" com recursos e
+    "Limpar e Explorar Tudo", como antes.
+- Graphify: 863 nós, 2095 relações, 49 comunidades, gerado em `edb30b7`.
+
+### Impacto observado
+
+`[A VALIDAR]` Depois do deploy.
+
+### Próximos passos
+
+1. Decidir o botão de orientações metodológicas: esconder ou publicar os PDFs.
+
+---
+
 ## 2026-10-21 · 10:05 — Tour fora do login e com passos curtos
 
 ### Antes

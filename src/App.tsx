@@ -484,6 +484,7 @@ export default function App() {
             <ContentTypeSelector value={contentTypeFilter} onChange={setContentTypeFilter} />
             <GalleryResults
               loading={projectsLoading}
+              unavailable={Boolean(catalog.error)}
               results={filteredProjects}
               pageResults={paginatedProjects}
               recommended={projects}

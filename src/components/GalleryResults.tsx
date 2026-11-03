@@ -9,6 +9,8 @@ const RECOMMENDED_LIMIT = 8;
 
 interface GalleryResultsProps {
   loading: boolean;
+  /** Catálogo não carregou: o aviso de falha fica sozinho, sem "nenhum resultado". */
+  unavailable?: boolean;
   /** Resultado da busca e dos filtros, inteiro. */
   results: Project[];
   /** Fatia da página atual de `results`. */
@@ -59,6 +61,7 @@ function ViewModeButton({
 
 export function GalleryResults({
   loading,
+  unavailable = false,
   results,
   pageResults,
   recommended,
@@ -84,6 +87,8 @@ export function GalleryResults({
       </div>
     );
   }
+
+  if (unavailable) return null;
 
   const isSearching = searchQuery.trim() !== '';
   const gridProps = { favorites, onProjectClick, onToggleFavorite };

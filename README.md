@@ -88,7 +88,7 @@ Acervo-Digital/
 ├── src/                          # Frontend (React + Vite)
 ├── server/                       # API Express + Prisma (local; não é a EC2)
 ├── public/
-│   ├── thumbs/                   # Capas webp versionadas (~60 MB)
+│   ├── thumbs/                   # Capas webp versionadas (~120 MB)
 │   └── bncc.db
 ├── data/                         # Planilha de categorização (fora do Git)
 ├── scripts/
@@ -117,7 +117,7 @@ planilha do NDE (.xlsx, baixada do Drive)
 
 O que fica no banco: título, códigos, BNCC, coleção, livro, bloco, SAMR, requisitos, **caminho da thumb** (`/thumbs/{marca}/{arquivo}.webp`) e **link externo** do ODA/vídeo. O mapa completo dos fluxos está no [SDD.md](./docs/SDD.md), em "Fluxos principais reais".
 
-O que **não** fica no banco: o arquivo do ODA e o vídeo. As capas ficam em `public/thumbs/` e sobem no Git (WebP, cerca de 60 MB).
+O que **não** fica no banco: o arquivo do ODA e o vídeo. As capas ficam em `public/thumbs/` e sobem no Git (WebP, cerca de 120 MB).
 
 ### Por que as thumbs não vão para o PostgreSQL
 
@@ -322,6 +322,6 @@ Supabase; as funções equivalentes estão em `scripts/supabase/rls.sql`.
 - **CSS / classes Tailwind:** o `src/index.css` é compilado e congelado; preferir CSS dedicado.
 - **Vimeo no console:** `ERR_BLOCKED_BY_CLIENT` costuma ser bloqueador de ads.
 - **Galeria vazia:** rode `npm run setup` e `npm run server:dev`, ou use o modo Supabase.
-- **Aviso "O banco do acervo está inativo":** o plano Free do Supabase pausou o projeto por falta de uso. Restaure no painel do Supabase e confira o workflow de ping (SDD, "Manter o Supabase acordado").
+- **Aviso "Acervo temporariamente indisponível":** o plano Free do Supabase pausou o projeto por falta de uso. Restaure no painel do Supabase e confira o workflow de ping (SDD, "Manter o Supabase acordado"). Se o aviso for "Não foi possível conectar ao Acervo", pode ser a rede ou a mesma pausa.
 - **Página em branco depois de mover ou renomear arquivo:** reinicie o `npm run dev`; o Vite em execução guarda o caminho antigo.
 - **Cards sem capa:** confira se `public/thumbs/` veio no clone; se faltar arquivo, `npm run thumbs:capture`.

@@ -194,14 +194,27 @@ No modo Express, o login valida a senha com bcrypt e emite um JWT próprio com
   (`src/utils/jwtRetryFetch.ts`): repete a chamada depois de 1 s e de 2 s, e só
   nesse erro.
 - **Aviso de falha do catálogo:** `CatalogLoadError` classifica a falha
-  (`src/utils/catalogLoadError.ts`) e oferece "Tentar novamente". No modo Supabase
-  o texto explica a falha e pede para avisar o time de Interações Digitais. Quando
-  a resposta traz pausa do projeto (mensagem `paused` ou código `540`), o aviso
-  diz que o plano gratuito inativou o banco. Uma queda de rede no mesmo modo
-  também cita essa pausa, porque o navegador muitas vezes esconde o corpo do
-  erro e só mostra falha de conexão. As instruções de desenvolvimento
-  (`server:dev`, `prisma:migrate`) só aparecem no modo Express. O login e a fila
-  do admin usam o mesmo texto quando o banco não responde.
+  (`src/utils/catalogLoadError.ts`) e oferece "Tentar novamente". Fora do modo
+  Express, nenhuma mensagem cita fornecedor nem plano (um teste confere):
+  - Banco pausado (mensagem `paused` ou código `540`): "Acervo temporariamente
+    indisponível" / "O Acervo está temporariamente indisponível (ambiente de teste).
+    Tente novamente ou avise o time de Interações Digitais."
+  - Falha de conexão, no login e na galeria: "Não foi possível conectar ao Acervo.
+    Pode ser a internet ou o ambiente de teste. Tente de novo em alguns minutos. Se
+    continuar, avise o time de Interações Digitais." O navegador muitas vezes
+    esconde o corpo do erro, então a pausa também pode chegar como falha de conexão.
+  - Com o catálogo em falha, a galeria mostra só o aviso: sem "Nenhum ODA
+    encontrado" nem "ODAs Recomendados" vazio (`GalleryResults`, prop `unavailable`).
+  - As instruções de desenvolvimento (`server:dev`, `prisma:migrate`) só aparecem no
+    modo Express. A fila do admin usa os mesmos textos.
+- **Minha Conta e recuperação de senha no Supabase:** "Neste ambiente de teste, nome e
+  senha não podem ser alterados." e "Neste ambiente de teste, a senha não pode ser
+  redefinida por aqui. Fale com o time de Interações Digitais."
+- **Menu do botão direito no card:** um item só, "{Abrir ODA/vídeo/…} em nova guia"
+  (`ProjectContextMenu.tsx`). Abrir na mesma guia tirava a pessoa do Acervo.
+- **Orientações metodológicas:** `public/metodologia/` não tem nenhum PDF versionado
+  (conferido em 2026-11-03), então o botão "Baixar Orientações Metodológicas (PDF)"
+  aparece sempre desativado na ficha.
 - **Página 404:**
   - Rota interna desconhecida (`#/xyz`) e link de recurso que o catálogo não tem
     (`#/recurso/<codigo>`) abrem `NotFoundPage`. O link de recurso mostra o código

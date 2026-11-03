@@ -231,6 +231,10 @@ ferramenta de cadastro.
 - ✅ As 19 playlists do YouTube abrem em nova guia (ver "Bugs conhecidos")
 - ✅ Tour do primeiro acesso completo: 7 passos curtos (ficha, favoritos e menu do
   perfil em passos próprios) e nunca na tela de login
+- ✅ Mensagens de erro sem "Supabase" nem "plano gratuito"; galeria em falha mostra só
+  o aviso; "Abrir ODA" do botão direito em nova guia; "Nenhum recurso encontrado"
+- ⬜ Decidir o botão "Baixar Orientações Metodológicas (PDF)": nenhum PDF está
+  versionado, então ele aparece sempre desativado (esconder ou publicar os PDFs)
 - ⬜ Opcional: tocar playlist dentro do Acervo, resolvendo o destino do link na
   importação e guardando o endereço de embed
 - ✅ Fila do admin com "Sem código" e "Código repetido" (tabela `import_issues`,
