@@ -190,6 +190,12 @@ ferramenta de cadastro.
   da API zeradas (eram 1 crítica, 3 altas e 4 moderadas)
 - ✅ CI do `main` verde de novo (2026-11-04): `body-parser` 1.20.9 e `multer` 2.5.0
   corrigem os 2 alertas altos que surgiram na API
+- ✅ Dependências do site atualizadas (2026-11-04): `@supabase/supabase-js` 2.119.0 e
+  `intro.js` 8.6.0
+- ⬜ Antes da migração, atualizar as demais propostas do Dependabot, um grupo por
+  vez: ferramentas de teste e build (`vitest` 5, `jsdom` 30, `plugin-react-swc` 4),
+  API e scripts (`playwright`, `better-sqlite3`, tipos), GitHub Actions com Node 24
+  no CI e, por último e separado, Prisma 5 → 7
 - ⬜ 7 alertas moderados na API, todos vindos do `exceljs` (leitura da planilha). A
   correção automática troca a versão do `exceljs` e pode quebrar a importação:
   avaliar quando sair versão nova do pacote

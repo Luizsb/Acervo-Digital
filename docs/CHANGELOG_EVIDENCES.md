@@ -10,6 +10,52 @@ trazem a seção "Impacto observado" com dado medido: nenhuma métrica foi colet
 
 ---
 
+## 2026-11-04 · 12:45 — Atualização das dependências do site
+
+### Antes
+
+- `@supabase/supabase-js` 2.112.3 e `intro.js` 8.5.0, com propostas do Dependabot
+  abertas desde 2026-10-20.
+- 12 propostas do Dependabot pendentes no total, entre site, testes, API, CI e Prisma.
+
+### Depois
+
+- `@supabase/supabase-js` 2.119.0 e `intro.js` 8.6.0, mesma versão principal.
+  Mudaram só o `package.json` e o `package-lock.json` da raiz.
+- As demais propostas ficam no `ROADMAP.md`, para fazer um grupo por vez antes da
+  migração.
+
+### Decisão
+
+O responsável preferiu atualizar antes da migração para o GitHub empresarial e o
+servidor, aproveitando que o Acervo ainda não está em uso oficial. Nesta rodada, só
+o grupo do site, que é o que o usuário vê.
+
+### Evidência
+
+- `npm run typecheck` sem erro, 97 testes passando, `npm run build` concluído e
+  `npm audit --omit=dev --audit-level=high` sem alerta.
+- No navegador, contra o Supabase:
+  - a sessão salva foi restaurada;
+  - a galeria carregou 2519 recursos;
+  - um favorito adicionado subiu `auth_favorites` de 2 para 3 linhas e, removido,
+    voltou a 2;
+  - "Rever tour do acervo" mostrou os 7 passos, de "Encontre o recurso certo" a
+    "Seu menu", e fechou no fim.
+
+### Impacto observado
+
+Sem mudança visível. O site fica nas versões atuais das duas bibliotecas que o
+usuário usa diretamente: login e dados, e o tour.
+
+### Próximos passos
+
+- Fechar no GitHub as propostas do Dependabot de `supabase-js` e `intro.js`, se ele
+  não fechar sozinho.
+- Seguir com os outros grupos do `ROADMAP.md`.
+
+---
+
 ## 2026-11-04 · 11:20 — Correção de 2 alertas altos nas dependências da API
 
 ### Antes
