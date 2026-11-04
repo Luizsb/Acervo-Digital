@@ -4,6 +4,8 @@ import path from 'path';
 import { createHash } from 'crypto';
 import prisma from '../lib/prisma';
 import { recordAuditEvent, type AuditOrigin } from '../lib/audit';
+import { discardExpiredData } from '../lib/retention';
+import { AUDIT_RETENTION_MONTHS } from '../lib/retentionPolicy';
 import { readWorksheetMatrix } from '../lib/excel';
 import {
   findRepeatedCodes,
@@ -212,6 +214,20 @@ export async function importCategorizacao(options: ImportOptions = {}): Promise<
         totalAtivos: summary.totalActive,
       },
     });
+    if (summary.errors === 0) {
+      const discarded = await discardExpiredData();
+      await recordAuditEvent({
+        action: 'data.discarded',
+        origin,
+        actor,
+        details: { ...discarded, prazoAuditoriaMeses: AUDIT_RETENTION_MONTHS },
+      });
+      if (options.log ?? true) {
+        console.log(
+          `   descarte por prazo: ${discarded.auditEvents} eventos de auditoria, ${discarded.viewEvents} visualizações individuais`
+        );
+      }
+    }
     return summary;
   } catch (error) {
     await recordAuditEvent({

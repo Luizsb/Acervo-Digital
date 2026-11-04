@@ -65,6 +65,7 @@ model ODA {
   // Relacionamento com BNCC
   bncc                  BNCC?   @relation(fields: [codigoBncc], references: [codigo])
   viewEvents            OdaViewEvent[]
+  viewDaily             OdaViewDaily[]
 
   @@index([tipoConteudo])
   @@index([componenteCurricular])
@@ -142,6 +143,21 @@ model OdaViewEvent {
   @@index([odaId, kind, viewedOn])
   @@index([kind, viewedOn])
   @@map("oda_view_events")
+}
+
+/// Total de visualizações por recurso, tipo e dia, sem identificar a pessoa. Alimenta o
+/// ranking de 7 e 30 dias; o registro individual (oda_view_events) só vive no dia.
+model OdaViewDaily {
+  odaId    Int      @map("oda_id")
+  kind     String
+  viewedOn DateTime @db.Date @map("viewed_on")
+  count    Int      @default(0)
+
+  oda ODA @relation(fields: [odaId], references: [id], onDelete: Cascade)
+
+  @@id([odaId, kind, viewedOn])
+  @@index([kind, viewedOn])
+  @@map("oda_view_daily")
 }
 
 model ImportEvent {

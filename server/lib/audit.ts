@@ -9,7 +9,8 @@ export type AuditAction =
   | 'catalog.resource_created'
   | 'catalog.resource_updated'
   | 'catalog.resource_deleted'
-  | 'admin.users_listed';
+  | 'admin.users_listed'
+  | 'data.discarded';
 
 /** De onde o evento partiu. `banco` e `supabase` são gravados por gatilhos SQL, não por aqui. */
 export type AuditOrigin = 'express' | 'cli' | 'apps-script';

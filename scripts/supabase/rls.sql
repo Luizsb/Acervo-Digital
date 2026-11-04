@@ -122,7 +122,14 @@ begin
     else
       update public.odas set open_view_count = open_view_count + 1 where id = p_oda_id;
     end if;
+    -- Total do dia sem a pessoa (oda_view_daily, da migração do Prisma).
+    insert into public.oda_view_daily (oda_id, kind, viewed_on, count)
+    values (p_oda_id, p_kind, viewed, 1)
+    on conflict (oda_id, kind, viewed_on) do update set count = public.oda_view_daily.count + 1;
   end if;
+
+  -- O registro individual só serve para contar 1 visita por pessoa por dia.
+  delete from public.auth_view_events where viewed_on < viewed;
 
   select page_view_count, open_view_count into page_count, open_count
   from public.odas where id = p_oda_id;
@@ -296,3 +303,40 @@ $$;
 revoke execute on function public.admin_list_users() from public;
 revoke execute on function public.admin_list_users() from anon;
 grant execute on function public.admin_list_users() to authenticated;
+
+-- Total diário de visualizações (migração do Prisma): sem acesso direto pela Data API.
+do $$
+begin
+  if to_regclass('public.oda_view_daily') is not null then
+    execute 'alter table public.oda_view_daily enable row level security';
+    execute 'revoke all on table public.oda_view_daily from anon, authenticated';
+  end if;
+end $$;
+
+-- Ranking de acessos por período no painel admin, a partir do total diário.
+create or replace function public.admin_top_views(p_kind text, p_days integer, p_limit integer)
+returns table (id integer, codigo_oda text, titulo text, total bigint)
+language plpgsql
+stable
+security definer
+set search_path = ''
+as $$
+begin
+  if not public.is_acervo_admin() then
+    raise exception 'not authorized' using errcode = '42501';
+  end if;
+  return query
+    select o.id, o.codigo_oda::text, o.titulo::text, sum(d.count)::bigint
+    from public.oda_view_daily d
+    join public.odas o on o.id = d.oda_id
+    where d.kind = p_kind
+      and d.viewed_on >= (timezone('America/Sao_Paulo', now()))::date - (p_days - 1)
+    group by o.id, o.codigo_oda, o.titulo
+    order by 4 desc
+    limit p_limit;
+end;
+$$;
+
+revoke execute on function public.admin_top_views(text, integer, integer) from public;
+revoke execute on function public.admin_top_views(text, integer, integer) from anon;
+grant execute on function public.admin_top_views(text, integer, integer) to authenticated;

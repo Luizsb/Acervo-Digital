@@ -41,6 +41,15 @@ function addUtcDays(date: Date, days: number): Date {
   return next;
 }
 
+/**
+ * O registro individual só serve para contar uma visita por pessoa por dia; o de dias
+ * anteriores é apagado. O total diário fica em oda_view_daily, sem a pessoa.
+ */
+export async function discardPastIndividualViews(today = todayInSaoPaulo()): Promise<number> {
+  const removed = await prisma.odaViewEvent.deleteMany({ where: { viewedOn: { lt: today } } });
+  return removed.count;
+}
+
 export type RecordViewResult = {
   counted: boolean;
   pageViewCount: number;
@@ -81,12 +90,18 @@ export async function recordOdaView(params: {
           viewedOn,
         },
       });
+      await tx.odaViewDaily.upsert({
+        where: { odaId_kind_viewedOn: { odaId: params.odaId, kind: params.kind, viewedOn } },
+        create: { odaId: params.odaId, kind: params.kind, viewedOn, count: 1 },
+        update: { count: { increment: 1 } },
+      });
       return tx.oDA.update({
         where: { id: params.odaId },
         data: { [counterField]: { increment: 1 } },
         select: { pageViewCount: true, openViewCount: true },
       });
     });
+    await discardPastIndividualViews(viewedOn);
 
     return {
       counted: true,
@@ -148,14 +163,14 @@ export async function getTopOdaViews(params: {
   const days = params.period === '7d' ? 6 : 29;
   const since = addUtcDays(today, -days);
 
-  const grouped = await prisma.odaViewEvent.groupBy({
+  const grouped = await prisma.odaViewDaily.groupBy({
     by: ['odaId'],
     where: {
       kind: params.kind,
       viewedOn: { gte: since },
     },
-    _count: { odaId: true },
-    orderBy: { _count: { odaId: 'desc' } },
+    _sum: { count: true },
+    orderBy: { _sum: { count: 'desc' } },
     take: params.limit,
   });
 
@@ -175,7 +190,7 @@ export async function getTopOdaViews(params: {
         id: oda.id,
         codigoOda: oda.codigoOda,
         titulo: oda.titulo,
-        count: row._count.odaId,
+        count: row._sum.count ?? 0,
       };
     })
     .filter((item): item is TopViewItem => item !== null);

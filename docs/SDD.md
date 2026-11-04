@@ -170,7 +170,8 @@ No modo Supabase, o login usa `signInWithPassword` e o papel de administrador é
 concede papel: o próprio usuário consegue editá-lo. Promover ou rebaixar admin é
 feito pelo banco; o procedimento está no runbook, em "Promover ou rebaixar
 administrador". O papel é restrito a e-mails `@arcoeducacao.com.br` dos times de
-Interações Digitais e Acervo.
+Interações Digitais (ID) e do Núcleo de Design Educacional (NDE). Com o JumpCloud,
+todo usuário autenticado entra como leitor; o admin é dado pelo banco.
 
 Enquanto o JumpCloud não chega, a tela de login tem dois botões de acesso rápido com
 credenciais fixas no front (`src/components/LoginPage.tsx`): um de leitura e um de
@@ -229,6 +230,16 @@ O front chama a RPC `record_oda_view()` (Supabase) ou `POST /api/odas/:id/view`
 (Express). Há deduplicação: um mesmo usuário conta uma vez por recurso por dia, no
 fuso de São Paulo. Dois tipos são distinguidos: `page` (abriu a ficha) e `open`
 (abriu o recurso de fato).
+
+Quando a visita conta, três coisas acontecem numa transação: a linha individual do
+dia é gravada (só para a deduplicação), o contador do recurso em `odas` sobe e o
+total do dia em `oda_view_daily` sobe. Em seguida, as linhas individuais de dias
+anteriores são apagadas. O ranking de 7 e 30 dias soma `oda_view_daily`: no
+Supabase, pela função `admin_top_views()`, que só responde a admin; no Express, pela
+rota `/api/admin/views/top`. O ranking "Total" lê os contadores de `odas`.
+
+Efeito aceito: depois do dia, não dá mais para saber quem viu o quê. Isso também
+vale para o relatório de usuários, que não mostra visualizações por pessoa.
 
 ---
 
@@ -301,8 +312,9 @@ vai para `data/ultima-importada.xlsx`, que é a base do `diff:planilha`.
 
 **Tabelas principais:** `odas` (catálogo), `bncc` (habilidades),
 `import_events` (histórico de importação), `import_issues` (problemas da planilha na
-última importação, só admin lê), `audit_events` (trilha de auditoria), `keep_alive`
-(uma linha, só para o ping).
+última importação, só admin lê), `audit_events` (trilha de auditoria),
+`oda_view_daily` (total de visualizações por recurso, tipo e dia, sem pessoa),
+`keep_alive` (uma linha, só para o ping).
 
 **Tabelas de usuário, duplicadas por backend:**
 
@@ -316,9 +328,11 @@ Essa duplicação é consequência de o Supabase gerenciar a identidade. **Favor
 criados num modo não aparecem no outro.**
 
 **Objetos SQL no Supabase** (definidos em `scripts/supabase/rls.sql`):
-`is_acervo_admin()` e `record_oda_view()`, ambas `SECURITY DEFINER` com `EXECUTE`
-concedido apenas ao papel `authenticated`. RLS está habilitada em todas as tabelas
-públicas, inclusive `_prisma_migrations`, que tem todo acesso revogado.
+`is_acervo_admin()`, `record_oda_view()` e `admin_top_views()`, todas
+`SECURITY DEFINER` com `EXECUTE` concedido apenas ao papel `authenticated`;
+`admin_top_views()` ainda recusa quem não é admin. RLS está habilitada em todas as
+tabelas públicas, inclusive `_prisma_migrations` e `oda_view_daily`, que têm todo
+acesso revogado.
 
 **Volume:** mais de 2 mil recursos (o número exato está no painel admin) e mil e
 trezentas habilidades BNCC.
@@ -440,7 +454,7 @@ vão no próprio relatório, como o comitê pediu.
 
 - **Leitor**: qualquer conta autenticada sem papel.
 - **Admin**: conta com `role = admin`, restrito a e-mails `@arcoeducacao.com.br` dos
-  times de Interações Digitais e Acervo.
+  times de Interações Digitais (ID) e do NDE.
 - **Operador**: quem tem a senha do banco ou acesso ao painel do Supabase. Opera
   pela linha de comando e pelo SQL, não pela aplicação.
 
@@ -506,24 +520,34 @@ limit 100;
 
 ### Dados pessoais
 
-Inventário para o mapeamento (ROPA) com a DPO. `[HIPÓTESE — CONFIRMAR]` A base legal
-e os prazos são propostas técnicas; quem define é a DPO.
+Inventário para o mapeamento (ROPA) com a DPO. A base legal, definida no mapeamento
+da DPO, é o **legítimo interesse** (LGPD, art. 7º, IX), tanto para a vitrine quanto
+para a auditoria. O mapeamento também confirma que não há dados sensíveis, dados de
+crianças nem decisão automatizada.
 
-| Dado | Onde fica | Finalidade | Retenção proposta |
+| Dado | Onde fica | Finalidade | Retenção |
 |---|---|---|---|
-| E-mail, nome (opcional) e papel | `auth.users` (Supabase) ou `users` (Express) | Autenticação e controle de acesso | Enquanto houver vínculo. Com o JumpCloud, o desligamento remove o acesso |
+| E-mail, nome e papel | `auth.users` (Supabase) ou `users` (Express) | Autenticação, controle de acesso e exibição do nome de quem está logado | Enquanto houver vínculo. Com o JumpCloud, o nome vem do diretório e o desligamento remove o acesso |
 | Hash de senha | `auth.users` ou `users.password_hash` | Autenticação | Igual ao anterior. Deixa de existir com o SSO |
 | Favoritos | `auth_favorites` ou `user_favorites` | Conveniência do usuário | Apagados junto com a conta (`on delete cascade`) |
-| Visualização por usuário, recurso e dia | `auth_view_events` ou `oda_view_events` | Ordenar a galeria pelos mais vistos | 12 meses identificados, depois removidos. As contagens agregadas em `odas` ficam |
-| Trilha de auditoria (e-mail, IP, ação) | `audit_events` | Segurança e rastreabilidade | 12 meses. `[A VALIDAR]` Se o art. 15 do Marco Civil (6 meses de registros de acesso) se aplica |
-| Export do banco | Pasta restrita do time de ID no Drive corporativo; `data/export-*` na máquina do operador só até o envio | Backup e migração | Antes de cada importação e no mínimo mensal. `[A VALIDAR]` Quantos exports manter: decisão da DPO junto com os demais prazos |
+| Visualização por usuário, recurso e dia | `auth_view_events` ou `oda_view_events` | Contar uma visita por pessoa por dia | **Só o dia corrente.** A cada visita, e no descarte, as linhas de dias anteriores são apagadas |
+| Total diário de visualizações, sem pessoa | `oda_view_daily` | Ranking de 7 e 30 dias do admin | Não é dado pessoal: recurso, tipo, dia e total. Sem prazo |
+| Trilha de auditoria (e-mail, IP, ação) | `audit_events` | Segurança e rastreabilidade | **6 meses**, pelo art. 15 do Marco Civil, conforme o mapeamento da DPO |
+| Export do banco | Pasta restrita do time de ID no Drive corporativo; `data/export-*` na máquina do operador só até o envio | Backup e migração | Antes de cada importação e no mínimo mensal. `[A VALIDAR]` Quantos exports manter |
 
 A planilha oficial do NDE tem nomes e e-mails; o `planilha:preparar` os remove antes
 de qualquer coisa entrar no projeto. A planilha original fica no Drive, sob a gestão
 do NDE.
 
-`[PERGUNTA AO RESPONSÁVEL]` Os prazos acima ainda não têm rotina de descarte. Ela é
-implementada depois que a DPO aprovar os valores.
+**Descarte por prazo.** `npm run db:descartar` apaga a auditoria mais antiga que 6
+meses e as visualizações individuais de dias anteriores, nos dois backends. A
+importação da planilha chama o mesmo descarte ao terminar sem erro. Cada descarte
+grava o evento `data.discarded` na auditoria, com as quantidades apagadas. O prazo
+fica em `server/lib/retentionPolicy.ts`.
+
+**Fim do MVP.** O mapeamento da DPO pede que os dados de teste sejam revistos e
+apagados ao término da fase de validação. O procedimento está no runbook, em
+"Encerrar o ambiente de testes".
 
 ### Aviso de privacidade
 
@@ -659,7 +683,8 @@ o `diff:planilha` pede a planilha anterior como argumento
 (`npm run diff:planilha -- caminho/da/anterior.xlsx`).
 
 O passo 3 imprime quantos recursos foram criados, atualizados, desativados e quantos
-estão sem capa. Os mesmos números ficam registrados em `import_events` e aparecem no
+estão sem capa. No fim, roda o descarte por prazo e imprime quantos eventos de
+auditoria e visualizações individuais apagou. Os mesmos números ficam registrados em `import_events` e aparecem no
 painel admin, na aba de histórico, com data, hora e a capa de cada item. A fila de
 revisão passa a mostrar os pendentes e os problemas da planilha desta importação.
 Para repassar ao NDE, `npm run relatorio:nde` grava em `data/relatorio-nde-AAAAMMDD.xlsx`
@@ -772,7 +797,7 @@ npm run prisma:migrate
 ### Promover ou rebaixar administrador
 
 Não há tela para isso, por decisão: o papel é concedido direto no banco, só para
-e-mails `@arcoeducacao.com.br` dos times de Interações Digitais e Acervo. No *SQL
+e-mails `@arcoeducacao.com.br` dos times de Interações Digitais (ID) e do NDE. No *SQL
 Editor* do Supabase:
 
 ```sql
@@ -803,8 +828,8 @@ O destino ainda não existe. O que já está pronto para a migração ser só ex
   usuários do Express e de auditoria em qualquer Postgres (`npm run prisma:migrate`).
 - **Dados:** `npm run db:exportar` gera em `data/export-AAAAMMDD-HHMM/` um JSON por
   tabela: catálogo com os contadores de visualização, histórico de importação,
-  auditoria, favoritos, visualizações e usuários (e-mail e papel; nunca o hash de
-  senha). Também serve de backup.
+  auditoria, favoritos, visualizações do dia, totais diários e usuários (e-mail e
+  papel; nunca o hash de senha). Também serve de backup.
 - **Catálogo:** pode ser reconstruído do zero pela planilha (`planilha:preparar` e
   `import:categorizacao`). O export só é necessário para preservar contadores,
   favoritos e histórico.
@@ -825,6 +850,28 @@ Sequência prevista:
 5. Subir a API Express com `VITE_BACKEND=ec2`. O empacotamento (o que a TI definir)
    é feito quando o servidor existir. A imagem Docker da EC2 foi removida.
 6. Manter o Supabase até validar o servidor. Depois, apagar os exports.
+
+### Descartar dados vencidos
+
+```bash
+npm run db:descartar
+```
+
+Apaga a auditoria com mais de 6 meses e as visualizações individuais de dias
+anteriores, no banco do `server/.env`. A importação já faz isso sozinha; o comando
+manual serve para quando ficar mais de um mês sem importar. Para mudar o prazo,
+edite `server/lib/retentionPolicy.ts`.
+
+### Encerrar o ambiente de testes
+
+Ao fim do MVP, conforme o mapeamento da DPO, os dados de teste são revistos e
+apagados:
+
+1. `npm run db:exportar` só se algo precisar ir para o servidor corporativo.
+2. No painel do Supabase, apagar o projeto `iezvzcrmzdfljvbbdneu`. Isso remove
+   usuários, favoritos, visualizações e auditoria de uma vez.
+3. Apagar os exports do Drive que não forem mais necessários.
+4. Remover os botões de acesso rápido de `src/components/LoginPage.tsx`.
 
 `[A VALIDAR]` No servidor, o Postgres é local ou um serviço gerenciado: a resposta é
 da TI, no chamado do servidor.
@@ -982,7 +1029,8 @@ limpo**, sem esse arquivo.
 - ✅ Enforce SSL no painel do Supabase (responsável, 2026-10-21): não será ativado,
   porque o Supabase não é o ambiente oficial. `sslmode=require` fica nos exemplos de
   `server/.env`.
-- `[PERGUNTA AO RESPONSÁVEL]` Para a DPO: base legal do tratamento, prazos de
-  retenção, texto final do aviso de privacidade e canal para os direitos do titular.
+- `[PERGUNTA AO RESPONSÁVEL]` Para a DPO: texto final do aviso de privacidade, canal
+  para os direitos do titular e quantos exports do banco manter. A base legal e os
+  prazos de auditoria já vieram no mapeamento.
 - `[PERGUNTA AO RESPONSÁVEL]` Para a Segurança: qual é o cofre corporativo e para onde
   enviar a trilha de auditoria.

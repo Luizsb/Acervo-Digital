@@ -281,6 +281,8 @@ export async function supabaseAdminReview(params?: {
   };
 }
 
+type TopViewRow = { id: number; codigo_oda: string | null; titulo: string | null; total: number | string };
+
 export async function supabaseAdminViewsTop(params?: {
   kind?: OdaViewKind;
   period?: string;
@@ -288,8 +290,30 @@ export async function supabaseAdminViewsTop(params?: {
 }): Promise<ViewRankingResponse> {
   const kind = params?.kind ?? 'open';
   const limit = params?.limit ?? 20;
-  const column = kind === 'page' ? 'page_view_count' : 'open_view_count';
+  const period = (params?.period as ViewRankingResponse['period']) ?? 'all';
   const supabase = getSupabaseClient();
+
+  if (period !== 'all') {
+    const { data, error } = await supabase.rpc('admin_top_views', {
+      p_kind: kind,
+      p_days: period === '7d' ? 7 : 30,
+      p_limit: limit,
+    });
+    throwIfError(error, 'Erro ao carregar o ranking de acessos.');
+    return {
+      kind,
+      period,
+      limit,
+      items: ((data ?? []) as TopViewRow[]).map((row) => ({
+        id: Number(row.id),
+        codigoOda: row.codigo_oda ?? null,
+        titulo: String(row.titulo ?? ''),
+        count: Number(row.total),
+      })),
+    };
+  }
+
+  const column = kind === 'page' ? 'page_view_count' : 'open_view_count';
   const { data, error } = await supabase
     .from('odas')
     .select('id, codigo_oda, titulo, page_view_count, open_view_count')
@@ -298,7 +322,7 @@ export async function supabaseAdminViewsTop(params?: {
   throwIfError(error, 'Erro ao carregar o ranking de acessos.');
   return {
     kind,
-    period: (params?.period as ViewRankingResponse['period']) ?? 'all',
+    period,
     limit,
     items: (data ?? []).map((row) => ({
       id: Number(row.id),

@@ -34,6 +34,11 @@ const QUERIES: ExportQuery[] = [
   { file: 'user_favorites', table: 'public.user_favorites', sql: 'select * from public.user_favorites order by id' },
   { file: 'oda_view_events', table: 'public.oda_view_events', sql: 'select * from public.oda_view_events order by id' },
   {
+    file: 'oda_view_daily',
+    table: 'public.oda_view_daily',
+    sql: 'select * from public.oda_view_daily order by viewed_on, oda_id, kind',
+  },
+  {
     file: 'users_supabase',
     table: 'auth.users',
     sql: `select id, email, raw_app_meta_data ->> 'role' as role, raw_user_meta_data ->> 'name' as name,

@@ -175,7 +175,7 @@ ferramenta de cadastro.
   automaticamente porque a TI bloqueia; entra por download manual e passa pelo
   `planilha:preparar`. O banco é o local oficial dos dados.
 - Gestão de administradores **pelo banco**, sem tela, restrita a e-mails
-  `@arcoeducacao.com.br` dos times de Interações Digitais e Acervo.
+  `@arcoeducacao.com.br` dos times de Interações Digitais (ID) e do NDE.
 - O acesso à planilha no Drive, inclusive de terceiros, é responsabilidade do NDE, que
   já conhece o apontamento da Gestão de Acessos.
 
@@ -204,9 +204,14 @@ ferramenta de cadastro.
 - ⬜ Deploy e conferência de que a URL antiga da planilha responde 404
 - ⬜ Ativar no GitHub *Dependabot alerts* (*Settings → Advanced Security → Dependabot
   alerts → Enable*) e conferir a aba *Security → Code scanning* depois do push
-- ⬜ Levar à DPO: inventário, base legal, prazos de retenção, aviso e canal do titular
+- ✅ Mapeamento da DPO recebido: base legal de legítimo interesse e auditoria por 6
+  meses (art. 15 do Marco Civil)
+- ⬜ Levar à DPO: texto do aviso, canal do titular e quantos exports manter
 - ⬜ Exibir o aviso de privacidade na tela de login, depois da aprovação da DPO
-- ⬜ Rotina de descarte (visualizações e auditoria), depois da aprovação dos prazos
+- ✅ Rotina de descarte (2026-11-04): `npm run db:descartar` e descarte no fim de
+  cada importação. Auditoria por 6 meses; visualização individual só no dia, com
+  o total diário sem pessoa em `oda_view_daily`
+- ⬜ Ao fim do MVP, apagar os dados de teste (runbook "Encerrar o ambiente de testes")
 - ⬜ Perguntar à Segurança qual é o cofre corporativo e para onde enviar a auditoria
 - ⬜ Comando de restauração a partir do export, quando o destino estiver definido
 - ⬜ Abrir o chamado do servidor corporativo

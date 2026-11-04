@@ -39,6 +39,7 @@
             "planilha:preparar": "cd server && npm run planilha:preparar --",
             "db:exportar": "cd server && npm run db:exportar",
             "relatorio:nde": "cd server && npm run relatorio:nde",
+            "db:descartar": "cd server && npm run db:descartar",
             "thumbs:setup": "cd server && npm run thumbs:setup",
             "thumbs:capture": "cd server && npm run thumbs:capture --",
             "test": "vitest run",

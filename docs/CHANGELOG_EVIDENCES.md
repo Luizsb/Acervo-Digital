@@ -10,6 +10,77 @@ trazem a seção "Impacto observado" com dado medido: nenhuma métrica foi colet
 
 ---
 
+## 2026-11-04 · 08:40 — Visualização individual só no dia e descarte da auditoria em 6 meses
+
+### Antes
+
+- Cada visualização ficava gravada por pessoa, recurso e dia em `auth_view_events`
+  (Supabase) e `oda_view_events` (Express), sem prazo. O SDD propunha 12 meses, sem
+  rotina de descarte.
+- A auditoria também não tinha descarte. O SDD propunha 12 meses e deixava em
+  `[A VALIDAR]` se o art. 15 do Marco Civil se aplicava.
+- No Supabase, o ranking de 7 e 30 dias mostrava o mesmo número do "Total".
+- A base legal estava como hipótese, e os admins futuros como "ID e Acervo".
+
+### Depois
+
+- O registro individual serve só para contar uma visita por pessoa por dia: a cada
+  visita, as linhas de dias anteriores são apagadas.
+- O total de cada dia, sem a pessoa, vai para a tabela nova `oda_view_daily`
+  (recurso, tipo, dia, total), com RLS ligada e nenhum acesso direto.
+- O ranking de 7 e 30 dias soma esse total: no Supabase, pela função nova
+  `admin_top_views()`, que recusa quem não é admin; no Express, por
+  `prisma.odaViewDaily.groupBy`. Os contadores de `odas` e a ordenação da galeria
+  não mudaram.
+- `npm run db:descartar` apaga a auditoria com mais de 6 meses e as visualizações
+  individuais antigas, nos dois backends, e grava o evento `data.discarded`. A
+  importação roda o mesmo descarte quando termina sem erro.
+- `db:exportar` passa a incluir `oda_view_daily`.
+- SDD: base legal de legítimo interesse, auditoria por 6 meses, tabela "Dados
+  pessoais" revista, fluxo de visualização, runbooks "Descartar dados vencidos" e
+  "Encerrar o ambiente de testes". Admins futuros: ID e NDE.
+
+### Decisão
+
+O responsável escolheu a opção B: apagar o registro individual de visualização e
+manter só o total do dia, sem pessoa. A auditoria fica por 6 meses, o mínimo do
+art. 15 do Marco Civil, conforme o mapeamento da DPO.
+
+Efeito aceito: depois do dia, não dá mais para saber quem viu o quê. A
+deduplicação de uma visita por pessoa por dia continua funcionando, porque a linha
+do dia corrente existe até a virada.
+
+### Evidência
+
+- Supabase antes da migração: 76 registros individuais, todos de dias anteriores;
+  contadores em `odas` somando 71 visitas e 20 aberturas; 34 eventos de auditoria.
+- Migração `20261104090000_add_oda_view_daily` e `rls.sql` aplicados no Supabase:
+  `oda_view_daily` com 87 linhas somando 91 (71 + 20, igual aos contadores) e 0
+  registros individuais. `admin_top_views` sem `EXECUTE` para `anon`.
+- `npm run db:descartar` no Supabase: 0 eventos de auditoria e 0 visualizações
+  apagados (a auditoria mais antiga tem menos de 6 meses).
+- No navegador, abrir a ficha de `SAE25_EI_G4_BL2_UT4_OD1` gerou total do dia 1 e
+  1 registro individual de hoje; abrir de novo manteve o total em 1.
+- Leitor chamando `admin_top_views`: "not authorized". Admin na aba "Acessos e
+  visualizações", tipo "Visita à página": 7 dias = 2, 30 dias = 6, Total = 9 para
+  "Obras de arte no prato".
+- `npm run typecheck`, `tsc` do `server/`, 97 testes (2 novos em
+  `src/utils/retentionPolicy.test.ts`) e `npm run build` passando.
+
+### Impacto observado
+
+O Acervo deixa de guardar o histórico de quem viu cada recurso, e a auditoria passa
+a ter prazo. O admin ganha um ranking de 7 e 30 dias que, no Supabase, de fato
+filtra o período. Sem efeito visível para o leitor.
+
+### Próximos passos
+
+- Rodar `npm run db:descartar` quando ficar mais de um mês sem importação.
+- Levar à DPO o texto do aviso, o canal do titular e quantos exports manter.
+- Ao fim do MVP, seguir o runbook "Encerrar o ambiente de testes".
+
+---
+
 ## 2026-11-03 · 08:40 — Mensagens em linguagem simples, menu em nova guia e limpeza pequena
 
 ### Antes
