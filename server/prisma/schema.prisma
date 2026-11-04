@@ -5,12 +5,10 @@ generator client {
   provider = "prisma-client-js"
 }
 
+// As URLs ficam fora do schema: o CLI (migrate) usa o DIRECT_URL do prisma.config.ts e
+// a aplicação conecta pelo DATABASE_URL em lib/prisma.ts.
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  // Pooler 6543 (PgBouncer) quebra migrate. DIRECT_URL usa sessão 5432.
-  // Na EC2/Docker local os dois apontam para o mesmo Postgres.
-  directUrl = env("DIRECT_URL")
+  provider = "postgresql"
 }
 
 model ODA {

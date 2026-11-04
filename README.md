@@ -66,7 +66,7 @@ IA do Cursor é obrigada a seguir neste repositório, está no
 | Camada | Stack |
 |--------|--------|
 | **Frontend** | React 18, TypeScript (modo estrito, `npm run typecheck`), Vite 6, CSS compilado (Tailwind congelado em `src/index.css`), Radix UI, Lucide React, Intro.js |
-| **Backend** | Produção: Supabase (Auth + Data API com RLS). Local: Node.js, Express, TypeScript, Prisma 5, JWT e bcrypt |
+| **Backend** | Produção: Supabase (Auth + Data API com RLS). Local: Node.js, Express, TypeScript, Prisma 7, JWT e bcrypt |
 | **Banco** | PostgreSQL. Produção no Supabase (`sa-east-1`); local via Docker Compose (porta **5433**) |
 | **Dados** | ExcelJS, BNCC (`public/bncc.db`) |
 | **Thumbs** | Playwright + Sharp (`npm run thumbs:capture`) |

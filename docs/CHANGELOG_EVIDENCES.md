@@ -10,6 +10,102 @@ trazem a seção "Impacto observado" com dado medido: nenhuma métrica foi colet
 
 ---
 
+## 2026-11-04 · 13:50 — Dependências em dia antes da migração: CI, testes, API e Prisma 7
+
+### Antes
+
+- O CI rodava em Node 20, que o GitHub já marcava como obsoleto, com
+  `actions/checkout` e `setup-node` na v4. A Vercel não tinha versão do Node fixada.
+- 10 propostas do Dependabot abertas: `vitest` 5, `jsdom` 30, `plugin-react-swc` 4,
+  `playwright` 1.64, `better-sqlite3` 13, `@types/multer` 2.3, `@types/node` 26,
+  Prisma 7 e as duas actions.
+- `vite` 6.4.3 com 2 alertas altos de desenvolvimento.
+- A API e os scripts usavam o Prisma 5, com a URL do banco no `schema.prisma` e o
+  `.env` lido pelo próprio Prisma.
+- 7 alertas moderados do `exceljs` sem avaliação.
+
+### Depois
+
+Quatro commits, um por grupo, cada um testado antes do push:
+
+1. **CI:** `actions/checkout` e `setup-node` v7. Node 24 no CI e em `engines` (raiz
+   e `server/`), o que fixa a mesma versão na Vercel.
+2. **Testes e build:** `vitest` 5.1, `jsdom` 30.1, `plugin-react-swc` 4.3,
+   `@types/node` 24 e `vite` 6.4.5, sem alertas.
+3. **API e scripts:** `playwright` 1.64 (Chromium 156), `better-sqlite3` 13,
+   `@types/multer` 2.3 e `@types/node` 24.
+4. **Prisma 7.10.1:**
+   - conexão pelo adaptador `@prisma/adapter-pg`;
+   - as URLs saíram do schema; o `migrate` lê o `DIRECT_URL` em
+     `server/prisma.config.ts`;
+   - `lib/prisma.ts` carrega o `.env` e falha com mensagem clara sem `DATABASE_URL`;
+   - `lib/databaseConnection.ts` monta o pool: host remoto sempre com TLS,
+     `verify-full` valida o certificado e `pgbouncer` e `connection_limit` continuam
+     aceitos (4 testes novos);
+   - o seed passou a usar o cliente compartilhado.
+
+Também nesta rodada:
+- os moderados do `exceljs` foram avaliados e aceitos, com o motivo em "Riscos" no
+  `SDD.md`;
+- o Dependabot passa a ignorar versão principal nova do `@types/node`, que
+  acompanha o Node 24.
+
+### Decisão
+
+O responsável preferiu resolver as atualizações antes de subir para o GitHub
+empresarial e o servidor, aproveitando que o Acervo ainda não está em uso oficial.
+O Prisma foi para a 7.10.1, última estável; a marcada como `latest` no npm é um
+candidato a lançamento (8.0.0-rc).
+
+Os testes do Prisma 7 que gravam no banco rodaram num Postgres 18 temporário
+(`embedded-postgres`, fora do repositório e apagado depois), porque a máquina não
+tem Docker nem WSL. No Supabase, só leituras.
+
+### Evidência
+
+- **CI:** GitHub Actions verde nos commits `77a1c62` e `dd6ef8e`, e Vercel com
+  "Deployment has completed" em Node 24.
+- **Local:** `npm run typecheck`, `tsc` do `server/`, 101 testes, `npm run build` e
+  `npm audit --audit-level=high` (raiz e `server/`) sem erro.
+- **Galeria em dev:** carregou 2519 resultados com o plugin novo.
+- **Grupo da API:**
+  - `lookupBnccText('EF01LP01')` leu o `bncc.db` com o `better-sqlite3` 13;
+  - o Chromium 156 abriu página;
+  - `/health/database` respondeu `connected`.
+- **Prisma 7 no Postgres temporário:**
+  - as 11 migrações rodaram;
+  - o seed criou 2614 recursos e 77 problemas da planilha, os mesmos números do
+    Supabase;
+  - a segunda importação terminou com 0 erros e 0 desativados;
+  - o relatório do NDE, o descarte (0/0) e o export (2614 recursos, 1387
+    habilidades BNCC, `oda_view_daily` incluído) rodaram;
+  - na API: login certo e errado (401), catálogo com 2519, ficha, favorito
+    adicionado e removido, a segunda visita no mesmo dia não contou
+    (`counted: false`), ranking de 7 dias, fila de revisão, relatório de usuários,
+    e o leitor foi recusado no admin (403).
+- **Prisma 7 no Supabase (só leitura):**
+  - socket TLS cifrado;
+  - 2614 ativos e 89 totais diários;
+  - `migrate status`: "Database schema is up to date!" com 11 migrações;
+  - relatório do NDE com as mesmas 172 pendências.
+
+### Impacto observado
+
+Sem mudança para quem usa o site. O projeto chega à migração com as dependências
+atuais, o CI fora do Node obsoleto e o Prisma já no modelo novo, que é o que vai
+rodar no servidor da Arco.
+
+### Próximos passos
+
+- Conferir que o Dependabot fechou as propostas atendidas; fechar à mão as que
+  sobrarem.
+- Na primeira importação real, rodar `npm run thumbs:setup` antes, porque o
+  Chromium mudou de versão.
+- `npm ci` em `server/` apaga o Chromium de `node_modules/.playwright-browsers`:
+  depois de reinstalar, repetir o `thumbs:setup`.
+
+---
+
 ## 2026-11-04 · 12:45 — Atualização das dependências do site
 
 ### Antes

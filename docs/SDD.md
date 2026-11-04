@@ -249,7 +249,7 @@ vale para o relatório de usuários, que não mostra visualizações por pessoa.
 |--------|-----------|
 | Front | React 18, TypeScript, Vite 6, Radix UI, Lucide, Intro.js |
 | Estilo | Tailwind **compilado e congelado** em `src/index.css` + CSS por componente |
-| API (modo ec2) | Node.js, Express, TypeScript, Prisma 5, JWT, bcrypt |
+| API (modo ec2) | Node.js, Express, TypeScript, Prisma 7, JWT, bcrypt |
 | API (modo supabase) | Supabase Data API (PostgREST) + Auth, protegidos por RLS |
 | Banco | PostgreSQL 16. Produção: Supabase, região `sa-east-1`, plano Free. Local: Docker na porta **5433** |
 | Capas | Playwright (Chromium) + Sharp |
@@ -276,10 +276,11 @@ src/
 server/
   routes/         odas, auth, admin, favorites, bncc, sync
   lib/            map-categorizacao, spreadsheetSync, catalogVisibility, thumbPaths, excel,
-                  odaViews, prisma
-  prisma/         schema.prisma e 8 migrações
+                  odaViews, prisma, databaseConnection, retention
+  prisma/         schema.prisma e 11 migrações
+  prisma.config.ts  configuração do CLI do Prisma (schema, migrações e DIRECT_URL)
   scripts/        import-categorizacao, capture-thumbs, diff-planilha, preparar-planilha,
-                  exportar-banco, seed, setup-playwright
+                  exportar-banco, descartar-dados, relatorio-nde, seed, setup-playwright
 public/
   thumbs/         capas .webp versionadas, uma pasta por marca (sae/, conquista/...)
   bncc.db
@@ -576,7 +577,7 @@ provedores:
 | APIs do Supabase (Auth, Data API) | Só aceitam HTTPS, com TLS 1.2 ou 1.3 | [Secure configuration of Supabase platform](https://supabase.com/docs/guides/security/platform-security), seção *TLS for project APIs* |
 | Site (Vercel) | Todo deploy é servido por HTTPS; HTTP recebe redirecionamento 308, que não pode ser desligado. TLS 1.2 e 1.3, HSTS com *preload* em `*.vercel.app` | [vercel.com/docs/encryption](https://vercel.com/docs/encryption) |
 | Residência dos dados | Projeto na região `sa-east-1` (São Paulo): banco, Auth e Storage ficam nela | [supabase.com/security](https://supabase.com/security), seção *Data Residency* |
-| Conexão direta ao Postgres (importação, migração) | `sslmode=require` nos exemplos de `server/.env`; testado nas duas URLs em 2026-10-21 | `server/.env.example` |
+| Conexão direta ao Postgres (importação, migração, API Express) | Host remoto sempre com TLS, mesmo sem `sslmode` na URL; `verify-full` valida o certificado. Conferido no Supabase em 2026-11-04 (socket TLS cifrado) | `server/lib/databaseConnection.ts` |
 
 O Supabase aceita, por padrão, conexão Postgres sem SSL, para compatibilidade. A
 opção *Enforce SSL* (*Settings → Database → SSL Configuration*) recusaria as que não
@@ -639,8 +640,12 @@ DATABASE_URL="postgresql://postgres.iezvzcrmzdfljvbbdneu:[SENHA]@aws-0-sa-east-1
 DIRECT_URL="postgresql://postgres.iezvzcrmzdfljvbbdneu:[SENHA]@aws-0-sa-east-1.pooler.supabase.com:5432/postgres?sslmode=require"
 ```
 
-`sslmode=require` recusa a conexão se o SSL não for negociado. Sem ele, o cliente
-tenta SSL mas aceitaria uma conexão aberta.
+Desde o Prisma 7, a aplicação conecta pelo `pg` (adaptador `@prisma/adapter-pg`), e
+`server/lib/databaseConnection.ts` traduz a URL. Num host remoto, a conexão é sempre
+criptografada, com ou sem `sslmode`. `localhost` fica sem TLS, salvo `sslmode` na URL;
+`sslmode=verify-full` também valida o certificado. Os parâmetros `pgbouncer` e
+`connection_limit` continuam aceitos: o primeiro é ignorado e o segundo vira o tamanho
+do pool. O `migrate` usa o `DIRECT_URL`, lido em `server/prisma.config.ts`.
 
 A senha do banco está no painel do Supabase, em *Settings → Database*. **Não existe
 no repositório e não deve existir.** Na transferência de responsabilidade ela é
@@ -939,6 +944,14 @@ aparecer na conta, ignore: a configuração vale só no `iezvzcrmzdfljvbbdneu`.
 decidido **não rotacioná-la**: a conversa foi interna e o risco foi avaliado e aceito
 pelo responsável. A senha continua sendo tratada como segredo e não entra no
 repositório.
+
+**7 alertas moderados no `exceljs`, aceitos (2026-11-04).** Vêm do `minimatch`, dentro
+do `archiver` que o `exceljs` 4.4.0 (a versão mais nova) traz. O `archiver` só é
+carregado pelo gravador em fluxo (`stream.xlsx.WorkbookWriter`), que o projeto não usa:
+`lib/excel.ts`, `preparar-planilha.ts` e `relatorio-nde.ts` usam `xlsx.readFile` e
+`xlsx.writeFile`, que passam pelo `jszip`. Forçar versões novas do `archiver` quebraria
+o pacote sem ganho. Rever se o `exceljs` lançar versão nova ou se o projeto passar a
+usar o gravador em fluxo. O CI reprova só alerta alto, então segue verde.
 
 **A EC2 saiu do repositório em 2026-10-20.** A instância já estava inacessível e o
 responsável decidiu não guardar o caminho. O gatilho do Apps Script continua parado:

@@ -1,12 +1,11 @@
-import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcrypt';
 import BetterSqlite3 from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
+import prisma from '../lib/prisma';
 import { importCategorizacao } from './import-categorizacao';
 import { workbookPath } from '../lib/acervoPaths';
 
-const prisma = new PrismaClient();
 const DEMO_EMAIL = 'demo@acervo.local';
 const DEMO_PASSWORD = 'demo1234';
 const ADMIN_EMAIL = 'admin@acervo.local';

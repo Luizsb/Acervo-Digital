@@ -192,13 +192,13 @@ ferramenta de cadastro.
   corrigem os 2 alertas altos que surgiram na API
 - ✅ Dependências do site atualizadas (2026-11-04): `@supabase/supabase-js` 2.119.0 e
   `intro.js` 8.6.0
-- ⬜ Antes da migração, atualizar as demais propostas do Dependabot, um grupo por
-  vez: ferramentas de teste e build (`vitest` 5, `jsdom` 30, `plugin-react-swc` 4),
-  API e scripts (`playwright`, `better-sqlite3`, tipos), GitHub Actions com Node 24
-  no CI e, por último e separado, Prisma 5 → 7
-- ⬜ 7 alertas moderados na API, todos vindos do `exceljs` (leitura da planilha). A
-  correção automática troca a versão do `exceljs` e pode quebrar a importação:
-  avaliar quando sair versão nova do pacote
+- ✅ Propostas do Dependabot atendidas antes da migração (2026-11-04), um grupo por
+  vez: GitHub Actions v7 e Node 24 (CI, Vercel e `engines`); `vitest` 5, `jsdom` 30,
+  `plugin-react-swc` 4 e `vite` 6.4.5; `playwright` 1.64, `better-sqlite3` 13 e tipos;
+  Prisma 5 → 7 com o adaptador `pg`
+- ✅ 7 alertas moderados do `exceljs` avaliados (2026-11-04): o código vulnerável não
+  é carregado pelo projeto. Risco aceito e explicado em "Riscos" no `SDD.md`; rever
+  quando sair versão nova do `exceljs`
 - ✅ Trilha de auditoria `audit_events` nos dois backends: login, falha de login
   (Express), mudança de papel, importação e alteração de recurso
 - ✅ Matriz de permissões e consulta de relatório de usuários e perfis (`SDD.md`)
