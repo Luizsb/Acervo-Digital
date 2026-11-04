@@ -10,6 +10,54 @@ trazem a seção "Impacto observado" com dado medido: nenhuma métrica foi colet
 
 ---
 
+## 2026-11-04 · 11:20 — Correção de 2 alertas altos nas dependências da API
+
+### Antes
+
+- O CI do `main` falhava desde 2026-11-03 no passo "Audita dependências da API
+  (SCA)", que reprova com alerta alto. O código, os tipos, os testes e o build
+  passavam, e o deploy na Vercel seguia normal.
+- Alertas altos: `body-parser` 1.20.8 (usado pelo Express; pedido com bytes
+  sobrando após o corpo comprimido pode derrubar a API, GHSA-27r3-jxmh-p828) e
+  `multer` 2.4.0 (upload da planilha; DoS com `fileFilter` assíncrono,
+  GHSA-q7qp-rjg7-q26m).
+- No mesmo dia, a prévia da Vercel do branch do Dependabot `vitest-5.0.5` falhou no
+  `npm install`: o `vitest` 5 pede `@types/node` 22 ou mais novo, e o projeto usa 20.
+  Isso não afeta o site, que publica só o `main`.
+
+### Depois
+
+- `npm audit fix` em `server/`: `body-parser` 1.20.9, `multer` 2.5.0 e `rimraf`
+  2.2.8, só no `server/package-lock.json`. Nenhuma versão principal mudou.
+- Ficam 7 alertas moderados, todos da cadeia do `exceljs`, registrados no `ROADMAP.md`.
+
+### Decisão
+
+Aplicar só a correção sem quebra. A correção dos moderados troca a versão do
+`exceljs`, que lê a planilha na importação, e fica para uma avaliação própria. O
+branch do `vitest` 5 não entra agora.
+
+### Evidência
+
+- GitHub Actions do commit `3079b32`: todos os passos verdes até "Audita
+  dependências da API (SCA)", que falhou; status da Vercel no mesmo commit:
+  "Deployment has completed".
+- Local, depois da correção: `npm audit --omit=dev --audit-level=high` em `server/`
+  sai com código 0 (7 moderados); `tsc` do `server/` sem erro; 97 testes passando;
+  `bcrypt`, `better-sqlite3`, `multer` e `express` carregam.
+
+### Impacto observado
+
+O CI volta a servir de alerta: falha só quando aparece problema novo. Sem efeito
+para quem usa o Acervo, porque a produção no Supabase não usa a API Express.
+
+### Próximos passos
+
+- Conferir o CI verde depois do push.
+- Avaliar os moderados do `exceljs` quando houver versão nova.
+
+---
+
 ## 2026-11-04 · 08:40 — Visualização individual só no dia e descarte da auditoria em 6 meses
 
 ### Antes

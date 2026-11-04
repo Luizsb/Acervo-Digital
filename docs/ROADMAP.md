@@ -188,6 +188,11 @@ ferramenta de cadastro.
 - ✅ Procedimento de promover e rebaixar admin documentado no runbook do `SDD.md`
 - ✅ SAST, SCA e IaC: CodeQL, `npm audit` no CI, Dependabot e Trivy. Vulnerabilidades
   da API zeradas (eram 1 crítica, 3 altas e 4 moderadas)
+- ✅ CI do `main` verde de novo (2026-11-04): `body-parser` 1.20.9 e `multer` 2.5.0
+  corrigem os 2 alertas altos que surgiram na API
+- ⬜ 7 alertas moderados na API, todos vindos do `exceljs` (leitura da planilha). A
+  correção automática troca a versão do `exceljs` e pode quebrar a importação:
+  avaliar quando sair versão nova do pacote
 - ✅ Trilha de auditoria `audit_events` nos dois backends: login, falha de login
   (Express), mudança de papel, importação e alteração de recurso
 - ✅ Matriz de permissões e consulta de relatório de usuários e perfis (`SDD.md`)
