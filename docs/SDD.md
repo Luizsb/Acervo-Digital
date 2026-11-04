@@ -621,7 +621,7 @@ executar o item "Preparar a máquina" antes de precisar dele.
 
 ### Preparar a máquina (uma vez)
 
-Requisitos: Node.js 20 ou superior, Git e Docker Desktop (o Docker só é necessário
+Requisitos: Node.js 24, Git e Docker Desktop (o Docker só é necessário
 para desenvolver contra o banco local).
 
 ```bash

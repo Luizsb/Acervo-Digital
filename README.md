@@ -156,7 +156,7 @@ apontava para a API da EC2, que foi desligada. Volta quando houver servidor.
 
 ### Pré-requisitos
 
-- Node.js 20+
+- Node.js 24 (fixado em `engines` no `package.json`; o CI e a Vercel usam a mesma versão)
 - [Docker Desktop](https://www.docker.com/products/docker-desktop/), só para o Postgres local. Consultar o catálogo de testes não precisa dele: use `VITE_BACKEND=supabase` e `npm run dev`.
 
 ### Desenvolvimento local (API e Vite na máquina)

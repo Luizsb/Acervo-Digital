@@ -2,6 +2,9 @@
       "name": "Acervo Digital",
       "version": "2.1.0",
       "private": true,
+      "engines": {
+            "node": "24.x"
+      },
       "dependencies": {
             "@supabase/supabase-js": "^2.119.0",
             "intro.js": "^8.6.0",
