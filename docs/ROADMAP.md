@@ -195,7 +195,12 @@ ferramenta de cadastro.
 - ✅ Propostas do Dependabot atendidas antes da migração (2026-11-04), um grupo por
   vez: GitHub Actions v7 e Node 24 (CI, Vercel e `engines`); `vitest` 5, `jsdom` 30,
   `plugin-react-swc` 4 e `vite` 6.4.5; `playwright` 1.64, `better-sqlite3` 13 e tipos;
-  Prisma 5 → 7 com o adaptador `pg`
+  Prisma 5 → 7 com o adaptador `pg`. Na segunda leva, `dotenv` 18, `tsx` 4.23.15 e
+  `@types/better-sqlite3` 9.6
+- ⬜ Depois da migração para o GitHub empresarial, uma por vez e com teste no
+  navegador: React 19 (com `@types/react` e `@types/react-dom`), `vite` 8,
+  TypeScript 7 (raiz e `server/`) e `lucide-react` 1.x (ícones podem ter mudado de
+  nome). Nenhuma tem alerta de segurança
 - ✅ 7 alertas moderados do `exceljs` avaliados (2026-11-04): o código vulnerável não
   é carregado pelo projeto. Risco aceito e explicado em "Riscos" no `SDD.md`; rever
   quando sair versão nova do `exceljs`

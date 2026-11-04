@@ -95,10 +95,25 @@ Sem mudança para quem usa o site. O projeto chega à migração com as dependê
 atuais, o CI fora do Node obsoleto e o Prisma já no modelo novo, que é o que vai
 rodar no servidor da Arco.
 
+### Segunda leva do Dependabot (13:55)
+
+Com as vagas liberadas, o Dependabot abriu 9 propostas novas. O responsável escolheu
+fazer agora só as de baixo risco: `dotenv` 18.0.9, `tsx` 4.23.15 e
+`@types/better-sqlite3` 9.6.0, no `server/`.
+
+Evidência:
+- `tsc` do `server/` sem erro;
+- `prisma migrate status` leu o `.env` pelo `prisma.config.ts` ("Database schema is
+  up to date!");
+- a API respondeu `/health/database` com `connected`.
+
+React 19, `vite` 8, TypeScript 7 e `lucide-react` 1.x ficaram no `ROADMAP.md`, para
+depois da migração.
+
 ### Próximos passos
 
-- Conferir que o Dependabot fechou as propostas atendidas; fechar à mão as que
-  sobrarem.
+- Conferir que o Dependabot fechou as propostas atendidas. As de React 19, `vite` 8,
+  TypeScript 7 e `lucide-react` ficam abertas de propósito.
 - Na primeira importação real, rodar `npm run thumbs:setup` antes, porque o
   Chromium mudou de versão.
 - `npm ci` em `server/` apaga o Chromium de `node_modules/.playwright-browsers`:

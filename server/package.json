@@ -33,14 +33,14 @@
     "@prisma/adapter-pg": "^7.10.1",
     "@prisma/client": "^7.10.1",
     "@types/bcrypt": "^6.0.0",
-    "@types/better-sqlite3": "^7.6.11",
+    "@types/better-sqlite3": "^9.6.0",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.10",
     "bcrypt": "^6.0.0",
     "better-sqlite3": "^13.0.3",
     "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
+    "dotenv": "^18.0.9",
     "exceljs": "^4.4.0",
     "express": "^4.18.2",
     "express-rate-limit": "^8.2.1",
@@ -57,7 +57,7 @@
     "@types/multer": "^2.3.0",
     "@types/node": "^24.19.2",
     "@types/pg": "^8.23.1",
-    "tsx": "^4.21.0"
+    "tsx": "^4.23.15"
   },
   "overrides": {
     "uuid": "^11.1.1"
