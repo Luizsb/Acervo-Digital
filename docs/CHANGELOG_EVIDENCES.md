@@ -10,6 +10,69 @@ trazem a seção "Impacto observado" com dado medido: nenhuma métrica foi colet
 
 ---
 
+## 2026-11-04 · 14:40 — Balão do tour guiado sempre inteiro na tela
+
+### Antes
+
+- Em telas baixas ou com a página rolada, os passos "Escolha o tipo de conteúdo" e
+  "Abra a ficha do recurso" punham o balão acima do elemento. A parte de cima saía
+  da tela, com o título e o texto cortados (prints do responsável, 2026-11-04).
+- **Causa:** o intro.js escolhe o lado do balão com a posição do elemento antes de
+  rolar até ele. O card ainda estava mais abaixo, então "embaixo" era descartado e
+  "em cima" vencia. Depois da rolagem, o balão ficava fora da tela.
+- **No celular:** o balão ficava cerca de 6px mais largo que a tela, porque o
+  `max-width` não contava o espaçamento interno.
+
+### Depois
+
+- Em `src/utils/onboarding.ts`, cada passo diz o lado, com `autoPosition: false`:
+  - busca e tipo de conteúdo: embaixo;
+  - menu do perfil: embaixo, alinhado à direita;
+  - filtros, card e coração: à direita quando cabe, à esquerda quando só ela cabe,
+    e embaixo quando nenhuma cabe (celular e lista).
+- **Rolagem:** depois de cada passo, se o balão ainda estiver cortado, o
+  `main.acervo-app-main` (que é quem rola a galeria) rola o necessário, e o
+  `refresh()` do intro.js reposiciona o destaque.
+- **Largura:** novo `src/utils/onboarding.css` com `box-sizing: border-box`. No
+  desktop a largura total continua 416px; no celular, cabe em `100vw - 32px`.
+
+### Decisão
+
+Corrigir no Acervo, não no intro.js: a escolha automática dele é a origem do corte,
+e cada passo tem um lado natural conhecido. O `src/index.css` continua intocado.
+
+### Evidência
+
+Medida da caixa do balão em cada passo, com a galeria rolada 300px:
+- **Antes, 1024×588 (o primeiro print):** o card caía acima e cortado.
+- **Depois:**
+  - 1024×588 em grade: os 7 passos dentro da tela;
+  - 1024×588 em lista: os 7 passos dentro da tela, com o coração à esquerda e o
+    destaque sem desvio (0px) depois da rolagem;
+  - 1024×393 (o segundo print): os 7 passos dentro da tela; o do tipo de conteúdo
+    termina exatamente na borda (393px);
+  - 1489×906: os 7 passos dentro da tela;
+  - celular 390×844: os 5 passos que aparecem nele, todos dentro, com 358px de
+    largura.
+- `npm run typecheck`, 101 testes e `npm run build` passando.
+
+Limite do teste: o navegador embutido ficou com a aba oculta, o que congela as
+transições do intro.js. Numa segunda rodada logo depois de um tour em lista, as
+medidas saíram deslocadas, com o balão ainda invisível (`opacity: 0`) e com o
+tamanho padrão do intro.js. Isso é efeito da aba oculta, mas precisa ser conferido
+numa aba visível.
+
+### Impacto observado
+
+Título, texto e botões do tour ficam legíveis em todas as telas medidas.
+
+### Próximos passos
+
+- Conferir numa aba visível: 1024×393, em grade e em lista, e "Rever tour" duas vezes
+  seguidas.
+
+---
+
 ## 2026-11-04 · 13:50 — Dependências em dia antes da migração: CI, testes, API e Prisma 7
 
 ### Antes

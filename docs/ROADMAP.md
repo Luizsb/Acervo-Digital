@@ -252,6 +252,11 @@ ferramenta de cadastro.
 - ✅ As 19 playlists do YouTube abrem em nova guia (ver "Bugs conhecidos")
 - ✅ Tour do primeiro acesso completo: 7 passos curtos (ficha, favoritos e menu do
   perfil em passos próprios) e nunca na tela de login
+- ✅ Balão do tour sempre inteiro na tela (2026-11-04): lado decidido pelo Acervo, não
+  pelo intro.js; rolagem até o balão quando ele fica cortado; largura limitada no
+  celular
+- ⬜ Conferir o tour numa aba visível em 1024×393, em grade e em lista, depois de
+  "Rever tour" duas vezes seguidas (no teste automático a aba ficou oculta)
 - ✅ Mensagens de erro sem "Supabase" nem "plano gratuito"; galeria em falha mostra só
   o aviso; "Abrir ODA" do botão direito em nova guia; "Nenhum recurso encontrado"
 - ⬜ Decidir o botão "Baixar Orientações Metodológicas (PDF)": nenhum PDF está

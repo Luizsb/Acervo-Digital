@@ -1,15 +1,73 @@
 import introJs from 'intro.js';
+import './onboarding.css';
 
 const ONBOARDING_STORAGE_KEY = 'acervo-onboarding-v1';
 
 /** Só existe na galeria; sem ele na tela, o tour não começa. */
 const GALLERY_MARKER = '#acervo-content-type';
 
+type TooltipPosition = 'right' | 'left' | 'bottom' | 'bottom-right-aligned';
+
 type OnboardingStep = {
   element?: HTMLElement;
   title: string;
   intro: string;
+  position?: TooltipPosition;
 };
+
+/** Largura do balão em `onboarding.css`, mais a seta e uma folga. */
+const TOOLTIP_SPACE = 416 + 32;
+
+const VIEWPORT_MARGIN = 16;
+/** Tempo para o intro.js terminar de posicionar o balão depois da troca de passo. */
+const TOOLTIP_SETTLE_MS = 350;
+
+/**
+ * O intro.js escolhe o lado do balão antes de rolar até o elemento, com a geometria
+ * de antes da rolagem: em telas baixas ele punha o balão acima e o cortava. O lado
+ * é decidido aqui: à direita ou à esquerda quando cabe na largura da tela; senão,
+ * embaixo.
+ */
+function besideOrBelow(element: HTMLElement): TooltipPosition {
+  const { left, right } = element.getBoundingClientRect();
+  if (right + TOOLTIP_SPACE <= window.innerWidth) return 'right';
+  if (left - TOOLTIP_SPACE >= 0) return 'left';
+  return 'bottom';
+}
+
+/** A galeria rola dentro de `main.acervo-app-main`, não na janela. */
+function scrollContainerOf(element: HTMLElement): HTMLElement | null {
+  for (let node = element.parentElement; node; node = node.parentElement) {
+    const { overflowY } = window.getComputedStyle(node);
+    if (/(auto|scroll)/.test(overflowY) && node.scrollHeight > node.clientHeight) return node;
+  }
+  return null;
+}
+
+/**
+ * O intro.js só rola quando o elemento está fora da tela, nunca pelo balão. A rolagem
+ * é instantânea porque o destaque e o balão ficam fixos no documento: o `refresh`
+ * os reposiciona sobre o elemento já no lugar novo.
+ */
+function keepTooltipInView(tour: IntroInstance, element: HTMLElement | undefined) {
+  window.setTimeout(() => {
+    const tooltip = document.querySelector<HTMLElement>('.acervo-onboarding-tooltip');
+    const container = element ? scrollContainerOf(element) : null;
+    if (!tooltip || !container || activeTour !== tour) return;
+
+    const { top, bottom } = tooltip.getBoundingClientRect();
+    let offset = 0;
+    if (bottom > window.innerHeight - VIEWPORT_MARGIN) {
+      offset = bottom - window.innerHeight + VIEWPORT_MARGIN;
+    } else if (top < VIEWPORT_MARGIN) {
+      offset = top - VIEWPORT_MARGIN;
+    }
+    if (offset === 0) return;
+
+    container.scrollBy({ top: offset, behavior: 'auto' });
+    tour.refresh();
+  }, TOOLTIP_SETTLE_MS);
+}
 
 type IntroInstance = ReturnType<typeof introJs>;
 
@@ -152,17 +210,20 @@ export function startOnboardingIfNeeded() {
           selectors: ['#acervo-search'],
           title: 'Comece pela busca',
           intro: 'Pesquise por título, tema, palavra-chave ou outro termo relacionado ao conteúdo.',
+          position: (): TooltipPosition => 'bottom',
         },
         {
           selectors: ['#acervo-content-type'],
           title: 'Escolha o tipo de conteúdo',
           intro: 'Consulte todo o acervo ou restrinja os resultados a conteúdos audiovisuais ou objetos digitais.',
+          position: (): TooltipPosition => 'bottom',
         },
         {
           selectors: ['#acervo-filters'],
           title: 'Refine os resultados',
           intro:
             'Use as seções para filtrar por localização editorial, currículo e características específicas do recurso.',
+          position: besideOrBelow,
         },
         {
           // Primeiro card (grade ou lista); sem resultados, a área inteira.
@@ -173,6 +234,7 @@ export function startOnboardingIfNeeded() {
           ],
           title: 'Abra a ficha do recurso',
           intro: 'Clique no card para ver descrição, BNCC, requisitos técnicos e o botão para abrir o recurso.',
+          position: besideOrBelow,
         },
         {
           selectors: [
@@ -181,15 +243,17 @@ export function startOnboardingIfNeeded() {
           ],
           title: 'Guarde nos favoritos',
           intro: 'Use o coração para guardar o recurso e encontrá-lo depois.',
+          position: besideOrBelow,
         },
         {
           selectors: ['[aria-label="Abrir menu do perfil"]'],
           title: 'Seu menu',
           intro: 'Aqui ficam seus favoritos e a opção de rever este tour.',
+          position: (): TooltipPosition => 'bottom-right-aligned',
         },
-      ].flatMap(({ selectors, title, intro }) => {
+      ].flatMap(({ selectors, title, intro, position }) => {
         const element = getVisibleElement(selectors);
-        return element ? [{ element, title, intro }] : [];
+        return element ? [{ element, title, intro, position: position(element) }] : [];
       }),
     ];
 
@@ -199,6 +263,7 @@ export function startOnboardingIfNeeded() {
       showProgress: true,
       showButtons: true,
       showBullets: false,
+      autoPosition: false,
       scrollToElement: true,
       scrollTo: 'tooltip',
       scrollPadding: 24,
@@ -212,6 +277,7 @@ export function startOnboardingIfNeeded() {
       highlightClass: 'acervo-onboarding-highlight',
     });
 
+    intro.onAfterChange((element) => keepTooltipInView(intro, element));
     intro.oncomplete(finishTour);
     intro.onexit(finishTour);
 

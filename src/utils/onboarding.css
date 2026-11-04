@@ -1,0 +1,7 @@
+/* O visual do balão está em src/index.css (congelado). A largura conta o padding para
+   o limite de 100vw - 32px valer no celular; no desktop, mantém os 416px de antes. */
+.introjs-tooltip.acervo-onboarding-tooltip {
+  box-sizing: border-box;
+  width: 416px;
+  max-width: calc(100vw - 32px);
+}
