@@ -206,6 +206,27 @@
   cursor: not-allowed;
 }
 
+.login-privacy {
+  margin: 20px 0 0;
+  font-family: Nunito, sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.45;
+  color: #64748b;
+  text-align: left;
+}
+
+.login-privacy a {
+  color: #012451;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.login-privacy a:hover {
+  color: #013668;
+}
+
 .login-footer {
   flex-shrink: 0;
   width: 100%;

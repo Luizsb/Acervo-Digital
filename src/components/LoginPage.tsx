@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ArrowLeft, ClipboardList, Rocket } from 'lucide-react';
 import { BrandMark } from './BrandMark';
+import { PRIVACY_POLICY_URL } from '../utils/privacyPolicy';
 import './LoginPage.css';
 
 /** Acesso de teste via seed local até o SSO JumpCloud estar ligado. */
@@ -92,6 +93,14 @@ export function LoginPage({ onBack, onLoginSuccess, login }: LoginPageProps) {
             <ClipboardList size={16} />
             {loading === 'admin' ? 'Entrando...' : 'Acesso admin (provisório)'}
           </button>
+
+          <p className="login-privacy">
+            Saiba como a Arco trata os seus dados na{' '}
+            <a href={PRIVACY_POLICY_URL} target="_blank" rel="noopener noreferrer">
+              Política de Privacidade
+            </a>
+            .
+          </p>
         </section>
       </div>
 
