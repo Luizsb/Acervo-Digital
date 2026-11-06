@@ -222,8 +222,16 @@ ferramenta de cadastro.
   alerts → Enable*) e conferir a aba *Security → Code scanning* depois do push
 - ✅ Mapeamento da DPO recebido: base legal de legítimo interesse e auditoria por 6
   meses (art. 15 do Marco Civil)
-- ⬜ Levar à DPO: texto do aviso, canal do titular e quantos exports manter
-- ⬜ Exibir o aviso de privacidade na tela de login, depois da aprovação da DPO
+- ✅ Respostas da DPO (2026-11-05): a política de privacidade do Grupo é única, e o
+  aviso próprio do Acervo depende do mapeamento. O banner de cookies é necessário
+  mesmo com o Acervo usando só armazenamento local
+- ✅ Link da Política de Privacidade da Arco na tela de login e no menu do perfil,
+  em nova guia (2026-11-05)
+- ⬜ Analista do time revisar as respostas da DPO, para darmos o OK a ela
+- ⬜ Levar à DPO: texto do aviso, canal do titular e quantos exports manter. Para
+  adiantar o mapeamento, enviar o inventário "Dados pessoais" do `SDD.md`
+- ⬜ Exibir o aviso próprio do Acervo, depois da aprovação da DPO
+- ⬜ Banner de cookies, quando a DPO entregar o texto e disser o formato
 - ✅ Rotina de descarte (2026-11-04): `npm run db:descartar` e descarte no fim de
   cada importação. Auditoria por 6 meses; visualização individual só no dia, com
   o total diário sem pessoa em `oda_view_daily`
@@ -232,6 +240,16 @@ ferramenta de cadastro.
 - ⬜ Comando de restauração a partir do export, quando o destino estiver definido
 - ⬜ Abrir o chamado do servidor corporativo
 - ⬜ Solicitar o repositório no GitHub da ArcoTech e migrar com histórico limpo
+  (dúvida aberta no grupo SRE do Pedagógico em 2026-11-05)
+- ✅ Acervo em container para o time de validação (2026-11-06): imagens da API e do
+  site, perfil `app` no compose (`npm run app:up`), job "Container" no CI e carga de
+  demonstração do catálogo (`npm run db:exportar-demo`)
+- ⬜ Conferir o primeiro resultado do job "Container" no GitHub Actions. O build não
+  pôde ser testado na máquina do responsável, que está sem WSL
+- ⬜ Na migração para o repositório corporativo: gerar de novo a carga de
+  demonstração, tirar `server/seed/catalogo-demo.json` do `.gitignore` e versionar
+- ⬜ Perguntar ao especialista do time se há padrão de imagem base, registry ou
+  pipeline a seguir
 - ⬜ Integrar o JumpCloud no backend Express e remover os botões de acesso rápido
 - ⬜ Pedir ao comitê o aceite de JumpCloud com MFA no lugar da VPN e enviar a
   atualização de escopo (cadastro → vitrine de consulta). Texto de resposta redigido

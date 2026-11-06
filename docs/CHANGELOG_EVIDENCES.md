@@ -10,6 +10,150 @@ trazem a seção "Impacto observado" com dado medido: nenhuma métrica foi colet
 
 ---
 
+## 2026-11-06 · 09:20 — Acervo em container para o time de validação
+
+### Antes
+
+- Só o Postgres de desenvolvimento rodava em container. As imagens da API e do site
+  tinham saído em 2026-10-20, junto com a EC2.
+- Para analisar o projeto, era preciso Node 24 na máquina e a sequência do runbook.
+- Num clone novo, a galeria ficava vazia: o catálogo vem da planilha, que fica fora
+  do Git.
+- O `.env.example` da raiz ainda descrevia nginx, Caddy e EC2.
+
+### Depois
+
+- **`server/Dockerfile` (API):** build em duas etapas sobre `node:24-trixie-slim`,
+  roda como o usuário `node`, sem o Chromium do Playwright, com verificação de saúde.
+  Na subida (`server/docker-entrypoint.sh`), aplica as migrações, roda o seed e
+  inicia a API.
+- **`Dockerfile` (site):** build no modo Express (`VITE_BACKEND=ec2`, `VITE_API_URL=/api`),
+  servido por `nginxinc/nginx-unprivileged:1.30-alpine` na porta 8080.
+  `docker/nginx.conf` encaminha `/api` e `/health` para a API e manda cabeçalhos
+  `nosniff`, `X-Frame-Options` e `Referrer-Policy`.
+- **`docker-compose.yml`:** o Postgres não muda (`npm run db:up` continua igual). API e
+  site entram no perfil `app` (`npm run app:up` e `npm run app:down`). Site só em
+  `127.0.0.1:8080`, API sem porta exposta, banco com `sslmode=disable` dentro da rede
+  do compose e `JWT_SECRET` obrigatório (a API recusa subir sem ele).
+- **`.dockerignore`:** deixa de fora `data/`, todo `.xlsx`, `.env`, `docs/` e `.git`.
+- **Carga de demonstração:** `npm run db:exportar-demo` gera
+  `server/seed/catalogo-demo.json` com os recursos visíveis e a BNCC. O seed carrega
+  esse arquivo quando não há planilha e o banco não tem recursos. Funções em
+  `server/lib/demoCatalog.ts` (puras, com teste) e `server/lib/demoCatalogFile.ts`.
+- **CI:** job novo "Container", que constrói as imagens, sobe tudo com `--wait` e
+  confere pelo nginx a página, o `/health`, o login de demonstração e o catálogo.
+- `.env.example` reescrito para o estado atual. As variáveis opcionais da API
+  (sincronização e Google Sheets) foram para o `server/.env.example`.
+- SDD: stack, validações automáticas, runbook novo "Subir o Acervo em container",
+  passo 5 da migração, seção EC2 e o problema conhecido do Docker sem WSL. README:
+  como rodar em container e scripts novos.
+
+### Decisão
+
+O especialista do time perguntou se o Acervo já estava em container, para o time
+analisar e validar quando o projeto subir no GitHub corporativo. O responsável
+decidiu containerizar agora, antecipando a decisão de 2026-10-20 de empacotar só com
+o servidor corporativo. Não é a volta da EC2: sem Caddy, sem HTTPS, sem deploy e sem
+porta aberta fora da máquina.
+
+Para a galeria não aparecer vazia em outra máquina, o responsável pediu uma carga do
+banco. O backup completo (`db:exportar`) tem dado pessoal e não pode ir ao Git.
+Por isso, a carga leva só o catálogo visível na galeria e a BNCC, que é o que
+qualquer pessoa já vê no site ao entrar. Fica fora do Git enquanto este repositório
+for público e é versionada só no repositório corporativo (decisão do responsável).
+
+A captura de capas ficou fora da imagem: o Chromium a deixaria bem maior, e a
+captura continua sendo feita na máquina de quem opera.
+
+### Evidência
+
+- `npm run typecheck`, `cd server && npx tsc --noEmit`, 104 testes (3 novos em
+  `src/utils/demoCatalog.test.ts`) e `npm run build` passando.
+- `npm run db:exportar-demo` contra o Supabase: 2519 recursos (o mesmo total que a
+  galeria mostra) e 1387 BNCC, 7,2 MB. Conferido no arquivo: nenhum e-mail, todos os
+  contadores zerados, nenhum recurso fora da regra de visibilidade, e
+  `git check-ignore` confirma que o arquivo está ignorado.
+- As imagens base existem no Docker Hub (`docker manifest inspect`).
+- `[A VALIDAR]` Build e subida dos containers. Não deu para rodar na máquina do
+  responsável: o Docker Desktop não inicia porque o WSL não está instalado
+  (`wsl --status`). O job "Container" do CI faz esse teste no primeiro push.
+
+### Impacto observado
+
+`[A VALIDAR]` Tamanho das imagens e tempo de subida: medir no primeiro job
+"Container" do CI ou numa máquina com Docker. A produção na Vercel com o Supabase não
+muda.
+
+### Próximos passos
+
+- Conferir o job "Container" no GitHub Actions depois do push.
+- Na migração para o repositório corporativo, gerar de novo a carga e versioná-la.
+- Perguntar ao especialista se há padrão de imagem base, registry ou pipeline.
+
+---
+
+## 2026-11-05 · 13:40 — Link da Política de Privacidade no login e no menu do perfil
+
+### Antes
+
+- O Acervo não indicava, em lugar nenhum, como os dados do usuário são tratados.
+- O rascunho do aviso de privacidade esperava a DPO, sem prazo.
+
+### Depois
+
+- Novo `src/utils/privacyPolicy.ts` com o endereço da política do Grupo.
+- **Tela de login:** abaixo dos botões, a frase "Saiba como a Arco trata os seus dados
+  na Política de Privacidade", com o link abrindo em nova guia. Estilo novo
+  `.login-privacy` em `LoginPage.css`.
+- **Menu do perfil:** item novo "Política de Privacidade", com ícone de escudo, entre
+  "Rever tour do acervo" e "Sair". O menu é o mesmo na galeria e nos favoritos.
+- SDD, seção "Aviso de privacidade": orientação da DPO, onde o link aparece, o que
+  o aviso próprio deve conter e o banner de cookies em espera.
+
+### Decisão
+
+A DPO respondeu que a política de privacidade do Grupo é única. O aviso próprio do
+Acervo depende do mapeamento, e por enquanto ela pediu para usar a política da Arco.
+Ela também confirmou que o banner de cookies é necessário mesmo só com
+armazenamento local, mas o texto ainda não existe.
+
+O responsável decidiu:
+
+- apontar para a página da Arco, sem copiar o texto, para que a política não fique
+  desatualizada dentro do Acervo;
+- mostrar o link no login, antes de entrar, e no menu do perfil, a qualquer momento
+  depois;
+- esperar o texto da DPO para fazer o banner de cookies.
+
+A frase do login não diz "você concorda", porque a base legal do mapeamento é o
+legítimo interesse, não o consentimento.
+
+### Evidência
+
+- `npm run typecheck`, 101 testes (`vitest run`) e `npm run build` passando.
+- No navegador, com o Vite local:
+  - **Login:** o link aponta para
+    `https://politicaprivacidade.arcoeducacao.com.br/`, com `target="_blank"` e
+    `rel="noopener noreferrer"`, texto em 13px e link na cor `#012451`.
+  - **Menu do perfil** (depois de "Acessar o acervo" e "Pular tour"): o item aparece
+    entre "Rever tour do acervo" e "Sair", com o mesmo tamanho dos itens vizinhos
+    (236 × 43 px) e o mesmo link.
+
+### Impacto observado
+
+O usuário consegue ver a política de privacidade antes de entrar e depois de
+entrar. Nada muda nos dados, na API ou nos dois backends. `[A VALIDAR]` Se esses
+dois lugares bastam para a DPO.
+
+### Próximos passos
+
+- Analista do time revisar as respostas da DPO, para darmos o OK a ela.
+- A DPO fechar o mapeamento e entregar o texto do aviso próprio e o do banner de
+  cookies.
+- Publicar os dois textos e levar a atualização ao comitê no PSBD-411.
+
+---
+
 ## 2026-11-04 · 14:40 — Balão do tour guiado sempre inteiro na tela
 
 ### Antes

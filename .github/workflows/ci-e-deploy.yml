@@ -49,3 +49,35 @@ jobs:
       - name: Verifica os tipos da API
         working-directory: server
         run: npx tsc --noEmit
+
+  container:
+    name: Container (build e subida)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Constrói as imagens da API e do site
+        run: docker compose --profile app build
+
+      - name: Sobe o Acervo e espera as verificações de saúde
+        run: |
+          JWT_SECRET="$(openssl rand -base64 48)"
+          export JWT_SECRET
+          docker compose --profile app up -d --wait --wait-timeout 300
+
+      - name: Confere site, API e banco pelo nginx
+        run: |
+          curl -fsS http://127.0.0.1:8080/ | grep -q '<div id="root">'
+          curl -fsS http://127.0.0.1:8080/health
+          TOKEN="$(curl -fsS -H 'Content-Type: application/json' \
+            -d '{"email":"demo@acervo.local","password":"demo1234"}' \
+            http://127.0.0.1:8080/api/auth/login | jq -r .token)"
+          curl -fsS -o /dev/null -H "Authorization: Bearer $TOKEN" http://127.0.0.1:8080/api/odas
+
+      - name: Mostra os logs se algo falhar
+        if: failure()
+        run: docker compose --profile app logs --no-color
+
+      - name: Derruba os containers
+        if: always()
+        run: docker compose --profile app down -v

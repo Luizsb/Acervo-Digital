@@ -62,6 +62,10 @@ desktop.ini
 /data/
 public/**/*.xlsx
 
+# Carga de demonstração (npm run db:exportar-demo): catálogo visível, sem dado pessoal.
+# Fora do Git enquanto este repositório for público; entra no repositório corporativo.
+server/seed/catalogo-demo.json
+
 # Cópias de segurança da planilha feitas antes de uma importação
 *.bak
 .cache/

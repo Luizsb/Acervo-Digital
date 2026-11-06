@@ -1,10 +1,12 @@
 import bcrypt from 'bcrypt';
+import type { Prisma } from '@prisma/client';
 import BetterSqlite3 from 'better-sqlite3';
 import fs from 'fs';
 import path from 'path';
 import prisma from '../lib/prisma';
 import { importCategorizacao } from './import-categorizacao';
 import { workbookPath } from '../lib/acervoPaths';
+import { demoCatalogFile, readDemoCatalog } from '../lib/demoCatalogFile';
 
 const DEMO_EMAIL = 'demo@acervo.local';
 const DEMO_PASSWORD = 'demo1234';
@@ -136,17 +138,37 @@ async function seedDemoUser() {
   console.log(`Admin demo disponível: ${ADMIN_EMAIL}`);
 }
 
+/** Sem a planilha, carrega o catálogo de demonstração, mas só num banco sem recursos. */
+async function seedDemoCatalog(): Promise<boolean> {
+  const catalog = readDemoCatalog<Prisma.ODACreateManyInput, Prisma.BNCCCreateManyInput>();
+  if (!catalog) return false;
+
+  const existing = await prisma.oDA.count();
+  if (existing > 0) {
+    console.log(`Catálogo já carregado: ${existing} recursos. Carga de demonstração ignorada.`);
+    return true;
+  }
+
+  const bncc = await prisma.bNCC.createMany({ data: catalog.bncc, skipDuplicates: true });
+  const odas = await prisma.oDA.createMany({ data: catalog.odas, skipDuplicates: true });
+  console.log(
+    `Carga de demonstração (${catalog.geradoEm}): ${odas.count} recursos e ${bncc.count} BNCC novas.`
+  );
+  return true;
+}
+
 async function seedCatalog() {
   const planilha = workbookPath();
-  if (!fs.existsSync(planilha)) {
-    console.warn(
-      `⚠️  Planilha não encontrada em ${planilha}. Catálogo não importado.\n` +
-        '   Salve a planilha oficial nesse caminho e rode npm run import:categorizacao.'
-    );
+  if (fs.existsSync(planilha)) {
+    console.log('Importando planilha de categorização...');
+    await importCategorizacao();
     return;
   }
-  console.log('Importando planilha de categorização...');
-  await importCategorizacao();
+  if (await seedDemoCatalog()) return;
+  console.warn(
+    `⚠️  Planilha não encontrada em ${planilha} nem carga de demonstração em ${demoCatalogFile()}.\n` +
+      '   Catálogo não importado. Salve a planilha oficial e rode npm run import:categorizacao.'
+  );
 }
 
 async function main() {

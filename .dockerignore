@@ -1,0 +1,28 @@
+.git
+.github
+.cursor
+node_modules
+**/node_modules
+dist
+server/dist
+graphify-out
+canvases
+**/*.capture.png
+**/*.log
+npm-debug.log*
+
+# Planilha, exports e relatórios: dado pessoal e recurso não publicável.
+data
+**/*.xlsx
+
+# Segredos e configuração da máquina.
+.env
+.env.*
+!.env.example
+server/.env
+server/.env.*
+
+# Documentação D.N.E.E.: leitura humana, não faz parte da imagem.
+docs
+*.md
+!README.md

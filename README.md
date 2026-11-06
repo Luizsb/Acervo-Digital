@@ -57,7 +57,8 @@ IA do Cursor é obrigada a seguir neste repositório, está no
 > **Onde o projeto está hospedado hoje:** front na **Vercel**, banco e autenticação
 > no **Supabase** (`VITE_BACKEND=supabase`). A publicação na EC2 (imagens Docker,
 > nginx, Caddy e scripts de deploy) foi removida em 2026-10-20. O `server/` continua:
-> é a API local e o caminho da importação. O Docker sobe só o Postgres de desenvolvimento.
+> é a API local e o caminho da importação. O Docker sobe o Postgres de desenvolvimento e,
+> para validação, o Acervo inteiro em container (`npm run app:up`, ver "Como rodar").
 
 ---
 
@@ -71,7 +72,8 @@ IA do Cursor é obrigada a seguir neste repositório, está no
 | **Dados** | ExcelJS, BNCC (`public/bncc.db`) |
 | **Thumbs** | Playwright + Sharp (`npm run thumbs:capture`) |
 | **Auth** | MVP: login único de visitante e de admin (botões na tela de login). JumpCloud na migração para a infraestrutura da Arco |
-| **CI** | GitHub Actions: tipos, testes, `npm audit`, build, CodeQL, Trivy e Dependabot |
+| **CI** | GitHub Actions: tipos, testes, `npm audit`, build, build e subida dos containers, CodeQL, Trivy e Dependabot |
+| **Container** | `server/Dockerfile` (API) e `Dockerfile` (site no nginx), só para validação local |
 
 ---
 
@@ -87,6 +89,8 @@ Acervo-Digital/
 │   └── visao-projeto.html        # Interface visual de leitura
 ├── src/                          # Frontend (React + Vite)
 ├── server/                       # API Express + Prisma (local; não é a EC2)
+│   ├── Dockerfile                # Imagem da API
+│   └── seed/catalogo-demo.json   # Carga de demonstração (só no repositório corporativo)
 ├── public/
 │   ├── thumbs/                   # Capas webp versionadas (~120 MB)
 │   └── bncc.db
@@ -94,7 +98,9 @@ Acervo-Digital/
 ├── scripts/
 │   ├── supabase/rls.sql          # Políticas e funções do Supabase
 │   └── apps-script/              # Gatilho de sincronização (parado; apontava para a EC2)
-├── docker-compose.yml            # Só o Postgres local
+├── docker/nginx.conf             # nginx do site em container
+├── Dockerfile                    # Imagem do site (modo Express)
+├── docker-compose.yml            # Postgres local; perfil "app" sobe API e site
 ├── .cursorrules                  # Processo que a IA segue no repositório
 └── README.md
 ```
@@ -157,7 +163,21 @@ apontava para a API da EC2, que foi desligada. Volta quando houver servidor.
 ### Pré-requisitos
 
 - Node.js 24 (fixado em `engines` no `package.json`; o CI e a Vercel usam a mesma versão)
-- [Docker Desktop](https://www.docker.com/products/docker-desktop/), só para o Postgres local. Consultar o catálogo de testes não precisa dele: use `VITE_BACKEND=supabase` e `npm run dev`.
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/), para o Postgres local e para subir o Acervo em container. No Windows, precisa do WSL. Consultar o catálogo de testes não precisa dele: use `VITE_BACKEND=supabase` e `npm run dev`.
+
+### Tudo em container (para analisar e validar)
+
+Só precisa de Docker:
+
+```bash
+copy .env.example .env   # preencha JWT_SECRET (por exemplo: openssl rand -base64 48)
+npm run app:up           # ou: docker compose --profile app up -d --build
+```
+
+Abra http://localhost:8080 e entre com os usuários de teste da tabela abaixo. A galeria
+vem da carga de demonstração `server/seed/catalogo-demo.json` (catálogo visível, sem
+dado pessoal), que só é versionada no repositório corporativo. Sem ela, a galeria fica
+vazia. Para parar: `npm run app:down`. Detalhes no SDD, em "Subir o Acervo em container".
 
 ### Desenvolvimento local (API e Vite na máquina)
 
@@ -262,8 +282,9 @@ O front publica na Vercel a cada push em main, depois do CI (tipos, testes, audi
 de dependências e build). O banco é o Supabase. Mudança de banco (migração do Prisma
 e `scripts/supabase/rls.sql`) não é aplicada pelo deploy: veja "Aplicar mudanças de
 banco" no SDD.
-A EC2, o nginx, o Caddy e as imagens Docker foram removidos em 2026-10-20;
-quando houver servidor corporativo, o empacotamento é feito de novo.
+A EC2, o Caddy e os scripts de deploy foram removidos em 2026-10-20. As imagens da
+API e do site voltaram em 2026-11-06, só para validação local e como base do servidor
+corporativo.
 A operação do catálogo está no [SDD.md](./docs/SDD.md).
 
 ## Scripts (raiz)
@@ -271,6 +292,8 @@ A operação do catálogo está no [SDD.md](./docs/SDD.md).
 | Script | Descrição |
 |--------|-----------|
 | `npm run docker:down` | Para o Postgres local |
+| `npm run app:up` / `app:down` | Sobe ou derruba o Acervo inteiro em container (site em http://localhost:8080) |
+| `npm run db:exportar-demo` | Gera `server/seed/catalogo-demo.json`: catálogo visível e BNCC, sem dado pessoal |
 | `npm run setup` | Postgres + migrações + seed (API local) |
 | `npm run dev` | Frontend Vite (porta 3000) |
 | `npm run build` | Build do frontend |
@@ -279,7 +302,7 @@ A operação do catálogo está no [SDD.md](./docs/SDD.md).
 | `npm run prisma:migrate` | Aplica as migrações pendentes (`migrate deploy`). Para criar migração nova: `cd server && npm run prisma:migrate:dev` |
 | `npm run prisma:studio` | Prisma Studio |
 | `npm run db:up` / `db:reset` | Sobe ou recria só o Postgres. Para parar, `npm run docker:down` |
-| `npm run seed` | BNCC + usuários demo/admin + planilha |
+| `npm run seed` | BNCC + usuários demo/admin + planilha (ou a carga de demonstração, sem planilha e com o banco vazio) |
 | `npm run import:categorizacao` | Sincroniza a planilha com o banco |
 | `npm run import:categorizacao:com-capa` | Igual, mas adia recurso novo visível que ainda não tem capa |
 | `npm run planilha:preparar -- "arquivo.xlsx"` | Prepara a planilha baixada do Drive: só a aba Recursos Digitais, sem dados pessoais, em `data/` |

@@ -1,6 +1,7 @@
-# Só o Postgres local. A API e o front rodam no Node (npm run server:dev e npm run dev).
-# A publicação em container (nginx, Caddy, imagens) foi removida em 2026-10-20,
-# junto com a EC2. O empacotamento volta quando o servidor corporativo existir.
+# Postgres local para o desenvolvimento (npm run db:up) e, no perfil "app", o Acervo
+# inteiro em container para validação (npm run app:up): API Express e site no nginx.
+# Não é a produção: a produção é a Vercel com o Supabase. Nada aqui fica exposto fora
+# da máquina (todas as portas em 127.0.0.1).
 services:
   postgres:
     image: postgres:16-alpine
@@ -23,6 +24,48 @@ services:
       interval: 5s
       timeout: 5s
       retries: 12
+
+  api:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: server/Dockerfile
+    image: acervo-digital-api
+    container_name: acervo-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # sslmode=disable: o Postgres do compose não tem TLS, e a API exige TLS para
+      # qualquer host que não seja localhost.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-acervo}:${POSTGRES_PASSWORD:-acervo}@postgres:5432/${POSTGRES_DB:-acervo}?sslmode=disable
+      DIRECT_URL: postgresql://${POSTGRES_USER:-acervo}:${POSTGRES_PASSWORD:-acervo}@postgres:5432/${POSTGRES_DB:-acervo}?sslmode=disable
+      # Vazio, a API recusa subir: em produção não há segredo padrão.
+      JWT_SECRET: ${JWT_SECRET:-}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      CORS_ORIGIN: http://localhost:${WEB_PORT:-8080}
+      ENABLE_REGISTRATION: "false"
+      # Um proxy na frente da API: o nginx do serviço web.
+      TRUST_PROXY: "1"
+      SKIP_SEED: ${SKIP_SEED:-false}
+    volumes:
+      # Só leitura: o painel admin confere quais recursos estão sem capa.
+      - ./public/thumbs:/app/public/thumbs:ro
+
+  web:
+    profiles: ["app"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: acervo-digital-web
+    container_name: acervo-web
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8080}:8080"
 
 volumes:
   acervo_pgdata:

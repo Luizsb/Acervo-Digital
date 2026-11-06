@@ -16,6 +16,7 @@
     "diff:planilha": "tsx scripts/diff-planilha.ts",
     "planilha:preparar": "tsx scripts/preparar-planilha.ts",
     "db:exportar": "tsx scripts/exportar-banco.ts",
+    "db:exportar-demo": "tsx scripts/exportar-demo.ts",
     "relatorio:nde": "tsx scripts/relatorio-nde.ts",
     "db:descartar": "tsx scripts/descartar-dados.ts",
     "thumbs:setup": "tsx scripts/setup-playwright.ts",

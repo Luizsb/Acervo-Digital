@@ -257,8 +257,9 @@ vale para o relatório de usuários, que não mostra visualizações por pessoa.
 | Testes | Vitest, apenas testes unitários de utilitários |
 | Segurança no CI | `npm audit`, CodeQL, Trivy e Dependabot (ver "Segurança e privacidade") |
 | Mapa do código | Graphify, ferramenta local de desenvolvimento, fora das dependências (ver `README.md`) |
-| Hospedagem | Vercel (front). Docker Compose sobe só o Postgres local |
-| Automação | GitHub Actions: CI de verificação e ping semanal no Supabase |
+| Hospedagem | Vercel (front). Docker Compose sobe o Postgres local e, no perfil `app`, o Acervo inteiro em container para validação (ver "Subir o Acervo em container") |
+| Container | API: `server/Dockerfile` (Node 24 sobre Debian 13, sem root). Site: `Dockerfile` (build no modo Express, nginx sem root em `docker/nginx.conf`) |
+| Automação | GitHub Actions: CI de verificação, build e subida dos containers, e ping semanal no Supabase |
 
 ### Organização das pastas
 
@@ -552,8 +553,31 @@ apagados ao término da fase de validação. O procedimento está no runbook, em
 
 ### Aviso de privacidade
 
-Rascunho para aprovação da DPO, a exibir na tela de login. `[A VALIDAR]` Texto, prazo e
-canal são da DPO.
+**Hoje (orientação da DPO, 2026-11-05):** a política de privacidade do Grupo é única.
+Até o aviso próprio do Acervo ficar pronto, o Acervo aponta para a
+[Política de Privacidade da Arco](https://politicaprivacidade.arcoeducacao.com.br/),
+que abre em nova guia. O link aparece em dois lugares: na tela de login, antes de
+entrar, e no menu do perfil, a qualquer momento depois. O endereço fica em
+`src/utils/privacyPolicy.ts`. O Acervo não copia o texto da política, porque quem o
+mantém é a Arco.
+
+O texto do login é só informativo ("Saiba como a Arco trata os seus dados..."), e
+não pede concordância, porque a base legal é o legítimo interesse, não o
+consentimento.
+
+**Aviso próprio do Acervo:** depende do mapeamento da DPO. Segundo ela, o aviso deve
+dizer a quem se aplica, quais dados o Acervo trata, a finalidade, a base legal, o
+tempo de retenção, o canal do titular, a identidade do DPO, com quem os dados são
+compartilhados e se há transferência internacional. Quando ficar pronto, ele aparece
+dentro do Acervo e aponta para a política completa da Arco.
+
+**Banner de cookies:** a DPO confirmou que ele é necessário, mesmo com o Acervo
+usando só armazenamento local (`localStorage`). Ele fica para depois do texto da DPO
+(decisão do responsável, 2026-11-05). `[A VALIDAR]` Texto e formato do banner (só
+informativo ou com escolha) são da DPO.
+
+Rascunho do aviso próprio, para aprovação da DPO. `[A VALIDAR]` Texto, prazo e canal
+são da DPO.
 
 > **Privacidade no Acervo Digital.** O Acervo Digital é uma ferramenta interna da Arco
 > para consultar recursos digitais pedagógicos. Para funcionar, ele usa o seu e-mail
@@ -608,7 +632,8 @@ de 2026 de não rotacioná-la.
 | SCA | `npm audit --omit=dev --audit-level=high` no front e na API; reprova o build | `.github/workflows/ci-e-deploy.yml` |
 | SCA | Dependabot, atualização semanal de npm e de actions | `.github/dependabot.yml` |
 | SAST | CodeQL com as consultas `security-extended` | `.github/workflows/seguranca.yml` |
-| IaC | Trivy no Compose e nos workflows; só reporta, não reprova | `.github/workflows/seguranca.yml` |
+| IaC | Trivy nos Dockerfiles, no Compose e nos workflows; só reporta, não reprova | `.github/workflows/seguranca.yml` |
+| Container | Build das duas imagens, subida com o Postgres e teste de site, saúde, login e catálogo pelo nginx; reprova o build | `.github/workflows/ci-e-deploy.yml`, job "Container" |
 
 Os achados de CodeQL e Trivy aparecem na aba *Security → Code scanning* do GitHub. O
 workflow também roda toda segunda-feira, para pegar vulnerabilidade nova sem commit.
@@ -779,6 +804,50 @@ Para desenvolver contra o Supabase, crie um `.env` na raiz com `VITE_BACKEND=sup
 `VITE_SUPABASE_URL` e `VITE_SUPABASE_ANON_KEY`, e rode só `npm run dev`. Nesse modo o
 Express não é usado e a importação e a captura de capas ficam bloqueadas na interface.
 
+### Subir o Acervo em container
+
+Para quem vai analisar ou validar o projeto sem preparar Node na máquina. Só precisa
+de Docker (no Windows, com o WSL instalado; ver "Problemas conhecidos").
+
+```bash
+cp .env.example .env     # e preencha JWT_SECRET (openssl rand -base64 48)
+npm run app:up           # ou: docker compose --profile app up -d --build
+```
+
+O site fica em `http://localhost:8080`, com os mesmos usuários de teste de
+"Desenvolver localmente". Para derrubar: `npm run app:down`; para apagar também o
+banco, `docker compose --profile app down -v`.
+
+O que acontece na subida:
+
+1. O Postgres sobe (o mesmo do `npm run db:up`, na porta 5433).
+2. A API aplica as migrações e roda o seed: usuários de teste, BNCC e catálogo.
+3. O site sobe no nginx, que encaminha `/api` para a API. A API não fica exposta.
+
+**De onde vem o catálogo.** Sem a planilha, o seed carrega a **carga de demonstração**
+`server/seed/catalogo-demo.json`, só num banco sem recursos. Ela traz os recursos
+visíveis na galeria (ativo, status do link `Funcionando` e link preenchido) e a BNCC.
+Não traz usuários, favoritos, visualizações nem auditoria, e os contadores vão
+zerados. É o que qualquer pessoa já vê no site ao entrar.
+
+- Gerar de novo, depois de uma importação: `npm run db:exportar-demo` (lê o banco do
+  `server/.env`).
+- **O arquivo está no `.gitignore` deste repositório, que é público.** Na migração
+  para o repositório corporativo (privado), tire a linha do `.gitignore` e versione o
+  arquivo, para que quem clonar veja a galeria cheia.
+- Sem a carga e sem a planilha, o Acervo sobe com a galeria vazia.
+
+Para importar a planilha no banco do container, rode `npm run import:categorizacao`
+na máquina com o `server/.env` apontando para `localhost:5433`, como em "Desenvolver
+localmente".
+
+**Fora do container:** a captura de capas (o Chromium do Playwright deixaria a imagem
+bem maior). As capas vêm de `public/thumbs`, que já está no Git.
+
+Não é a produção: não há HTTPS, as portas ficam só em `127.0.0.1` e os botões de
+acesso rápido continuam na tela de login. No servidor corporativo, o empacotamento
+parte destas imagens e segue o padrão que a TI definir.
+
 ### Alterar a configuração de produção
 
 Na Vercel, em *Settings → Environment Variables*, as três variáveis que importam
@@ -852,8 +921,8 @@ Sequência prevista:
 4. Restaurar contadores, favoritos e histórico a partir do export. Ainda não há
    comando de restauração: ele é escrito quando o destino e o modelo de identidade
    do JumpCloud estiverem definidos (item no `ROADMAP.md`).
-5. Subir a API Express com `VITE_BACKEND=ec2`. O empacotamento (o que a TI definir)
-   é feito quando o servidor existir. A imagem Docker da EC2 foi removida.
+5. Subir a API Express com `VITE_BACKEND=ec2`. As imagens de "Subir o Acervo em
+   container" são o ponto de partida; o empacotamento final segue o que a TI definir.
 6. Manter o Supabase até validar o servidor. Depois, apagar os exports.
 
 ### Descartar dados vencidos
@@ -886,7 +955,11 @@ da TI, no chamado do servidor.
 Removida em 2026-10-20, por decisão do responsável. Imagens Docker, nginx, Caddy e
 os scripts `deploy-ec2.sh` e `recover-ec2-http.sh` saíram do repositório. O modo
 `VITE_BACKEND=ec2` continua sendo o nome do backend Express, usado na máquina local.
-O servidor corporativo, quando existir, ganha o empacotamento na hora.
+
+Em 2026-11-06 voltaram duas imagens (API e site), para o time de validação e como
+base do servidor corporativo. Não é a volta da EC2: sem Caddy, sem HTTPS, sem
+scripts de deploy e sem porta aberta fora da máquina (ver "Subir o Acervo em
+container").
 
 ### Problemas conhecidos e o que fazer
 
@@ -899,7 +972,7 @@ O servidor corporativo, quando existir, ganha o empacotamento na hora.
 | Capa nova não aparece no site | Falta o push | As capas são arquivos versionados; sem commit não sobem |
 | Porta 3000 ou 3001 ocupada | Vite ou API já rodando | Encerrar os processos antes de subir o Docker |
 | `unable to get local issuer certificate` no `prisma generate` ou no `thumbs:setup` | Proxy corporativo com inspeção TLS | Node 23.8+ usa a cadeia do Windows com `setx NODE_USE_SYSTEM_CA 1` (abrir terminal novo). Não desligar a validação TLS |
-| Docker Desktop: *Virtualization support not detected* | Recursos "Plataforma de Máquina Virtual" e WSL desligados no Windows, mesmo com virtualização ligada na BIOS | `wsl --install --no-distribution` como administrador e reiniciar; em máquina corporativa, pode exigir a TI. Para só consultar o catálogo, use o modo Supabase, que não precisa de Docker |
+| Docker Desktop: *Virtualization support not detected* ou *Docker Desktop is unable to start* | Recursos "Plataforma de Máquina Virtual" e WSL desligados ou não instalados no Windows, mesmo com virtualização ligada na BIOS (`wsl --status` diz que o WSL não está instalado) | `wsl --install --no-distribution` como administrador e reiniciar; em máquina corporativa, pode exigir a TI. Para só consultar o catálogo, use o modo Supabase, que não precisa de Docker |
 | Galeria com menos recursos que o esperado no modo Supabase | Limite de "Max rows" da Data API (1000 por padrão) | `supabaseFetchOdas` pagina a consulta desde 2026-10-19. Se voltar a ocorrer, conferir se alguma consulta nova de listagem deixou de paginar |
 
 ---
@@ -1044,6 +1117,10 @@ limpo**, sem esse arquivo.
   `server/.env`.
 - `[PERGUNTA AO RESPONSÁVEL]` Para a DPO: texto final do aviso de privacidade, canal
   para os direitos do titular e quantos exports do banco manter. A base legal e os
-  prazos de auditoria já vieram no mapeamento.
+  prazos de auditoria já vieram no mapeamento. Por enquanto, o Acervo aponta para a
+  política do Grupo (2026-11-05).
+- `[PERGUNTA AO RESPONSÁVEL]` Para a DPO: texto e formato do banner de cookies (só
+  informativo ou com escolha), e se o link da política no login e no menu do perfil
+  basta.
 - `[PERGUNTA AO RESPONSÁVEL]` Para a Segurança: qual é o cofre corporativo e para onde
   enviar a trilha de auditoria.
