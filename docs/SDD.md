@@ -814,9 +814,27 @@ cp .env.example .env     # e preencha JWT_SECRET (openssl rand -base64 48)
 npm run app:up           # ou: docker compose --profile app up -d --build
 ```
 
-O site fica em `http://localhost:8080`, com os mesmos usuários de teste de
-"Desenvolver localmente". Para derrubar: `npm run app:down`; para apagar também o
-banco, `docker compose --profile app down -v`.
+O site fica em `http://localhost:8080` (ou na porta do `WEB_PORT` do `.env`), com os
+mesmos usuários de teste de "Desenvolver localmente". Para derrubar:
+`npm run app:down`; para apagar também o banco, `docker compose --profile app down -v`.
+
+**Rede da Arco (Zscaler).** O proxy da empresa inspeciona o HTTPS, e o build da API
+falha ao baixar os binários dos módulos nativos (`unable to get local issuer
+certificate`). Exporte a CA raiz do Zscaler para `docker/certs/`, uma vez por
+máquina, e construa de novo:
+
+```powershell
+$c = Get-ChildItem Cert:\LocalMachine\Root | Where-Object Subject -match 'CN=Zscaler Root CA'
+"-----BEGIN CERTIFICATE-----`n" + [Convert]::ToBase64String($c.RawData, 'InsertLineBreaks') + "`n-----END CERTIFICATE-----" |
+  Set-Content docker/certs/zscaler-root-ca.crt -Encoding ascii
+```
+
+Os `.crt` de `docker/certs/` valem só no estágio de build da API e ficam fora do Git.
+Fora da rede da empresa, e no CI, a pasta fica vazia e nada muda.
+
+Medido em 2026-11-10, numa máquina da Arco: imagem da API com 979 MB, a do site com
+343 MB, build de cerca de 2 minutos e subida do zero em 27 segundos, com a carga de
+demonstração.
 
 O que acontece na subida:
 
@@ -972,6 +990,8 @@ container").
 | Capa nova não aparece no site | Falta o push | As capas são arquivos versionados; sem commit não sobem |
 | Porta 3000 ou 3001 ocupada | Vite ou API já rodando | Encerrar os processos antes de subir o Docker |
 | `unable to get local issuer certificate` no `prisma generate` ou no `thumbs:setup` | Proxy corporativo com inspeção TLS | Node 23.8+ usa a cadeia do Windows com `setx NODE_USE_SYSTEM_CA 1` (abrir terminal novo). Não desligar a validação TLS |
+| Build da imagem da API: `unable to get local issuer certificate` no `npm ci` (`better-sqlite3`, `node-gyp`) | Proxy corporativo (Zscaler) inspecionando o HTTPS dentro do container | Exportar a CA do Zscaler para `docker/certs/` (ver "Subir o Acervo em container") |
+| Container: site não abre em `localhost:8080` | `.env` antigo, da época da EC2, com `WEB_PORT=3000` | Abrir na porta do `WEB_PORT`, ou apagar a linha do `.env` (o padrão é 8080, que não colide com o Vite) |
 | Docker Desktop: *Virtualization support not detected* ou *Docker Desktop is unable to start* | Recursos "Plataforma de Máquina Virtual" e WSL desligados ou não instalados no Windows, mesmo com virtualização ligada na BIOS (`wsl --status` diz que o WSL não está instalado) | `wsl --install --no-distribution` como administrador e reiniciar; em máquina corporativa, pode exigir a TI. Para só consultar o catálogo, use o modo Supabase, que não precisa de Docker |
 | Galeria com menos recursos que o esperado no modo Supabase | Limite de "Max rows" da Data API (1000 por padrão) | `supabaseFetchOdas` pagina a consulta desde 2026-10-19. Se voltar a ocorrer, conferir se alguma consulta nova de listagem deixou de paginar |
 

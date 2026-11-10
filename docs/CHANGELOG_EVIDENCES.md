@@ -10,6 +10,90 @@ trazem a seção "Impacto observado" com dado medido: nenhuma métrica foi colet
 
 ---
 
+## 2026-11-10 · 14:30 — Container testado de verdade e falha do CI corrigida
+
+### Antes
+
+- O job "Container" do CI falhou no primeiro push (`a264e52`): as imagens foram
+  construídas, mas a API não ficou saudável. Os logs do GitHub exigem login, então a
+  causa não estava clara.
+- Nesta máquina o WSL não estava instalado, e o Docker Desktop não iniciava.
+- A `main` local tinha perdido a referência: o Git mostrava todos os arquivos como
+  novos, embora a pasta fosse idêntica ao commit `e29c453`.
+
+### Depois
+
+- **WSL 2 instalado** pelo responsável (`wsl --install --no-distribution` como
+  administrador, versão 3.0.5) e máquina reiniciada. Docker Desktop 29.8.1 no ar.
+- **Causa da falha do CI, corrigida em `server/Dockerfile`:** o `public/bncc.db` está
+  em modo WAL, e o SQLite cria o arquivo `-shm` ao lado dele mesmo só para leitura. A
+  pasta `/app/public` era do root, e a API roda como `node`: o seed falhava
+  (`SQLITE_READONLY_DIRECTORY`), e a API reiniciava sem parar. O `bncc.db` e a pasta
+  passaram a ser do usuário `node`.
+- **Rede da Arco:** o Zscaler inspeciona o HTTPS, e o `npm ci` do build da API falhava
+  ao baixar o binário do `better-sqlite3` (`unable to get local issuer certificate`).
+  O estágio de build agora confia nos `.crt` de `docker/certs/`, pasta que fica fora
+  do Git, e usa `NODE_EXTRA_CA_CERTS`. Sem certificado na pasta, como no CI, nada
+  muda.
+- O aviso de versão nova do npm saiu do log da API (`NPM_CONFIG_UPDATE_NOTIFIER=false`).
+- `main` local recriada no `e29c453` e avançada até o `origin/main`, com aprovação
+  do responsável. Nada local se perdeu.
+- SDD: runbook do container com a CA do Zscaler e as medidas, e dois problemas
+  conhecidos novos (Zscaler e `.env` antigo com `WEB_PORT=3000`). README e ROADMAP
+  atualizados. Graphify atualizado nesta pasta, que ainda tinha o grafo de 3 de
+  novembro.
+
+### Decisão
+
+O certificado do Zscaler é público, mas é da rede de cada máquina, então fica fora do
+Git e entra só no estágio de build, não na imagem final. A redução da imagem da API
+ficou como débito no `ROADMAP.md`, porque exige mexer nas dependências da API.
+
+O `.env` local do responsável, da época da EC2, tinha `WEB_PORT=3000`, e o site do
+container subiu na porta 3000. Como o servidor e o banco novos ainda não estão
+definidos e a produção segue na Vercel com o Supabase, o responsável pediu para
+limpar o arquivo: ficaram só as variáveis do site (Supabase), do Postgres local e do
+container, no formato do `.env.example`. O `JWT_SECRET`, que ainda era o texto de
+exemplo, ganhou um valor aleatório local. A cópia do arquivo antigo ficou fora do
+repositório, e o `.gitignore` passou a cobrir `.env.*` (menos o `.env.example`), para
+uma cópia como `.env.bak` não entrar num commit.
+
+### Evidência
+
+- Subida do zero (`docker compose --profile app up -d --wait`): postgres, api e web
+  saudáveis em 27 segundos. Seed: usuários de teste, 1387 BNCC e 2519 recursos da
+  carga de demonstração.
+- Segunda subida, com o banco já carregado: API saudável em 7 segundos, com
+  "Catálogo já carregado: 2519 recursos. Carga de demonstração ignorada."
+- Com o `.env` limpo: site em `127.0.0.1:8080`, `/health` ok, catálogo com 2519
+  recursos, porta 3000 livre para o Vite e `npm run build` lendo o `.env` novo.
+- Pelo nginx: página com `nosniff`, `X-Frame-Options: DENY` e `Referrer-Policy`;
+  `/health` ok; login do demo e do admin (`role` admin); `/api/odas` com 2519 itens;
+  401 sem login; capa servida; API sem porta exposta na 3001.
+- No navegador: login com "Acessar o acervo" e galeria com "2519 resultados
+  encontrados", capas carregadas.
+- Imagens: API com 979 MB (470 MB de `node_modules`, 170 MB só do `@prisma`), site
+  com 343 MB. Build de cerca de 2 minutos.
+- `npm run typecheck`, `cd server && npx tsc --noEmit`, 104 testes, `npm run build` e
+  `npm audit --omit=dev --audit-level=high` (0 vulnerabilidades no front e na API).
+- Graphify: 918 nós, 2219 ligações e 43 comunidades, sem `catalogo-demo.json` nem
+  `data/`.
+- `[A VALIDAR]` Job "Container" verde no GitHub Actions, depois do push desta correção.
+
+### Impacto observado
+
+Quem clonar o repositório numa máquina com Docker sobe o Acervo inteiro com um
+comando, em menos de meio minuto depois do build, e já vê a galeria cheia, desde que
+a carga de demonstração esteja versionada.
+
+### Próximos passos
+
+- Push e conferência do job "Container".
+- Reduzir a imagem da API (`ROADMAP.md`).
+- Na migração, versionar a carga de demonstração.
+
+---
+
 ## 2026-11-10 · 13:30 — Validação antes da migração para o GitHub corporativo
 
 ### Antes

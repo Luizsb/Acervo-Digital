@@ -258,8 +258,15 @@ ferramenta de cadastro.
 - ✅ Acervo em container para o time de validação (2026-11-06): imagens da API e do
   site, perfil `app` no compose (`npm run app:up`), job "Container" no CI e carga de
   demonstração do catálogo (`npm run db:exportar-demo`)
-- ⬜ Conferir o primeiro resultado do job "Container" no GitHub Actions. O build não
-  pôde ser testado na máquina do responsável, que está sem WSL
+- ✅ Container testado na máquina do responsável (2026-11-10), com WSL 2 e Docker
+  Desktop: os três serviços saudáveis, login e galeria com os 2519 recursos. Corrigida
+  a causa da falha do job "Container" no primeiro push (seed da BNCC sem permissão de
+  escrita na imagem) e aceita a CA do Zscaler no build
+- ⬜ Conferir o job "Container" verde no GitHub Actions depois do próximo push
+- ⬜ Reduzir a imagem da API (979 MB): `typescript`, `playwright` e os `@types/*`
+  estão em `dependencies` do `server/package.json` e vão para a produção sem uso.
+  Mover para `devDependencies` e conferir se os scripts que rodam com `tsx` continuam
+  funcionando
 - ⬜ Na migração para o repositório corporativo: gerar de novo a carga de
   demonstração, tirar `server/seed/catalogo-demo.json` do `.gitignore` e versionar
 - ⬜ Perguntar ao especialista do time se há padrão de imagem base, registry ou

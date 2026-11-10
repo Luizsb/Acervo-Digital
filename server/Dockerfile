@@ -4,11 +4,17 @@
 FROM node:24-trixie-slim AS build
 
 WORKDIR /app/server
-ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
+ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 \
+    NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
 
-# Só para o caso de um módulo nativo não ter binário pronto para a plataforma.
+# CA corporativa opcional (proxy que inspeciona HTTPS, como o Zscaler): os .crt de
+# docker/certs/ valem só neste estágio, para baixar os binários dos módulos nativos.
+COPY docker/certs/ /usr/local/share/ca-certificates/extra/
+
+# python3, make e g++ só para o caso de um módulo nativo não ter binário pronto.
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends python3 make g++ \
+  && apt-get install -y --no-install-recommends ca-certificates python3 make g++ \
+  && update-ca-certificates \
   && rm -rf /var/lib/apt/lists/*
 
 COPY server/package.json server/package-lock.json server/.npmrc ./
@@ -31,7 +37,8 @@ RUN apt-get update \
 WORKDIR /app/server
 ENV NODE_ENV=production \
     PORT=3001 \
-    ACERVO_DATA_DIR=/app/data
+    ACERVO_DATA_DIR=/app/data \
+    NPM_CONFIG_UPDATE_NOTIFIER=false
 
 COPY --from=build /app/server/node_modules ./node_modules
 COPY --from=build /app/server/dist ./dist
@@ -40,11 +47,14 @@ COPY --from=build /app/server/prisma.config.ts /app/server/package.json ./
 COPY server/docker-entrypoint.sh ./
 COPY server/seed ./seed
 # A API procura a raiz do projeto pela pasta public/; a BNCC do seed vem dela.
-COPY public/bncc.db /app/public/bncc.db
+# O bncc.db está em modo WAL: mesmo só para leitura, o SQLite cria o arquivo -shm ao
+# lado dele, então a pasta precisa ser do usuário que roda a API.
+COPY --chown=node:node public/bncc.db /app/public/bncc.db
 
 # Build feito direto de uma cópia no Windows pode trazer o script com CRLF.
 RUN sed -i 's/\r$//' docker-entrypoint.sh \
-  && mkdir -p /app/data && chown node:node /app/data
+  && mkdir -p /app/data \
+  && chown node:node /app/data /app/public
 
 USER node
 EXPOSE 3001
