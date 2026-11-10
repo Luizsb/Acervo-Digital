@@ -262,7 +262,7 @@ ferramenta de cadastro.
   Desktop: os três serviços saudáveis, login e galeria com os 2519 recursos. Corrigida
   a causa da falha do job "Container" no primeiro push (seed da BNCC sem permissão de
   escrita na imagem) e aceita a CA do Zscaler no build
-- ⬜ Conferir o job "Container" verde no GitHub Actions depois do próximo push
+- ✅ Job "Container" verde no GitHub Actions (commit `89cdbf6`, 2026-11-10)
 - ⬜ Reduzir a imagem da API (979 MB): `typescript`, `playwright` e os `@types/*`
   estão em `dependencies` do `server/package.json` e vão para a produção sem uso.
   Mover para `devDependencies` e conferir se os scripts que rodam com `tsx` continuam

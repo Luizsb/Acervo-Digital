@@ -78,7 +78,10 @@ uma cópia como `.env.bak` não entrar num commit.
   `npm audit --omit=dev --audit-level=high` (0 vulnerabilidades no front e na API).
 - Graphify: 918 nós, 2219 ligações e 43 comunidades, sem `catalogo-demo.json` nem
   `data/`.
-- `[A VALIDAR]` Job "Container" verde no GitHub Actions, depois do push desta correção.
+- GitHub Actions no commit `89cdbf6`: "CI" verde nos dois jobs ("Testes e build" e
+  "Container (build e subida)") e "Segurança" verde. No CI, sem a carga de
+  demonstração, o Acervo sobe com a galeria vazia e passa nos testes de página,
+  saúde, login e catálogo.
 
 ### Impacto observado
 
@@ -88,7 +91,7 @@ a carga de demonstração esteja versionada.
 
 ### Próximos passos
 
-- Push e conferência do job "Container".
+- Iniciar a migração para o repositório corporativo (lista no `ROADMAP.md`).
 - Reduzir a imagem da API (`ROADMAP.md`).
 - Na migração, versionar a carga de demonstração.
 
