@@ -5,7 +5,9 @@
  * 1. Abra a planilha no Google Sheets → Extensões → Apps Script
  * 2. Cole este arquivo (Code.gs)
  * 3. Em Configurações do projeto → Propriedades do script, cadastre:
- *      - SYNC_TOKEN: mesmo valor de SPREADSHEET_SYNC_TOKEN da EC2
+ *      - ACERVO_API_BASE: endereço HTTPS da API, terminando em /api
+ *        (ex.: https://acervo.exemplo.com.br/api)
+ *      - SYNC_TOKEN: mesmo valor de SPREADSHEET_SYNC_TOKEN da API
  * 4. Autorize o script (primeira execução de testSyncNow)
  * 5. Acionadores (ícone de relógio) → Adicionar acionador:
  *      - Função: syncAcervoDaily
@@ -16,23 +18,27 @@
  * acionador executa com as permissões da conta que o criou.
  */
 
-var ACERVO_API_BASE = 'http://13.217.4.132/api';
-
 /**
- * Os segredos ficam nas Propriedades do Script, não neste arquivo.
- * Assim eles não são publicados junto com o código no GitHub.
+ * O endereço da API e o token ficam nas Propriedades do Script, não neste arquivo.
+ * Assim nada é publicado junto com o código, e o endereço muda sem editar o script.
  */
 function getAcervoConfig_() {
   var properties = PropertiesService.getScriptProperties();
+  var apiBase = (properties.getProperty('ACERVO_API_BASE') || '').replace(/\/+$/, '');
   var syncToken = properties.getProperty('SYNC_TOKEN');
 
-  if (!syncToken) {
+  if (!apiBase || !syncToken) {
     throw new Error(
-      'SYNC_TOKEN não configurado. Abra Configurações do projeto → Propriedades do script.'
+      'ACERVO_API_BASE ou SYNC_TOKEN não configurado. Abra Configurações do projeto → Propriedades do script.'
     );
+  }
+  // A planilha e o token viajam nesta chamada: sem HTTPS, ficariam expostos na rede.
+  if (apiBase.indexOf('https://') !== 0) {
+    throw new Error('ACERVO_API_BASE precisa começar com https://.');
   }
 
   return {
+    apiBase: apiBase,
     syncToken: syncToken,
   };
 }
@@ -43,7 +49,7 @@ function startAcervoSync_() {
   var spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
   var xlsx = exportSpreadsheetAsXlsx_(spreadsheet.getId());
 
-  var response = UrlFetchApp.fetch(ACERVO_API_BASE + '/sync/spreadsheet', {
+  var response = UrlFetchApp.fetch(config.apiBase + '/sync/spreadsheet', {
     method: 'post',
     payload: { spreadsheet: xlsx },
     headers: {
@@ -80,7 +86,7 @@ function waitForJob_(jobId) {
   for (var attempt = 0; attempt < 40; attempt++) {
     Utilities.sleep(5000);
     var response = UrlFetchApp.fetch(
-      ACERVO_API_BASE + '/sync/jobs/' + encodeURIComponent(jobId),
+      config.apiBase + '/sync/jobs/' + encodeURIComponent(jobId),
       {
         headers: { 'X-Acervo-Sync-Token': config.syncToken },
         muteHttpExceptions: true,

@@ -10,6 +10,81 @@ trazem a seção "Impacto observado" com dado medido: nenhuma métrica foi colet
 
 ---
 
+## 2026-11-10 · 13:30 — Validação antes da migração para o GitHub corporativo
+
+### Antes
+
+- O acesso ao GitHub corporativo foi liberado. Faltava conferir se o repositório
+  estava pronto para subir: erros, arquivos sobrando, segredos, documentação e grafo.
+- Os dois commits de 2026-11-06 (link da política e container) não tinham ido para
+  o GitHub, então o job "Container" do CI nunca rodou.
+- O grafo do Graphify era de 2026-11-03, antes dessas duas entregas.
+
+### Depois
+
+- Graphify atualizado sem LLM (`graphify update .`). `.graphifyignore` passou a
+  excluir `server/seed/`, para a carga de demonstração não entrar no grafo quando for
+  versionada, e o comentário sobre o grafo da documentação foi corrigido.
+- `SOBRE.md`, "Momento atual": acesso ao GitHub corporativo liberado e container para
+  o time de validação. "Funcionalidades prontas": link da Política de Privacidade.
+- `ROADMAP.md`: lista do que fazer na migração.
+- `scripts/apps-script/sync-acervo.gs`: o IP público da antiga EC2, em HTTP, saiu do
+  código. O endereço da API vem da propriedade `ACERVO_API_BASE` do script, que é
+  obrigatória e precisa começar com `https://`. O script continua parado.
+- `README.md`: dicas para galeria vazia no container e para o Docker sem WSL.
+
+### Decisão
+
+A migração leva só a árvore atual, sem o histórico do repositório público, como
+decidido em 2026-10-20. Por isso a busca de segredos olhou os arquivos versionados,
+não o histórico.
+
+Nada foi removido do código: não há arquivo sem uso. As capas sem recurso visível
+ficam.
+
+O IP da EC2 saiu do script do Apps Script porque a AWS pode ter repassado o
+endereço a outro cliente: religado, o script mandaria a planilha e o token para
+um servidor desconhecido, sem HTTPS. O responsável escolheu manter o script e
+tirar o endereço do código, em vez de removê-lo, porque a Fase 6 prevê retomar o
+gatilho.
+
+### Evidência
+
+- `npm run typecheck`, `cd server && npx tsc --noEmit`, 104 testes e `npm run build`
+  passando. `npm audit --omit=dev --audit-level=high`: 0 vulnerabilidades no front e
+  na API.
+- **Segredos:** nenhuma chave `sb_secret_`, JWT, chave privada, token do GitHub ou da
+  AWS, nem URL de banco com senha real nos arquivos versionados. Só os valores de
+  exemplo do Postgres local (`acervo:acervo`) e textos para substituir.
+- **Dado pessoal:** o único e-mail é o exemplo `pessoa@arcoeducacao.com.br` do
+  runbook. A planilha, os exports e a carga de demonstração estão no `.gitignore`.
+- **Código sem uso:** nenhum arquivo de `src/` ou `server/` deixou de ser importado.
+- **Capas**, contra a carga de demonstração (2519 recursos visíveis): 2518 capas
+  versionadas; nenhum caminho que só funcione no Windows (diferença de maiúscula e
+  minúscula); 4 recursos sem capa, os mesmos de inglês já conhecidos no `ROADMAP.md`;
+  4 capas sem recurso visível, provavelmente de itens da fila de revisão.
+- **Graphify:** 918 nós, 2219 ligações e 43 comunidades. `graph.json` sem
+  `catalogo-demo.json` nem `data/`. Os 12 arquivos SQL ficaram fora porque falta o
+  extrator de SQL na instalação local.
+- **Achado corrigido:** `scripts/apps-script/sync-acervo.gs` trazia o IP público da
+  antiga EC2, em HTTP. Depois da troca, nenhum IP público nos arquivos versionados.
+- `[A VALIDAR]` Container: o WSL continua sem instalar nesta máquina, e o job
+  "Container" só roda depois do push.
+
+### Impacto observado
+
+O repositório está pronto para a migração do ponto de vista de testes, dependências,
+segredos e dado pessoal. Faltam o teste real do container e as decisões da lista de
+migração no `ROADMAP.md`.
+
+### Próximos passos
+
+- Conferir o job "Container" no GitHub Actions depois do push.
+- Decidir o deploy da Vercel depois da migração.
+- Na migração, gerar e versionar a carga de demonstração.
+
+---
+
 ## 2026-11-06 · 09:20 — Acervo em container para o time de validação
 
 ### Antes

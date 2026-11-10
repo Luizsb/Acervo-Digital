@@ -288,7 +288,7 @@ public/
 data/             planilha de categorização, fora do Git (ver "Dados, entradas e saídas")
 scripts/
   supabase/rls.sql          políticas e funções do Supabase
-  apps-script/sync-acervo.gs gatilho diário (parado; apontava para a EC2)
+  apps-script/sync-acervo.gs gatilho diário (parado; endereço HTTPS da API e token nas propriedades do script)
 ```
 
 ---

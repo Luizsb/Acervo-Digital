@@ -153,7 +153,8 @@ planilha. Código que sai da planilha é desativado, nunca apagado. A regra comp
 está no SDD, em "Sincronização pelo código do recurso". Não use `--clear` no dia a
 dia.
 
-O gatilho do Google Apps Script (`scripts/apps-script/sync-acervo.gs`) está **parado**:
+O gatilho do Google Apps Script (`scripts/apps-script/sync-acervo.gs`, com o endereço
+HTTPS da API e o token nas propriedades do script) está **parado**:
 apontava para a API da EC2, que foi desligada. Volta quando houver servidor.
 
 ---
@@ -345,7 +346,8 @@ Supabase; as funções equivalentes estão em `scripts/supabase/rls.sql`.
 - **CORS:** confira `CORS_ORIGIN`.
 - **CSS / classes Tailwind:** o `src/index.css` é compilado e congelado; preferir CSS dedicado.
 - **Vimeo no console:** `ERR_BLOCKED_BY_CLIENT` costuma ser bloqueador de ads.
-- **Galeria vazia:** rode `npm run setup` e `npm run server:dev`, ou use o modo Supabase.
+- **Galeria vazia:** rode `npm run setup` e `npm run server:dev`, ou use o modo Supabase. No container, confira se `server/seed/catalogo-demo.json` existe (ou gere com `npm run db:exportar-demo`) e recrie o banco com `docker compose --profile app down -v`.
+- **Docker Desktop não inicia no Windows:** falta o WSL. `wsl --install --no-distribution` como administrador e reiniciar.
 - **Aviso "Acervo temporariamente indisponível":** o plano Free do Supabase pausou o projeto por falta de uso. Restaure no painel do Supabase e confira o workflow de ping (SDD, "Manter o Supabase acordado"). Se o aviso for "Não foi possível conectar ao Acervo", pode ser a rede ou a mesma pausa.
 - **Página em branco depois de mover ou renomear arquivo:** reinicie o `npm run dev`; o Vite em execução guarda o caminho antigo.
 - **Cards sem capa:** confira se `public/thumbs/` veio no clone; se faltar arquivo, `npm run thumbs:capture`.

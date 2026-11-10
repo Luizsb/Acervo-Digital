@@ -5,6 +5,8 @@ data/
 # Mais de mil capas: caro para a extração por imagem e sem valor estrutural.
 public/thumbs/
 public/*.db
+# Carga de demonstração do catálogo: dado, não código (versionada no repositório corporativo).
+server/seed/
 # Segredos e artefatos.
 .env*
 server/.env*
@@ -13,7 +15,7 @@ server/dist/
 node_modules/
 server/node_modules/
 graphify-out/
-# Documentação tem grafo próprio (graphify update docs → docs/graphify-out/), para as
-# comunidades do código não se misturarem com títulos de Markdown.
+# O grafo é só de código, para as comunidades não se misturarem com títulos de Markdown.
+# Grafo dos documentos só por extração semântica, com decisão do responsável (README).
 *.md
 docs/

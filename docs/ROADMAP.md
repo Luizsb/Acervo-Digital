@@ -239,8 +239,22 @@ ferramenta de cadastro.
 - ⬜ Perguntar à Segurança qual é o cofre corporativo e para onde enviar a auditoria
 - ⬜ Comando de restauração a partir do export, quando o destino estiver definido
 - ⬜ Abrir o chamado do servidor corporativo
-- ⬜ Solicitar o repositório no GitHub da ArcoTech e migrar com histórico limpo
-  (dúvida aberta no grupo SRE do Pedagógico em 2026-11-05)
+- ✅ Acesso ao GitHub corporativo liberado (2026-11-10), depois da dúvida aberta no
+  grupo SRE do Pedagógico em 2026-11-05
+- ✅ Validação antes da migração (2026-11-10): tipos, testes, build e auditoria sem
+  achados; nenhum segredo nem dado pessoal nos arquivos versionados; Graphify
+  atualizado (ver `CHANGELOG_EVIDENCES.md`)
+- ⬜ Migrar para o repositório corporativo com histórico limpo (só a árvore atual, sem
+  o histórico do repositório público). Na migração:
+  - gerar de novo a carga de demonstração e versioná-la (item abaixo);
+  - trocar a URL do `git clone` no runbook do `SDD.md` `[A VALIDAR]` endereço novo;
+  - cadastrar os secrets `SUPABASE_URL` e `SUPABASE_ANON_KEY` do workflow de ping;
+  - conferir se o GitHub Actions está liberado na organização e se o *code scanning*
+    existe em repositório privado (`[A VALIDAR]`: em repositório privado, CodeQL e o
+    envio do Trivy exigem GitHub Advanced Security);
+  - decidir o deploy da Vercel, hoje ligado ao repositório público
+    `[PERGUNTA AO RESPONSÁVEL]`: religar ao corporativo, se a organização permitir a
+    integração, ou manter o público só para o deploy até o servidor da Arco
 - ✅ Acervo em container para o time de validação (2026-11-06): imagens da API e do
   site, perfil `app` no compose (`npm run app:up`), job "Container" no CI e carga de
   demonstração do catálogo (`npm run db:exportar-demo`)
@@ -250,6 +264,9 @@ ferramenta de cadastro.
   demonstração, tirar `server/seed/catalogo-demo.json` do `.gitignore` e versionar
 - ⬜ Perguntar ao especialista do time se há padrão de imagem base, registry ou
   pipeline a seguir
+- ✅ IP público da antiga EC2 tirado de `scripts/apps-script/sync-acervo.gs`
+  (2026-11-10). O endereço da API agora vem da propriedade `ACERVO_API_BASE` do
+  script, que precisa ser HTTPS. O script continua parado
 - ⬜ Integrar o JumpCloud no backend Express e remover os botões de acesso rápido
 - ⬜ Pedir ao comitê o aceite de JumpCloud com MFA no lugar da VPN e enviar a
   atualização de escopo (cadastro → vitrine de consulta). Texto de resposta redigido

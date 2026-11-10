@@ -52,6 +52,7 @@ captura de capas faltantes.
 ## Funcionalidades prontas
 
 - Login autenticado e sessão persistente.
+- Link da Política de Privacidade da Arco na tela de login e no menu do perfil.
 - Galeria com busca, filtros combináveis, paginação e alternância entre grade e lista.
 - Ordenação do catálogo pelos recursos mais visualizados.
 - Ficha do recurso com BNCC, requisitos técnicos e relacionados.
@@ -130,9 +131,12 @@ validação da proposta, com login único de visitante e de admin. O catálogo p
 Em julho de 2026, o Comitê Security by Design da Arco avaliou o projeto, ainda como
 ferramenta de cadastro, e classificou o risco como alto. O rumo combinado depois disso
 é levar o Acervo para um **servidor corporativo da Arco, com SSO JumpCloud**, e o
-código para o GitHub da ArcoTech. Os pedidos de servidor, com a infraestrutura
-adequada ao projeto, e de repositório estão em fluxo de solicitação com a TI. O backend Express em `server/`, que roda em servidor, é o caminho
-para esse ambiente; trocar é mudar a variável `VITE_BACKEND`.
+código para o GitHub corporativo. O acesso ao GitHub corporativo foi liberado em
+novembro de 2026; o pedido de servidor, com a infraestrutura adequada ao projeto,
+segue em fluxo de solicitação com a TI. O backend Express em `server/`, que roda em
+servidor, é o caminho para esse ambiente; trocar é mudar a variável `VITE_BACKEND`.
+Para o time de validação, o Acervo inteiro sobe em container com um comando, com uma
+carga de demonstração do catálogo (ver `SDD.md`).
 
 **O ponto de atenção do momento é operacional, não de produto.** A atualização do
 catálogo e a captura de capas dependem de um ambiente Node local configurado. Com a
