@@ -244,17 +244,25 @@ ferramenta de cadastro.
 - ✅ Validação antes da migração (2026-11-10): tipos, testes, build e auditoria sem
   achados; nenhum segredo nem dado pessoal nos arquivos versionados; Graphify
   atualizado (ver `CHANGELOG_EVIDENCES.md`)
-- ⬜ Migrar para o repositório corporativo com histórico limpo (só a árvore atual, sem
-  o histórico do repositório público). Na migração:
-  - gerar de novo a carga de demonstração e versioná-la (item abaixo);
-  - trocar a URL do `git clone` no runbook do `SDD.md` `[A VALIDAR]` endereço novo;
-  - cadastrar os secrets `SUPABASE_URL` e `SUPABASE_ANON_KEY` do workflow de ping;
-  - conferir se o GitHub Actions está liberado na organização e se o *code scanning*
-    existe em repositório privado (`[A VALIDAR]`: em repositório privado, CodeQL e o
-    envio do Trivy exigem GitHub Advanced Security);
-  - decidir o deploy da Vercel, hoje ligado ao repositório público
-    `[PERGUNTA AO RESPONSÁVEL]`: religar ao corporativo, se a organização permitir a
-    integração, ou manter o público só para o deploy até o servidor da Arco
+- 🔄 Migrar para o repositório corporativo
+  ([arcotech-services/id-acervo-digital](https://github.com/arcotech-services/id-acervo-digital)),
+  com histórico limpo (só a árvore atual). Decisões do responsável (2026-11-10):
+  - ✅ **Dois repositórios** até o servidor da Arco: o público continua com o deploy
+    da Vercel e o Supabase, sem mexer em nada; o corporativo recebe as mesmas
+    mudanças por pull request para a `develop` (runbook "Manter os dois
+    repositórios" no `SDD.md`)
+  - ✅ O workflow de ping no Supabase roda só no repositório público; o corporativo
+    não precisa dos secrets `SUPABASE_URL` e `SUPABASE_ANON_KEY`
+  - ✅ O repositório corporativo veio de um template da ArcoTech (`README.md`
+    genérico e `.key_cti`), com as branches `main`, `develop` (padrão) e
+    `initial-setup`. O `.key_cti` fica; o README do template dá lugar ao do Acervo
+  - ⬜ Importar a árvore atual numa branch a partir da `develop`, com a carga de
+    demonstração versionada, e abrir o pull request para a `develop`
+  - ⬜ `[A VALIDAR]` Regras de proteção das branches (aprovação obrigatória, quem
+    aprova, quem leva a `develop` para a `main`)
+  - ⬜ Conferir o CI no pull request: GitHub Actions liberado na organização e
+    *code scanning* em repositório privado (`[A VALIDAR]`: CodeQL e o envio do Trivy
+    exigem GitHub Advanced Security)
 - ✅ Acervo em container para o time de validação (2026-11-06): imagens da API e do
   site, perfil `app` no compose (`npm run app:up`), job "Container" no CI e carga de
   demonstração do catálogo (`npm run db:exportar-demo`)
@@ -267,8 +275,6 @@ ferramenta de cadastro.
   estão em `dependencies` do `server/package.json` e vão para a produção sem uso.
   Mover para `devDependencies` e conferir se os scripts que rodam com `tsx` continuam
   funcionando
-- ⬜ Na migração para o repositório corporativo: gerar de novo a carga de
-  demonstração, tirar `server/seed/catalogo-demo.json` do `.gitignore` e versionar
 - ⬜ Perguntar ao especialista do time se há padrão de imagem base, registry ou
   pipeline a seguir
 - ✅ IP público da antiga EC2 tirado de `scripts/apps-script/sync-acervo.gs`

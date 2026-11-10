@@ -284,6 +284,11 @@ O front publica na Vercel a cada push em main, depois do CI (tipos, testes, audi
 de dependências e build). O banco é o Supabase. Mudança de banco (migração do Prisma
 e `scripts/supabase/rls.sql`) não é aplicada pelo deploy: veja "Aplicar mudanças de
 banco" no SDD.
+O código vive em dois repositórios até o servidor da Arco: este, público, que publica
+na Vercel, e o corporativo
+[arcotech-services/id-acervo-digital](https://github.com/arcotech-services/id-acervo-digital),
+que recebe as mesmas mudanças por pull request para a `develop`. A rotina está no SDD,
+em "Manter os dois repositórios".
 A EC2, o Caddy e os scripts de deploy foram removidos em 2026-10-20. As imagens da
 API e do site voltaram em 2026-11-06, só para validação local e como base do servidor
 corporativo.

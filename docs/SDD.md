@@ -658,6 +658,65 @@ cd server && npm ci && cd ..
 npm run thumbs:setup      # instala o Chromium usado na captura de capas
 ```
 
+Quem só vai analisar o projeto, sem operar o catálogo, clona o repositório
+corporativo (`https://github.com/arcotech-services/id-acervo-digital.git`, branch
+`develop`) e segue "Subir o Acervo em container". Quem opera precisa dos dois
+remotos: ver "Manter os dois repositórios".
+
+### Manter os dois repositórios
+
+Desde 2026-11-10, até existir o servidor da Arco, o código vive em dois lugares
+(decisão do responsável):
+
+| Repositório | Remoto local | Branch | Papel |
+|---|---|---|---|
+| [Luizsb/Acervo-Digital](https://github.com/Luizsb/Acervo-Digital) (público) | `origin` | `main` | Deploy da Vercel e ambiente de testes no Supabase. Nada muda aqui |
+| [arcotech-services/id-acervo-digital](https://github.com/arcotech-services/id-acervo-digital) (privado) | `corporativo` | `develop`, por pull request | Análise e validação pelo time; fonte única quando o servidor existir |
+
+Os históricos são independentes: o corporativo começou num template da ArcoTech e
+recebeu a árvore do público num commit só, sem o histórico. Por isso o mesmo commit
+não vai para os dois; cada mudança é feita na `main` pública e copiada para o
+corporativo com `cherry-pick`.
+
+**Diferenças permanentes**, que só existem no corporativo:
+
+- `.key_cti`, que veio do template da ArcoTech. Não apagar.
+- `server/seed/catalogo-demo.json` versionado e a linha dele fora do `.gitignore`.
+  No público, o arquivo continua ignorado.
+
+**Preparar (uma vez):**
+
+```bash
+git remote add corporativo https://github.com/arcotech-services/id-acervo-digital.git
+git fetch corporativo
+```
+
+**A cada mudança:**
+
+```bash
+git switch main
+# ... commit da mudança ...
+git push origin main                                # deploy na Vercel
+git fetch corporativo
+git switch -c sync/nome-curto corporativo/develop   # branch nova a partir da develop
+git cherry-pick <commit>                            # um ou mais commits da main
+git push corporativo sync/nome-curto                # e abrir o pull request para a develop
+git switch main
+```
+
+Se o `cherry-pick` der conflito, quase sempre é no `.gitignore`: mantenha a linha do
+`catalogo-demo.json` fora no corporativo. Depois de `npm run db:exportar-demo`, o
+arquivo novo só vai para o corporativo, num commit próprio.
+
+**Conferir se os dois ficaram iguais**, depois do merge na `develop`:
+
+```bash
+git fetch origin corporativo
+git diff --stat origin/main corporativo/develop
+```
+
+Só podem aparecer `.key_cti`, `.gitignore` e `server/seed/catalogo-demo.json`.
+
 Crie `server/.env` a partir de `server/.env.example` apontando para o Supabase:
 
 ```env
