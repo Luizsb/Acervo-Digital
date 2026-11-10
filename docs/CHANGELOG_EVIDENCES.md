@@ -10,6 +10,74 @@ trazem a seção "Impacto observado" com dado medido: nenhuma métrica foi colet
 
 ---
 
+## 2026-11-10 · 15:00 — Código no GitHub corporativo, mantendo o repositório público
+
+### Antes
+
+- O acesso ao GitHub corporativo estava liberado, e o repositório
+  [arcotech-services/id-acervo-digital](https://github.com/arcotech-services/id-acervo-digital)
+  existia. Ele não estava vazio: veio de um template da ArcoTech, com um `README.md`
+  genérico, um arquivo `.key_cti` e as branches `main`, `develop` (padrão) e
+  `initial-setup`.
+- O deploy da Vercel e o ambiente de testes no Supabase dependem do repositório
+  público.
+
+### Depois
+
+- **Dois repositórios** até o servidor da Arco. O público continua igual, com o deploy
+  da Vercel. O corporativo recebeu a árvore atual num commit só, sem o histórico, numa
+  branch a partir da `develop`, para pull request.
+- **Só no corporativo:** o `.key_cti` do template e a carga de demonstração
+  versionada (a linha dela saiu do `.gitignore` de lá).
+- **Workflow de ping no Supabase** só no repositório público
+  (`if: github.repository == 'Luizsb/Acervo-Digital'`): o corporativo não precisa dos
+  secrets.
+- SDD: runbook novo "Manter os dois repositórios", com os remotos, a rotina de
+  `cherry-pick` a cada mudança e o comando para conferir se os dois ficaram iguais.
+  O "Preparar a máquina" aponta para o corporativo para quem só vai analisar. README
+  e ROADMAP atualizados.
+
+### Decisão
+
+O responsável preferiu manter os dois repositórios para não mexer na Vercel nem no
+Supabase agora, porque o servidor e o banco novos ainda não estão definidos. Como o
+corporativo começou com o histórico do template, e o nosso vai sem o histórico do
+público, os dois não compartilham commits: cada mudança é feita na `main` pública e
+copiada com `cherry-pick`. O `.key_cti` não foi aberto nem alterado: veio do template
+da ArcoTech e parece ser um identificador do pipeline corporativo
+`[A VALIDAR]` com o time da ArcoTech.
+
+### Evidência
+
+- Árvore da importação montada com `git archive` da `main` (só arquivos
+  versionados). Comparada arquivo a arquivo pelo hash do Git: 2714 arquivos iguais à
+  `main`; diferenças só no `.gitignore` (linha da carga) e nos acréscimos `.key_cti` e
+  `server/seed/catalogo-demo.json`. Nenhum `.env` (só os dois `.env.example`),
+  planilha, certificado, `data/` ou `node_modules`.
+- Carga de demonstração gerada de novo: 2519 recursos e 1387 BNCC.
+- No clone do corporativo, com instalação limpa: `npm run typecheck`, 104 testes e
+  `npm run build` passando. A instalação da API no Windows falhou pelo Zscaler
+  (`better-sqlite3`), problema da máquina e não do projeto; os arquivos da API são
+  idênticos aos da `main`, que passou na checagem de tipos aqui e no CI.
+- Container a partir do clone do corporativo, com banco novo: 11 migrações
+  aplicadas, 1387 BNCC, 2519 recursos da carga, os três serviços saudáveis em 22
+  segundos, site e catálogo respondendo em `127.0.0.1:8080`.
+- `[A VALIDAR]` CI no pull request do corporativo (GitHub Actions na organização e
+  *code scanning* em repositório privado) e regras de proteção das branches.
+
+### Impacto observado
+
+O time de validação passa a ter o projeto completo no GitHub da empresa, com a
+galeria cheia no container. Nada mudou para quem usa o site na Vercel.
+
+### Próximos passos
+
+- Abrir o pull request da branch de importação para a `develop` e conferir o CI.
+- Confirmar com a ArcoTech as regras das branches e o papel do `.key_cti`.
+- A cada mudança, seguir "Manter os dois repositórios" no SDD.
+
+---
+
 ## 2026-11-10 · 14:30 — Container testado de verdade e falha do CI corrigida
 
 ### Antes
