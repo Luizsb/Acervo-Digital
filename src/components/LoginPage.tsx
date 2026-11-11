@@ -95,7 +95,7 @@ export function LoginPage({ onBack, onLoginSuccess, login }: LoginPageProps) {
           </button>
 
           <p className="login-privacy">
-            Saiba como a Arco trata os seus dados na{' '}
+            Ao iniciar sessão, você reconhece que leu a{' '}
             <a href={PRIVACY_POLICY_URL} target="_blank" rel="noopener noreferrer">
               Política de Privacidade
             </a>

@@ -10,6 +10,43 @@ trazem a seção "Impacto observado" com dado medido: nenhuma métrica foi colet
 
 ---
 
+## 2026-11-11 · 08:00 — Frase da Política de Privacidade na tela de login
+
+### Antes
+
+- Abaixo dos botões do login: "Saiba como a Arco trata os seus dados na Política de
+  Privacidade."
+
+### Depois
+
+- "Ao iniciar sessão, você reconhece que leu a Política de Privacidade." O link
+  continua abrindo a política da Arco numa nova guia. O menu do perfil não mudou.
+
+### Decisão
+
+O responsável pediu o formato "Ao iniciar sessão, você reconhece que leu e concorda
+com os Termos de Serviço. Política de Privacidade". Ficou a versão sem "concorda",
+porque a base legal definida pela DPO é o legítimo interesse, não o consentimento, e
+sem os Termos de Serviço, que o Acervo não tem (escolha do responsável).
+
+### Evidência
+
+- `npm run typecheck`, 104 testes e `npm run build` passando.
+- No navegador, com o Vite local: texto "Ao iniciar sessão, você reconhece que leu a
+  Política de Privacidade." e link para
+  `https://politicaprivacidade.arcoeducacao.com.br/` com `target="_blank"` e
+  `rel="noopener noreferrer"`.
+
+### Impacto observado
+
+Só o texto da tela de login. Nada muda em dados, API ou nos dois backends.
+
+### Próximos passos
+
+- Confirmar com a DPO, junto com os outros pontos pendentes, se a frase atende.
+
+---
+
 ## 2026-11-10 · 15:00 — Código no GitHub corporativo, mantendo o repositório público
 
 ### Antes

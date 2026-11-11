@@ -561,9 +561,10 @@ entrar, e no menu do perfil, a qualquer momento depois. O endereço fica em
 `src/utils/privacyPolicy.ts`. O Acervo não copia o texto da política, porque quem o
 mantém é a Arco.
 
-O texto do login é só informativo ("Saiba como a Arco trata os seus dados..."), e
-não pede concordância, porque a base legal é o legítimo interesse, não o
-consentimento.
+O texto do login é só informativo ("Ao iniciar sessão, você reconhece que leu a
+Política de Privacidade.", desde 2026-11-11), e não pede concordância, porque a base
+legal é o legítimo interesse, não o consentimento. Também não cita Termos de Serviço,
+que o Acervo não tem.
 
 **Aviso próprio do Acervo:** depende do mapeamento da DPO. Segundo ela, o aviso deve
 dizer a quem se aplica, quais dados o Acervo trata, a finalidade, a base legal, o
@@ -698,10 +699,12 @@ git switch main
 # ... commit da mudança ...
 git push origin main                                # deploy na Vercel
 git fetch corporativo
-git switch -c sync/nome-curto corporativo/develop   # branch nova a partir da develop
-git cherry-pick <commit>                            # um ou mais commits da main
-git push corporativo sync/nome-curto                # e abrir o pull request para a develop
-git switch main
+# Pasta separada para a branch do corporativo (git worktree): trocar de branch nesta
+# pasta apagaria o catalogo-demo.json local, que é versionado só lá.
+git worktree add ../acervo-sync -b sync/nome-curto corporativo/develop
+git -C ../acervo-sync cherry-pick <commit>          # um ou mais commits da main
+git -C ../acervo-sync push -u corporativo sync/nome-curto   # e abrir o pull request
+git worktree remove ../acervo-sync
 ```
 
 Se o `cherry-pick` der conflito, quase sempre é no `.gitignore`: mantenha a linha do
