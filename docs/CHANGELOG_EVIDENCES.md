@@ -10,6 +10,98 @@ trazem a seção "Impacto observado" com dado medido: nenhuma métrica foi colet
 
 ---
 
+## 2026-11-19 · 11:30 — Retornos de Security/Privacidade: cookies, cofre, logs, VPN e JumpCloud
+
+### Antes
+
+- Banner de cookies estava em espera, por orientação anterior de que seria necessário
+  mesmo com só `localStorage`.
+- Canal do titular, cofre, destino da auditoria e se JumpCloud dispensava VPN
+  estavam como pergunta aberta.
+- O chamado de servidor existia, mas a documentação ainda falava em "abrir o chamado".
+
+### Depois
+
+- **Cookies (Vittoria):** scan no site de testes sem cookie → banner dispensado. Se
+  no futuro houver cookie, falar com ela ou `#suporte-lgpd`.
+- **Canal do titular (Larissa / DPO):** `privacidade@arcoeducacao.com.br`. Rascunho
+  do aviso no SDD atualizado.
+- **Cofre e logs (Felipe Gurian):** cofre conforme a hospedagem (AWS Secrets Manager
+  se for AWS); logs fora do servidor (CloudWatch, Datadog etc.).
+- **Acesso privado (Felipe Gurian):** VPN ou IPs da Zscaler; JumpCloud + MFA não
+  dispensa. Hipótese antiga descartada.
+- **JumpCloud (Daniel):** cadastro com o time do Henrique Braga, depois do servidor.
+- **Servidor:** chamado já aberto; Infra pediu OK em `#fluxo-security-privacy-by-design`
+  e novo chamado com a aprovação. Cobrança reenviada em 2026-11-19.
+- Também sobe a decisão de 2026-11-11: corporativo vira o oficial com servidor e banco;
+  o público e a Vercel saem do ar depois.
+
+### Decisão
+
+Nada a implementar no código do MVP agora: o banner nunca foi criado, e cofre, logs,
+VPN/Zscaler e JumpCloud dependem do servidor. A documentação registra as respostas e
+o que fica para depois do OK do Security by Design.
+
+### Evidência
+
+- Só documentação: `docs/SDD.md`, `docs/ROADMAP.md`, `docs/SOBRE.md`, `README.md` e
+  este registro. Nenhum arquivo de `src/` ou `server/` alterado nesta entrega.
+
+### Impacto observado
+
+O caminho para o ambiente corporativo ficou claro. O bloqueio atual é o OK do
+Security by Design para a Infra.
+
+### Próximos passos
+
+- Aguardar o OK em `#fluxo-security-privacy-by-design` e reabrir o chamado.
+- Com a DPO: texto do aviso próprio e prazo dos exports (proposta: 6 meses).
+
+---
+
+## 2026-11-11 · 08:10 — Repositório oficial: o corporativo, quando houver servidor e banco
+
+### Antes
+
+- Os documentos diziam que o corporativo seria a "fonte única quando o servidor
+  existir", sem dizer o que acontece com o repositório público, a Vercel e o
+  Supabase.
+- O `SOBRE.md` datava a avaliação do comitê em julho de 2026.
+
+### Depois
+
+- SDD, "Manter os dois repositórios": o público é só o MVP de testes. Quando o
+  servidor e o banco da Arco existirem, o corporativo vira o repositório oficial e
+  único, o público e o projeto da Vercel saem do ar, o Supabase é encerrado e a
+  rotina de dois repositórios acaba.
+- ROADMAP: pull request #3 marcado como concluído, decisão registrada e item novo
+  para a virada.
+- README e `SOBRE.md` alinhados. No `SOBRE.md`, a avaliação do comitê passou para
+  "entre junho e agosto de 2026", como informado pelo responsável.
+
+### Decisão
+
+O responsável decidiu que o repositório corporativo passa a ser o oficial quando o
+servidor e o banco existirem. Até lá, os dois convivem, porque a Vercel e o Supabase
+dependem do público. Ficou local em 2026-11-11 e sobe junto com o registro dos
+retornos de 2026-11-19.
+
+### Evidência
+
+- Só documentação: `docs/SDD.md`, `docs/ROADMAP.md`, `docs/SOBRE.md`, `README.md` e
+  este registro.
+
+### Impacto observado
+
+Nenhum no código ou no deploy. Deixa registrado o fim do repositório público e do
+ambiente de testes.
+
+### Próximos passos
+
+- Quando o servidor e o banco existirem, seguir a virada no ROADMAP.
+
+---
+
 ## 2026-11-11 · 08:00 — Frase da Política de Privacidade na tela de login
 
 ### Antes

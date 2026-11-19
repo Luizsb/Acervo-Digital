@@ -167,8 +167,8 @@ ferramenta de cadastro.
   integração é feita quando o servidor existir. O pedido de servidor segue o caminho
   TI → Requisição → Infraestrutura → Configuração em servidores; o contato de
   JumpCloud está com o responsável.
-- Com JumpCloud e MFA, a hipótese é dispensar a VPN. `[A VALIDAR]` Depende de aceite
-  formal do comitê.
+- JumpCloud (SSO + MFA) **não dispensa** VPN: app interno fica atrás da VPN ou com
+  IPs restritos à Zscaler (Engenharia de Segurança, Felipe Gurian, 2026-11).
 - O repositório continua público até haver um repositório no GitHub da ArcoTech.
   Tudo deve estar pronto para a migração, que leva histórico limpo.
 - A planilha oficial é do **NDE, no Drive da empresa**. Ela não é lida
@@ -223,22 +223,32 @@ ferramenta de cadastro.
 - ✅ Mapeamento da DPO recebido: base legal de legítimo interesse e auditoria por 6
   meses (art. 15 do Marco Civil)
 - ✅ Respostas da DPO (2026-11-05): a política de privacidade do Grupo é única, e o
-  aviso próprio do Acervo depende do mapeamento. O banner de cookies é necessário
-  mesmo com o Acervo usando só armazenamento local
+  aviso próprio do Acervo depende do mapeamento
 - ✅ Link da Política de Privacidade da Arco na tela de login e no menu do perfil,
   em nova guia (2026-11-05)
-- ⬜ Analista do time revisar as respostas da DPO, para darmos o OK a ela
-- ⬜ Levar à DPO: texto do aviso, canal do titular e quantos exports manter. Para
-  adiantar o mapeamento, enviar o inventário "Dados pessoais" do `SDD.md`
+- ✅ Canal do titular (Larissa / DPO, 2026-11): `privacidade@arcoeducacao.com.br`
+- ✅ Banner de cookies dispensado (Vittoria, 2026-11-19): o site de testes não coleta
+  cookie. Se no futuro houver cookie, falar com ela ou `#suporte-lgpd`
+- ⬜ Levar à DPO: texto do aviso próprio e quantos exports manter (proposta: 6 meses).
+  Para adiantar o mapeamento, enviar o inventário "Dados pessoais" do `SDD.md`
 - ⬜ Exibir o aviso próprio do Acervo, depois da aprovação da DPO
-- ⬜ Banner de cookies, quando a DPO entregar o texto e disser o formato
 - ✅ Rotina de descarte (2026-11-04): `npm run db:descartar` e descarte no fim de
   cada importação. Auditoria por 6 meses; visualização individual só no dia, com
   o total diário sem pessoa em `oda_view_daily`
 - ⬜ Ao fim do MVP, apagar os dados de teste (runbook "Encerrar o ambiente de testes")
-- ⬜ Perguntar à Segurança qual é o cofre corporativo e para onde enviar a auditoria
+- ✅ Cofre e destino da auditoria (Felipe Gurian, 2026-11): cofre conforme a
+  hospedagem (AWS Secrets Manager se for AWS); logs fora do servidor (CloudWatch,
+  Datadog etc.). Implementação depois do servidor
+- ✅ Acesso privado (Felipe Gurian, 2026-11): VPN ou IPs da Zscaler; JumpCloud + MFA
+  não dispensa
+- ✅ JumpCloud (Daniel / Gestão de Acessos, 2026-11): cadastro do app com o time do
+  Henrique Braga; chamado TI → Requisição → Acessos → Sistemas → Outros sistemas,
+  depois do servidor
 - ⬜ Comando de restauração a partir do export, quando o destino estiver definido
-- ⬜ Abrir o chamado do servidor corporativo
+- ✅ Chamado de servidor e banco PostgreSQL aberto; a Infra (William, 2026-10-21)
+  pediu OK do Security by Design em `#fluxo-security-privacy-by-design` e, depois,
+  um novo chamado com a aprovação. Cobrança reenviada em 2026-11-19; aguardando
+- ⬜ `[A VALIDAR]` OK do Security by Design para reabrir o chamado de infraestrutura
 - ✅ Acesso ao GitHub corporativo liberado (2026-11-10), depois da dúvida aberta no
   grupo SRE do Pedagógico em 2026-11-05
 - ✅ Validação antes da migração (2026-11-10): tipos, testes, build e auditoria sem
@@ -256,8 +266,15 @@ ferramenta de cadastro.
   - ✅ O repositório corporativo veio de um template da ArcoTech (`README.md`
     genérico e `.key_cti`), com as branches `main`, `develop` (padrão) e
     `initial-setup`. O `.key_cti` fica; o README do template dá lugar ao do Acervo
-  - ⬜ Importar a árvore atual numa branch a partir da `develop`, com a carga de
-    demonstração versionada, e abrir o pull request para a `develop`
+  - ✅ Importar a árvore atual numa branch a partir da `develop`, com a carga de
+    demonstração versionada. Pull request #3 aprovado e com merge na `develop`
+    (2026-11-10)
+  - ✅ Decisão (2026-11-11): o corporativo passa a ser o repositório oficial quando
+    o servidor e o banco da Arco existirem. Nesse momento, o repositório público e o
+    projeto da Vercel saem do ar, e o Supabase é encerrado
+  - ⬜ Quando o servidor e o banco existirem: migrar banco e deploy, tirar do ar o
+    repositório público e a Vercel, e encerrar o Supabase ("Migrar para o servidor
+    corporativo" e "Encerrar o ambiente de testes" no `SDD.md`)
   - ⬜ `[A VALIDAR]` Regras de proteção das branches (aprovação obrigatória, quem
     aprova, quem leva a `develop` para a `main`)
   - ⬜ Conferir o CI no pull request: GitHub Actions liberado na organização e
@@ -281,9 +298,11 @@ ferramenta de cadastro.
   (2026-11-10). O endereço da API agora vem da propriedade `ACERVO_API_BASE` do
   script, que precisa ser HTTPS. O script continua parado
 - ⬜ Integrar o JumpCloud no backend Express e remover os botões de acesso rápido
-- ⬜ Pedir ao comitê o aceite de JumpCloud com MFA no lugar da VPN e enviar a
-  atualização de escopo (cadastro → vitrine de consulta). Texto de resposta redigido
-  em 2026-10-21, fora do repositório; falta revisar e enviar no PSBD-411
+  (depois do servidor; cadastro do app com o time do Henrique Braga)
+- ✅ Hipótese "JumpCloud + MFA no lugar da VPN" descartada (Felipe Gurian, 2026-11):
+  app interno precisa de VPN ou allowlist da Zscaler
+- ⬜ Depois do servidor: VPN ou IPs da Zscaler, cofre (ex. AWS Secrets Manager) e
+  centralização dos logs (CloudWatch/Datadog)
 - ✅ Relatório de usuários e perfis no admin (aba *Usuários e perfis*, com CSV), nos
   dois backends; o SQL continua no runbook. Função `admin_list_users()` aplicada no
   Supabase em 2026-10-21
@@ -352,7 +371,7 @@ Nenhuma das alternativas foi avaliada tecnicamente ainda. Sem data (responsável
 | Prioridade | Item | Por quê |
 |---|---|---|
 | 1 | Repassar acessos por mensagem direta a quem assume | Sem isso o catálogo congela |
-| 2 | Abrir o chamado do servidor corporativo e solicitar o GitHub da ArcoTech | Pendente, sem data. Destrava o JumpCloud e a maior parte do relatório de segurança |
+| 2 | OK do Security by Design e novo chamado de servidor/banco | Chamado já aberto; Infra pediu OK em `#fluxo-security-privacy-by-design` (2026-10-21). GitHub corporativo já existe |
 | 3 | Cadastrar os secrets do workflow de ping e remover o gatilho de push | Hoje funciona com valor embutido |
 | 4 | Corrigir os 20 códigos repetidos na planilha (lista em "Bugs conhecidos") | Vence a linha da galeria, senão a última; um deles junta dois recursos diferentes |
 | 5 | SSO JumpCloud | Tira o login com senha manual |

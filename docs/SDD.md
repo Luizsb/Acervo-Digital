@@ -509,9 +509,9 @@ Limitações conhecidas:
   ao banco. O registro existe apenas nos logs do painel, com retenção curta no plano
   Free. `[A VALIDAR]` Quanto tempo esses logs ficam. No ambiente corporativo, o
   JumpCloud registra as falhas.
-- **Visibilidade para TI e Segurança:** hoje, só por SQL.
-  `[PERGUNTA AO RESPONSÁVEL]` Para onde a Segurança quer que os eventos sejam
-  enviados (SIEM, exportação periódica)?
+- **Visibilidade para TI e Segurança:** hoje, só por SQL. Depois do servidor, os
+  logs vão para local seguro fora da máquina (CloudWatch, Datadog etc., orientação
+  da Engenharia de Segurança, 2026-11).
 
 ```sql
 select occurred_at, action, actor, target, origin, ip, details
@@ -572,13 +572,20 @@ tempo de retenção, o canal do titular, a identidade do DPO, com quem os dados 
 compartilhados e se há transferência internacional. Quando ficar pronto, ele aparece
 dentro do Acervo e aponta para a política completa da Arco.
 
-**Banner de cookies:** a DPO confirmou que ele é necessário, mesmo com o Acervo
-usando só armazenamento local (`localStorage`). Ele fica para depois do texto da DPO
-(decisão do responsável, 2026-11-05). `[A VALIDAR]` Texto e formato do banner (só
-informativo ou com escolha) são da DPO.
+**Banner de cookies:** a Vittoria Cariatti Lazarini (2026-11-19) fez o scan no site de
+testes (`https://acervo-digital-omega.vercel.app/#/login`) e confirmou que **não há
+cookie sendo coletado**. Nesse caso, **não há necessidade de banner**. Se no futuro o
+Acervo passar a coletar cookie, falar com ela ou pelo canal `#suporte-lgpd` para o
+fluxo de política de cookies e banner. O Acervo usa só armazenamento local
+(`localStorage`) necessário para funcionar; não há banner no código.
 
-Rascunho do aviso próprio, para aprovação da DPO. `[A VALIDAR]` Texto, prazo e canal
-são da DPO.
+**Canal do titular** (Larissa Albuquerque Nascimento, DPO, 2026-11):
+`privacidade@arcoeducacao.com.br`.
+
+Rascunho do aviso próprio, para aprovação da DPO. `[A VALIDAR]` Texto final e prazo
+(quanto tempo guardar os exports do banco) são da DPO. A auditoria no banco segue 6
+meses; a DPO indicou que, se julgarem necessário para defesa em processo, os logs
+podem ser mantidos por mais tempo (`[A VALIDAR]` se 5 anos).
 
 > **Privacidade no Acervo Digital.** O Acervo Digital é uma ferramenta interna da Arco
 > para consultar recursos digitais pedagógicos. Para funcionar, ele usa o seu e-mail
@@ -587,8 +594,8 @@ são da DPO.
 > a galeria e guardar seus favoritos, e eventos de segurança como entradas, tentativas
 > recusadas e mudanças de perfil, com data, hora e endereço IP. Esses dados não são
 > compartilhados fora da Arco e são mantidos por [prazo definido pela DPO]. Para pedir
-> acesso, correção ou eliminação dos seus dados (art. 18 da LGPD), fale com [canal da
-> DPO].
+> acesso, correção ou eliminação dos seus dados (art. 18 da LGPD), fale com
+> privacidade@arcoeducacao.com.br.
 
 ### Criptografia em repouso e em trânsito
 
@@ -621,10 +628,27 @@ precisa constar na resposta ao comitê.
 
 ### Gestão de segredos
 
-Pendente. `[PERGUNTA AO RESPONSÁVEL]` Qual é o cofre corporativo? A resposta é da
-Segurança. Quando estiver definido: guardar lá a senha do banco, o `JWT_SECRET` e o
-`SPREADSHEET_SYNC_TOKEN`, e rotacionar a senha do banco, revendo a decisão de setembro
-de 2026 de não rotacioná-la.
+Orientação da Engenharia de Segurança (Felipe Gurian, 2026-11): o cofre **depende de
+onde a aplicação será hospedada**; os segredos precisam ficar criptografados por
+padrão. Se for AWS, o caminho indicado é o **AWS Secrets Manager**. Guardar lá a
+senha do banco, o `JWT_SECRET` e o `SPREADSHEET_SYNC_TOKEN`, e rotacionar a senha do
+banco, revendo a decisão de setembro de 2026 de não rotacioná-la. A implementação
+fica para depois do servidor.
+
+### Destino da trilha de auditoria
+
+Orientação da Engenharia de Segurança (Felipe Gurian, 2026-11): os logs precisam
+ficar em **local seguro, e não diretamente no servidor** — por exemplo AWS
+CloudWatch, Datadog ou equivalente. Hoje a trilha está em `audit_events` no banco.
+A centralização fora do servidor fica para depois do ambiente corporativo.
+
+### Acesso privado (VPN ou Zscaler)
+
+Orientação da Engenharia de Segurança (Felipe Gurian, 2026-11): se o app for para
+**usuários internos**, deve ficar **atrás da VPN** ou com **IPs restritos aos da
+Zscaler**. JumpCloud (SSO + MFA) **não dispensa** esse requisito. A hipótese antiga
+de trocar VPN por JumpCloud + MFA fica **descartada**. A implementação depende do
+servidor.
 
 ### Validações automáticas
 
@@ -671,8 +695,15 @@ Desde 2026-11-10, até existir o servidor da Arco, o código vive em dois lugare
 
 | Repositório | Remoto local | Branch | Papel |
 |---|---|---|---|
-| [Luizsb/Acervo-Digital](https://github.com/Luizsb/Acervo-Digital) (público) | `origin` | `main` | Deploy da Vercel e ambiente de testes no Supabase. Nada muda aqui |
-| [arcotech-services/id-acervo-digital](https://github.com/arcotech-services/id-acervo-digital) (privado) | `corporativo` | `develop`, por pull request | Análise e validação pelo time; fonte única quando o servidor existir |
+| [Luizsb/Acervo-Digital](https://github.com/Luizsb/Acervo-Digital) (público) | `origin` | `main` | Só o MVP de testes: deploy da Vercel e Supabase. Sai do ar quando o servidor e o banco da Arco existirem |
+| [arcotech-services/id-acervo-digital](https://github.com/arcotech-services/id-acervo-digital) (privado) | `corporativo` | `develop`, por pull request | Análise e validação pelo time. Passa a ser o repositório oficial, e o único, quando o servidor e o banco da Arco existirem |
+
+**Quando o servidor e o banco da Arco existirem** (decisão do responsável,
+2026-11-11): o corporativo vira o repositório oficial, a migração de banco e de
+deploy segue "Migrar para o servidor corporativo", o repositório público e o projeto
+da Vercel saem do ar, e o ambiente de testes do Supabase é encerrado pelo runbook
+"Encerrar o ambiente de testes". A partir daí, esta rotina de dois repositórios deixa
+de existir.
 
 Os históricos são independentes: o corporativo começou num template da ArcoTech e
 recebeu a árvore do público num commit só, sem o histórico. Por isso o mesmo commit
@@ -1184,8 +1215,8 @@ limpo**, sem esse arquivo.
   oficial é o Supabase; no futuro, os dados vão para a infraestrutura da Arco.
 - ✅ Backup automático no plano Free: não existe. A página de segurança do Supabase
   diz que só bancos de planos pagos têm backup diário (conferido em 2026-10-21).
-- `[A VALIDAR]` Se o comitê aceita JumpCloud com MFA no lugar da VPN. É hipótese do
-  responsável, não decisão do comitê.
+- ✅ JumpCloud com MFA **não** substitui VPN (Engenharia de Segurança, Felipe Gurian,
+  2026-11): app interno fica atrás da VPN ou com IPs só da Zscaler.
 - ✅ Vídeos que recusam `iframe` (conferido em 2026-10-21): 19 playlists do YouTube,
   que passaram a abrir em nova guia. Os demais destinos abrem; 34 links não
   responderam a tempo e ficam para novo teste.
@@ -1197,12 +1228,13 @@ limpo**, sem esse arquivo.
 - ✅ Enforce SSL no painel do Supabase (responsável, 2026-10-21): não será ativado,
   porque o Supabase não é o ambiente oficial. `sslmode=require` fica nos exemplos de
   `server/.env`.
-- `[PERGUNTA AO RESPONSÁVEL]` Para a DPO: texto final do aviso de privacidade, canal
-  para os direitos do titular e quantos exports do banco manter. A base legal e os
-  prazos de auditoria já vieram no mapeamento. Por enquanto, o Acervo aponta para a
-  política do Grupo (2026-11-05).
-- `[PERGUNTA AO RESPONSÁVEL]` Para a DPO: texto e formato do banner de cookies (só
-  informativo ou com escolha), e se o link da política no login e no menu do perfil
-  basta.
-- `[PERGUNTA AO RESPONSÁVEL]` Para a Segurança: qual é o cofre corporativo e para onde
-  enviar a trilha de auditoria.
+- ✅ Canal do titular (DPO Larissa, 2026-11): `privacidade@arcoeducacao.com.br`.
+- ✅ Banner de cookies (Vittoria, 2026-11-19): dispensado no MVP atual; não há cookie
+  no site de testes. Se passar a haver cookie, falar com ela ou `#suporte-lgpd`.
+- ✅ Cofre e destino da auditoria (Felipe Gurian, 2026-11): cofre conforme a
+  hospedagem (AWS Secrets Manager se for AWS); logs fora do servidor (CloudWatch,
+  Datadog etc.). Implementação depois do servidor.
+- `[A VALIDAR]` Com a DPO: texto final do aviso próprio e quantos exports do banco
+  manter (proposta do responsável: 6 meses, o mesmo prazo da auditoria).
+- `[A VALIDAR]` OK do Security by Design em `#fluxo-security-privacy-by-design` para
+  reabrir o chamado de servidor e banco (retorno da Infra, William, 2026-10-21).

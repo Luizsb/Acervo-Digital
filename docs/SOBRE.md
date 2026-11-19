@@ -72,7 +72,9 @@ captura de capas faltantes.
 ## Funcionalidades parciais
 
 - **SSO JumpCloud** — existe o botão na tela de login, mas é placeholder. O login
-  real hoje é e-mail e senha.
+  real hoje é e-mail e senha. No ambiente corporativo, o JumpCloud vem junto com
+  VPN ou IPs da Zscaler (acesso privado); o cadastro do app fica com o time do
+  Henrique Braga, depois do servidor.
 - **Recuperação de senha** — funciona no backend Express; desativada no modo Supabase.
 - **Importação da planilha e captura de capas** — rodam apenas na máquina de quem
   mantém o projeto. Na Vercel esses comandos são bloqueados de propósito, porque não
@@ -128,12 +130,14 @@ instância AWS, com custo zero. **O Acervo ainda não está em uso oficial:** é
 validação da proposta, com login único de visitante e de admin. O catálogo passa de
 2 mil recursos; o número exato está no painel admin.
 
-Em julho de 2026, o Comitê Security by Design da Arco avaliou o projeto, ainda como
-ferramenta de cadastro, e classificou o risco como alto. O rumo combinado depois disso
-é levar o Acervo para um **servidor corporativo da Arco, com SSO JumpCloud**, e o
-código para o GitHub corporativo. O acesso ao GitHub corporativo foi liberado em
-novembro de 2026; o pedido de servidor, com a infraestrutura adequada ao projeto,
-segue em fluxo de solicitação com a TI. O backend Express em `server/`, que roda em
+Entre junho e agosto de 2026, o Comitê Security by Design da Arco avaliou o projeto,
+ainda como ferramenta de cadastro, e classificou o risco como alto. O rumo combinado
+depois disso é levar o Acervo para um **servidor corporativo da Arco, com SSO
+JumpCloud**, e o código para o GitHub corporativo. O código já está no repositório
+corporativo `arcotech-services/id-acervo-digital` desde novembro de 2026, que passa a
+ser o oficial quando o servidor e o banco existirem; até lá, o repositório público
+segue só para o MVP de testes na Vercel e sai do ar depois. O pedido de servidor, com
+a infraestrutura adequada ao projeto, segue em fluxo de solicitação com a TI. O backend Express em `server/`, que roda em
 servidor, é o caminho para esse ambiente; trocar é mudar a variável `VITE_BACKEND`.
 Para o time de validação, o Acervo inteiro sobe em container com um comando, com uma
 carga de demonstração do catálogo (ver `SDD.md`).
@@ -170,7 +174,8 @@ Respostas do responsável em 2026-10-21:
   exato fica no painel admin, não neste arquivo.
 - ✅ **Usuários reais.** Ainda não há uso oficial: é um MVP de validação. Métrica de
   uso só faz sentido depois do lançamento.
-- `[A VALIDAR]` **Prazo do SSO JumpCloud.** O servidor e a infraestrutura adequada ao
-  projeto estão em fluxo de solicitação com a TI; ainda sem data.
+- `[A VALIDAR]` **Prazo do SSO JumpCloud e do servidor.** O chamado de servidor e banco
+  já foi aberto; a Infra aguarda o OK do Security by Design em
+  `#fluxo-security-privacy-by-design`. Ainda sem data.
 - ✅ **Nomenclatura.** "Interações Digitais" (ID) é o time que desenvolve a plataforma
   do Acervo. O NDE é o Núcleo de Design Educacional, que alimenta o catálogo.
